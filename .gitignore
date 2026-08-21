@@ -1,0 +1,27 @@
+# ===== 敏感凭证（绝对不能提交）=====
+zsxq_cookie.txt
+
+# ===== 运行产物（各自演化，不同步）=====
+zsxq_fetch_raw.json
+zsxq_evening_clean.txt
+forecast_chain.json
+consensus_chain.json
+*信号流缓存.json
+*周线快照缓存.json
+automations/
+
+# ===== 图片与报告产物（大文件/各自生成）=====
+zsxq_images/
+outputs/
+
+# ===== Python 缓存 =====
+__pycache__/
+*.pyc
+*.pyo
+
+# ===== 每日日志（各自 append，不同步，仅 MEMORY.md 纳入）=====
+memory/20*.md
+
+# ===== 系统文件 =====
+.DS_Store
+Thumbs.db
