@@ -115,7 +115,7 @@
 - **分支**：`main`；工作流 = 家里改完 `git push`，公司开工前 `git pull`
 - **git 仓库根**：项目目录 `2026-08-14-09-01-12`
 - **代理**：git 走 Clash `http://127.0.0.1:7897`（`git config --global http.proxy` / `https.proxy`）
-- **认证**：Git Credential Manager（浏览器授权，在能弹窗的终端里跑 push/pull）
+- **认证**：Personal Access Token（已存 `~/.git-credentials`，credential.helper=store）——agent 可自动 push/pull，无需用户开终端；token 若失效需重新生成并更新 `~/.git-credentials`
 - **.gitignore 排除**：`zsxq_cookie.txt`（敏感凭证，绝不提交）、`zsxq_fetch_raw.json`/`forecast_chain.json`/`consensus_chain.json`（链数据各自演化）、`zsxq_images/`、`outputs/`、`automations/`、`*信号流缓存.json`、每日日志 `memory/20*.md`、`__pycache__/`
 - **纳入跟踪**：`.workbuddy/*.py` 脚本 + `README_预判系统.md` + `memory/MEMORY.md`（项目约定）
 - **公司电脑待办**：首次 clone 后，把公司本地的 `zsxq_cookie.txt` 放回（不进 git）
