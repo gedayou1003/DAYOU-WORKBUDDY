@@ -20,7 +20,8 @@ __pycache__/
 *.pyo
 
 # ===== 每日日志（各自 append，不同步，仅 MEMORY.md 纳入）=====
-memory/20*.md
+.workbuddy/memory/20*.md
+.workbuddy/memory/today_check.txt
 
 # ===== 系统文件 =====
 .DS_Store
