@@ -118,4 +118,10 @@
 - **认证**：Personal Access Token（已存 `~/.git-credentials`，credential.helper=store）——agent 可自动 push/pull，无需用户开终端；token 若失效需重新生成并更新 `~/.git-credentials`
 - **.gitignore 排除**：`zsxq_cookie.txt`（敏感凭证，绝不提交）、`zsxq_fetch_raw.json`/`forecast_chain.json`/`consensus_chain.json`（链数据各自演化）、`zsxq_images/`、`outputs/`、`automations/`、`*信号流缓存.json`、每日日志 `memory/20*.md`、`__pycache__/`
 - **纳入跟踪**：`.workbuddy/*.py` 脚本 + `README_预判系统.md` + `memory/MEMORY.md`（项目约定）
-- **公司电脑待办**：首次 clone 后，把公司本地的 `zsxq_cookie.txt` 放回（不进 git）
+- **公司电脑待办**：首次接入按以下步骤（或让公司 WorkBuddy 执行）：
+  1. 备份 `.workbuddy/zsxq_cookie.txt`（敏感，不进 git）
+  2. 探测代理端口并配置 `git config --global http.proxy/https.proxy`
+  3. 配置认证：`credential.helper=store` + 写入 `~/.git-credentials`（复用家里同一个 PAT，账号级通用；PAT 值不写进 git，仅存各设备本机）
+  4. `git init && git remote add origin <仓库地址>`
+  5. `git fetch origin && git reset --hard origin/main`（用远程最新覆盖本地脚本）
+  6. 确认 Cookie 还在，否则恢复备份
