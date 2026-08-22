@@ -114,13 +114,13 @@
 - **远程仓库**：`https://github.com/gedayou1003/DAYOU-WORKBUDDY.git`（私有，勿公开）
 - **分支**：`main`；工作流 = 家里改完 `git push`，公司开工前 `git pull`
 - **git 仓库根**：项目目录 `2026-08-14-09-01-12`
-- **代理**：git 走 Clash `http://127.0.0.1:7897`（`git config --global http.proxy` / `https.proxy`）
+- **代理**：优先直连 GitHub（2026-08-22 起实测可直连）；直连不通时开 Clash 并探测端口（常见 7890/7897）配置 `http.proxy`/`https.proxy`
 - **认证**：Personal Access Token（已存 `~/.git-credentials`，credential.helper=store）——agent 可自动 push/pull，无需用户开终端；token 若失效需重新生成并更新 `~/.git-credentials`
 - **.gitignore 排除**：`zsxq_cookie.txt`（敏感凭证，绝不提交）、`zsxq_fetch_raw.json`/`forecast_chain.json`/`consensus_chain.json`（链数据各自演化）、`zsxq_images/`、`outputs/`、`automations/`、`*信号流缓存.json`、每日日志 `memory/20*.md`、`__pycache__/`
 - **纳入跟踪**：`.workbuddy/*.py` 脚本 + `README_预判系统.md` + `memory/MEMORY.md`（项目约定）
 - **公司电脑待办**：首次接入按以下步骤（或让公司 WorkBuddy 执行）：
   1. 备份 `.workbuddy/zsxq_cookie.txt`（敏感，不进 git）
-  2. 探测代理端口并配置 `git config --global http.proxy/https.proxy`
+  2. 测直连 `git ls-remote <仓库地址>`；能返回结果则跳过代理；卡住则探测端口（7890/7897）配置代理
   3. 配置认证：`credential.helper=store` + 写入 `~/.git-credentials`（复用家里同一个 PAT，账号级通用；PAT 值不写进 git，仅存各设备本机）
   4. `git init && git remote add origin <仓库地址>`
   5. `git fetch origin && git reset --hard origin/main`（用远程最新覆盖本地脚本）
