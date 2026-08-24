@@ -23,6 +23,11 @@ __pycache__/
 .workbuddy/memory/20*.md
 .workbuddy/memory/today_check.txt
 
+# ===== 回测数据与临时文件（可重拉 / 中间产物）=====
+backtest_data/
+tmp_fulltext.txt
+forecast_chain.md
+
 # ===== 系统文件 =====
 .DS_Store
 Thumbs.db
