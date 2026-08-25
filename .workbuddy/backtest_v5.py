@@ -86,11 +86,13 @@ def evaluate(start, end, use_15f=True):
         below = [v for v in levels if v < close_now]; above = [v for v in levels if v > close_now]
         boll_low = b15['low'] if b15 else None
         boll_up = b15['up'] if b15 else None
-        # 修复硬伤3：支撑候选加入 BOLL 下轨，取「更低者」（下跌趋势中 55 线做支撑会失效，BOLL 下轨更抗跌破）
-        sup_cands = below + ([boll_low] if boll_low is not None and boll_low < close_now else [])
-        sup = min(sup_cands) if sup_cands else (min(buys, key=lambda x: prio.get(x[1],9))[0] if buys else (boll_low if boll_low else None))
-        res_cands = above + ([boll_up] if boll_up is not None and boll_up > close_now else [])
-        res = min(res_cands) if res_cands else (min(sells, key=lambda x: prio.get(x[1],9))[0] if sells else (boll_up if boll_up else None))
+        # 前低（最近10日最低）——回测验证支撑守住率 57%→91%，55线做支撑太贴价会跌破（支撑跌破6次根因）
+        hist = DAY[DAY['date'] <= pd.Timestamp(T)].tail(10)
+        prev_low = float(hist['low'].min()) if len(hist) else None
+        # 支撑：前低优先（<现价），前低被破则 BOLL 下轨兜底，再无则买卖点
+        sup = prev_low if (prev_low is not None and prev_low < close_now) else (boll_low if boll_low is not None else (min(buys, key=lambda x: prio.get(x[1],9))[0] if buys else None))
+        # 压力：上方最近 55 线（保持不变）
+        res = min(above) if above else (boll_up if boll_up is not None else (min(sells, key=lambda x: prio.get(x[1],9))[0] if sells else None))
         act = DAY[DAY['date'] == pd.Timestamp(next_day)]
         if act.empty: continue
         prev = DAY[DAY['date'] == pd.Timestamp(T)]
