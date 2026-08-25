@@ -56,7 +56,9 @@ def evaluate(start, end, use_15f=True):
         r_week = run_engine_at(WEEK[WEEK['date'] <= pd.Timestamp(T)], 7)
         r_m60 = run_engine_at(M60[M60['date'] <= cut], 6)
         r_m15 = run_engine_at(M15[M15['date'] <= cut], 15) if use_15f else None
-        cutoff = (pd.Timestamp(T) - pd.Timedelta(days=30)).strftime('%Y-%m-%d')
+        # 分级窗口（修复硬伤2）：日线/周线信号生命周期长用 60 天，60F/15F 用 20 天
+        cutoff_day = (pd.Timestamp(T) - pd.Timedelta(days=30)).strftime('%Y-%m-%d')
+        cutoff_short = (pd.Timestamp(T) - pd.Timedelta(days=20)).strftime('%Y-%m-%d')
         trend_score = 0
         for r in (r_day, r_week):
             if r and r.get('structure'):
@@ -67,7 +69,8 @@ def evaluate(start, end, use_15f=True):
         prio = {'15分钟':0, '60分钟':1, '日线':2, '周线':3}
         for tag, r, w in [('日线', r_day, 2), ('周线', r_week, 2), ('60分钟', r_m60, 2), ('15分钟', r_m15, 1)]:
             if not r: continue
-            sigs = [s for s in r.get('signals', []) if (s.get('date','') or '') >= cutoff]
+            _cut = cutoff_day if tag in ('日线', '周线') else cutoff_short
+            sigs = [s for s in r.get('signals', []) if (s.get('date','') or '') >= _cut]
             if not sigs: continue
             if sigs[0]['type'] == 'buy': sig_score += w; buys.append((sigs[0]['price'], tag))
             else: sig_score -= w; sells.append((sigs[0]['price'], tag))
@@ -81,8 +84,13 @@ def evaluate(start, end, use_15f=True):
         elif total > 0: direction = '震荡偏多'
         else: direction = '震荡偏空'
         below = [v for v in levels if v < close_now]; above = [v for v in levels if v > close_now]
-        sup = max(below) if below else (min(buys, key=lambda x: prio.get(x[1],9))[0] if buys else (b15['low'] if b15 else None))
-        res = min(above) if above else (min(sells, key=lambda x: prio.get(x[1],9))[0] if sells else (b15['up'] if b15 else None))
+        boll_low = b15['low'] if b15 else None
+        boll_up = b15['up'] if b15 else None
+        # 修复硬伤3：支撑候选加入 BOLL 下轨，取「更低者」（下跌趋势中 55 线做支撑会失效，BOLL 下轨更抗跌破）
+        sup_cands = below + ([boll_low] if boll_low is not None and boll_low < close_now else [])
+        sup = min(sup_cands) if sup_cands else (min(buys, key=lambda x: prio.get(x[1],9))[0] if buys else (boll_low if boll_low else None))
+        res_cands = above + ([boll_up] if boll_up is not None and boll_up > close_now else [])
+        res = min(res_cands) if res_cands else (min(sells, key=lambda x: prio.get(x[1],9))[0] if sells else (boll_up if boll_up else None))
         act = DAY[DAY['date'] == pd.Timestamp(next_day)]
         if act.empty: continue
         prev = DAY[DAY['date'] == pd.Timestamp(T)]
