@@ -22,8 +22,8 @@ IDS = {
 
 def simplify(prompt: str) -> str:
     """对单档 prompt 做 v5 精简，返回新 prompt。"""
-    # 1. 加兜底句（幂等：已加则跳过）
-    if "执行本块前先读" not in prompt:
+    # 1. 加兜底句（幂等：prompt 已引用 v5 文件则跳过，兼容手动精简措辞）
+    if "预判规则_v5.md" not in prompt:
         prompt = re.sub(
             r"(## 第四块：预判[^\n]*)\n",
             rf'\1\n> 执行本块前先读 `{V5}`（v5 规则 + 偏差归因统计的唯一权威文件）。\n',
