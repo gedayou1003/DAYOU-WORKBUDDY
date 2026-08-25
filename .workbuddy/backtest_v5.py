@@ -76,8 +76,11 @@ def evaluate(start, end, use_15f=True):
             _cut = cutoff_day if tag in ('日线', '周线') else cutoff_short
             sigs = [s for s in r.get('signals', []) if (s.get('date','') or '') >= _cut]
             if not sigs: continue
-            if sigs[0]['type'] == 'buy': sig_score += w; buys.append((sigs[0]['price'], tag))
-            else: sig_score -= w; sells.append((sigs[0]['price'], tag))
+            s0 = sigs[0]
+            # confidence 降权（2026-08-25 优化）：无背驰的一买/一卖 confidence<0.6 是弱信号，降半权
+            w_eff = w * (0.5 if s0.get('confidence', 0.5) < 0.6 else 1.0)
+            if s0['type'] == 'buy': sig_score += w_eff; buys.append((s0['price'], tag))
+            else: sig_score -= w_eff; sells.append((s0['price'], tag))
         total = trend_score + sig_score
         b15 = boll(M15, cut) if use_15f else None
         bw = b15['bw'] if b15 else None
