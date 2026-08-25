@@ -132,6 +132,7 @@ def main():
         print(f"  {r['name']:8s} 方向{r['direction']:+.1f} 振幅{r['volatility']}% 综合{r['score']} 信号[{r['sig']}]")
 
     out = {'ths': results_ths, 'index': results_idx}
+    os.makedirs(os.path.join(HERE, 'backtest_data'), exist_ok=True)
     with open(os.path.join(HERE, 'backtest_data', 'scan_result_ths.json'), 'w', encoding='utf-8') as f:
         json.dump(out, f, ensure_ascii=False, indent=2, default=str)
     print(f"\n结果已保存 backtest_data/scan_result_ths.json")
