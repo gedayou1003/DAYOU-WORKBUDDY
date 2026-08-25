@@ -37,10 +37,34 @@ def boll(df, asof, n=20, k=2):
     return {'up': float((mid+k*std).iloc[-1]), 'low': float((mid-k*std).iloc[-1]),
             'bw': float(((mid+k*std-(mid-k*std))/mid*100).iloc[-1])}
 
+ENGINE_CACHE = os.path.join(BT, 'engine_cache')
+
 def run_engine_at(df, cat):
     if df is None or len(df) < 30: return None
-    try: return build_analysis(CODE, df, run_engine(df), cat, recent_bars=0)
-    except Exception: return None
+    # 磁盘缓存：key = 周期 + 切片最后日期。回测同一 T 的引擎结果只算一次，
+    # 改参数（方向阈值/窗口/支撑方案）重跑时直接读缓存，省 752 次引擎计算（约 2-3 分钟 → 秒级）
+    try:
+        # 时间戳里的冒号是 Windows 文件名非法字符，替换掉
+        last_date = str(df['date'].iloc[-1])[:19].replace(':', '-').replace(' ', '_')
+    except Exception:
+        last_date = 'unknown'
+    cache_file = os.path.join(ENGINE_CACHE, f'{cat}_{last_date}.json')
+    try:
+        if os.path.exists(cache_file):
+            return json.load(open(cache_file, encoding='utf-8'))
+    except Exception:
+        pass
+    try:
+        r = build_analysis(CODE, df, run_engine(df), cat, recent_bars=0)
+    except Exception:
+        return None
+    if r:
+        try:
+            os.makedirs(ENGINE_CACHE, exist_ok=True)
+            json.dump(r, open(cache_file, 'w', encoding='utf-8'), ensure_ascii=False)
+        except Exception:
+            pass
+    return r
 
 def evaluate(start, end, use_15f=True):
     DAY = load_df('day.json'); WEEK = load_df('week.json'); M60 = load_df('m60.json', minute=True); M15 = load_df('m15.json', minute=True)
