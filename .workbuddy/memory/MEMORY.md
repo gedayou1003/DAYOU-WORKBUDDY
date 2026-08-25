@@ -48,6 +48,7 @@
 - 数据源实测：宽基指数（沪深300/500/1000/上证50/创业板/国证2000）腾讯 fqkline+mkline 全部可用；中证2000(932000) 腾讯无数据；申万一级 31 行业用 akshare（日线+周线完整，**无分钟线硬限制**），iFinD 缺历史 OHLC 已排除
 - ⚠️ 2026-08-25 行业数据源升级：**申万行业（akshare index_hist_sw）滞后 2 交易日（实测只到 8-21）不可用于择时**。改用**同花顺行业指数（akshare `stock_board_industry_index_ths`）**：90 个细分行业、完整 OHLC（开高低收）、最新 T+1（8-24 当日收盘前的最新是前一天）。行业指数均盘后发布（T+1 惯例），东财 push2 接口在本机网络被拦（RemoteDisconnected）不可用。扫描脚本 `.workbuddy/scan_ths.py`
 - ✅ 2026-08-25 **Datayes（萝卜投研）API 接入**：token 存 `.workbuddy/datayes_token.txt`（不入 git），鉴权 `Authorization: Bearer <token>`，base `gw.datayes.com`。导航接口（api_catalog/api_info 免费）。**申万一级行业拼接方案**：akshare `index_hist_sw`（历史完整）+ Datayes `getMktIdxdSw`（申万指数日行情，点位口径与 akshare 一致，补最近 20 天动态窗口）→ 拼到最新。⚠️ 时效实测修正：**申万指数当天收盘后约 2 小时即可拿到（8-25 当天 17:18 已取到），非严格 T+1**；`getMktInstEqudV1`（行业板块行情）是「板块加权价」口径（44.7）与指数点位（8773）不一致，不能混拼。扫描脚本 `.workbuddy/scan_sw_v3.py`（日期已动态化），**已固化进晨报第五块「行业判断」**（automation-1786669064976，晨报改为五块模式）
+- ⚠️ 2026-08-25 晚 **Datayes API 用量用尽停用**：行业数据源回退**同花顺行业（akshare `stock_board_industry_index_ths`，8-24 T+1）**，晨报第五块改用 `scan_ths.py`（日期已动态化）。免费渠道最新行业数据只有 T+1（行业指数盘后发布机制限制）：申万一级 akshare 滞后 4 天（8-21）、东财 push2 被本机网络拦、新浪 49 行业分类不符且无板块指数点位、腾讯板块接口空。**结论：Datayes 停用后，免费可得的最新行业数据 = 同花顺行业（T+1），当天行业指数数据无免费渠道**
 
 ### 8. v5 规则要点（2026-08-24 回测固化，详见预判规则_v5.md）
 - 方向量化打分：趋势因子日/周线 ±2；买卖点因子日±2/周±2/60F±2/15F±1；**confidence 降权**（无背驰一买/一卖 confidence<0.6 降半权，回测相反率 30.3%→28.2%）；总分 ≥3 偏多、≤-3 偏空、|总分|≤1 或 15F BOLL 带宽<1% → **方向不明不硬猜**（给 A/B 双向剧本）
