@@ -33,7 +33,10 @@ def fetch_tencent(code, period='day', count=250):
 def fetch_ths(name):
     """同花顺行业指数 OHLC（akshare，完整开高低收，T+1 最新）"""
     import akshare as ak
-    raw = ak.stock_board_industry_index_ths(symbol=name, start_date='20260101', end_date='20260825')
+    from datetime import date, timedelta
+    end_date = date.today().strftime('%Y%m%d')
+    start_date = (date.today() - timedelta(days=400)).strftime('%Y%m%d')
+    raw = ak.stock_board_industry_index_ths(symbol=name, start_date=start_date, end_date=end_date)
     df = pd.DataFrame({
         'date': pd.to_datetime(raw['日期']),
         'open': raw['开盘价'].astype(float), 'close': raw['收盘价'].astype(float),
