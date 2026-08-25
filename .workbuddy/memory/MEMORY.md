@@ -70,9 +70,9 @@
 - 公司电脑已知 bug：PortableGit 2.55.0 3 层 ref 不落盘（不影响 pull/push）；补齐命令 `mkdir -p .git/refs/remotes/origin && git ls-remote origin main | awk '{print $1}' > .git/refs/remotes/origin/main`；已关闭 maintenance/gc auto
 - ⚠️ 事故教训（已 3 次）：**避免 `git rm` 中文路径、避免 `git stash`**（本 Windows Git Bash 环境会误删工作区文件甚至整个 .git 目录）。替代：直接 `git add <文件> && git commit` 保住改动，或 `cp` 到仓库外备份；重要未提交文件先 commit
 
-### 11. 定时任务时间（2026-08-24 调整）
-- 晨报 8:30（automation-1786669064976，"Operation Dawn"）、午间 12:30（-1786674776188）、收盘 16:00（-1786694342329）；家中 4 档定时任务全部 PAUSED，仅手动喊触发
-- fetch_zsxq.py morning 窗口=前一天16:00~当天8:30，noon 起点 8:30，evening 未动
+### 11. 定时任务时间（2026-08-25 调整：只留晨报 8:00）
+- 晨报 8:00（automation-1786669064976，"Operation Dawn"）；午间 12:30（-1786674776188）、收盘 16:00（-1786694342329）**已暂停**；家中 4 档定时任务全部 PAUSED，仅手动喊触发
+- fetch_zsxq.py morning 窗口=前一天16:00~当天8:00，noon 起点 8:00，evening 未动
 - v5 规则已固化进三档 automation prompt（引用预判规则_v5.md）；automation 配置存本机 SQLite 不走 git，换设备需重配
 
 ### 12. 预判历史关键记录（2026-08-24）

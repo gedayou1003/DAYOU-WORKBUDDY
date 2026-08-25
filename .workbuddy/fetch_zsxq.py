@@ -8,8 +8,8 @@ from datetime import datetime, timezone, timedelta
 
 CST = timezone(timedelta(hours=8))
 
-# 时间窗口：优先级 环境变量 > --window 参数 > 默认 morning（前一天16:00 ~ 当天8:30）
-# 三档：morning(前一天16:00~8:30) / noon(8:30~12:30) / afternoon(12:30~16:00)
+# 时间窗口：优先级 环境变量 > --window 参数 > 默认 morning（前一天16:00 ~ 当天8:00）
+# 三档：morning(前一天16:00~8:00) / noon(8:00~12:30) / afternoon(12:30~16:00)
 _win_arg = None
 if "--window" in sys.argv:
     try:
@@ -25,8 +25,8 @@ def _resolve_window():
     today = datetime.now(CST).strftime("%Y-%m-%d")
     prev = (datetime.now(CST) - timedelta(days=1)).strftime("%Y-%m-%d")
     # 2) --window 参数
-    if _win_arg == "noon":    # 午间：当天 8:30 ~ 12:30
-        return (datetime.fromisoformat(f"{today}T08:30:00+08:00"),
+    if _win_arg == "noon":    # 午间：当天 8:00 ~ 12:30
+        return (datetime.fromisoformat(f"{today}T08:00:00+08:00"),
                 datetime.fromisoformat(f"{today}T12:30:00+08:00"))
     if _win_arg == "afternoon": # 下午：当天 12:30 ~ 16:00
         return (datetime.fromisoformat(f"{today}T12:30:00+08:00"),
@@ -34,9 +34,9 @@ def _resolve_window():
     if _win_arg == "evening":   # 晚间：当天 12:00 ~ 19:00（2026-08-21 补齐，此前会误退回 morning）
         return (datetime.fromisoformat(f"{today}T12:00:00+08:00"),
                 datetime.fromisoformat(f"{today}T19:00:00+08:00"))
-    # 3) 默认 morning：前一天 16:00 ~ 当天 8:30
+    # 3) 默认 morning：前一天 16:00 ~ 当天 8:00
     return (datetime.fromisoformat(f"{prev}T16:00:00+08:00"),
-            datetime.fromisoformat(f"{today}T08:30:00+08:00"))
+            datetime.fromisoformat(f"{today}T08:00:00+08:00"))
 
 WIN_START, WIN_END = _resolve_window()
 
