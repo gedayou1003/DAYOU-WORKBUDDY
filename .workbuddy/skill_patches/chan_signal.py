@@ -561,8 +561,11 @@ def _find_first_sell(bi_list, macd_hist, zhongshu_list):
         return None
 
     has_zs = any(zs["end_bi_index"] >= len(bi_list) - 3 for zs in zhongshu_list)
+    if not has_zs:
+        return None
+
     beichi = _check_divergence(bi_list, macd_hist, "top")
-    confidence = 0.8 if (beichi and has_zs) else 0.5
+    confidence = 0.8 if beichi else 0.5
 
     return {
         "date": str(last_bi["end_date"])[:10],
@@ -797,16 +800,16 @@ def build_analysis(code: str, df_raw: pd.DataFrame, engine_result: Dict,
     elif bi_dir == -1:
         current_trend = "向下"
 
-    # 当前价格相对于中枢的位置
+    # 当前价格相对于中枢的位置（复用 zs_pos，与 current_trend 口径一致，避免两字段打架）
     price_vs_zs = "无中枢参考"
     if zhongshu_list:
         zs = zhongshu_list[-1]
-        if latest_close > zs["zs_high"]:
+        if zs_pos == 1:
             price_vs_zs = f"在中枢上方（中枢上沿:{zs['zs_high']:.2f} 下沿:{zs['zs_low']:.2f}）"
-        elif latest_close < zs["zs_low"]:
+        elif zs_pos == -1:
             price_vs_zs = f"在中枢下方（中枢上沿:{zs['zs_high']:.2f} 下沿:{zs['zs_low']:.2f}）"
         else:
-            price_vs_zs = f"在中枢内部（中枢上沿:{zs['zs_high']:.2f} 下沿:{zs['zs_low']:.2f}）"
+            price_vs_zs = f"在中枢内部或未明显离开（中枢上沿:{zs['zs_high']:.2f} 下沿:{zs['zs_low']:.2f}）"
 
     # 信号分类
     buy_signals = [s for s in signals if s["signal_type"] == "buy"]

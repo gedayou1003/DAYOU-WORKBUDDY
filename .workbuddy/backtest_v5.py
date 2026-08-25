@@ -28,7 +28,7 @@ def load_df(name, minute=False):
 
 def ma55(df, asof):
     sub = df[df['date'] <= asof]
-    return float(sub['close'].rolling(55).mean().iloc[-1]) if len(sub) >= 56 else None
+    return float(sub['close'].rolling(55).mean().iloc[-1]) if len(sub) >= 55 else None
 
 def boll(df, asof, n=20, k=2):
     sub = df[df['date'] <= asof]
@@ -47,7 +47,11 @@ def evaluate(start, end, use_15f=True):
     trade_days = [d for d in DAY['date'].dt.strftime('%Y-%m-%d').tolist() if start <= d <= end]
     rows = []
     for i, T in enumerate(trade_days):
-        next_day = '2026-08-24' if i + 1 >= len(trade_days) else trade_days[i + 1]
+        # 动态找 T 之后的下一个交易日（避免硬编码，且最后一日无次日数据则跳过）
+        after = DAY[DAY['date'] > pd.Timestamp(T)]
+        if after.empty:
+            continue
+        next_day = after['date'].dt.strftime('%Y-%m-%d').iloc[0]
         cut = pd.Timestamp(T + ' 15:00:00')
         close_now = float(DAY[DAY['date'] <= pd.Timestamp(T)]['close'].iloc[-1])
         d55 = ma55(DAY, pd.Timestamp(T)); m60_55 = ma55(M60, cut); m15_55 = ma55(M15, cut) if use_15f else None
@@ -56,7 +60,7 @@ def evaluate(start, end, use_15f=True):
         r_week = run_engine_at(WEEK[WEEK['date'] <= pd.Timestamp(T)], 7)
         r_m60 = run_engine_at(M60[M60['date'] <= cut], 6)
         r_m15 = run_engine_at(M15[M15['date'] <= cut], 15) if use_15f else None
-        # 分级窗口（修复硬伤2）：日线/周线信号生命周期长用 60 天，60F/15F 用 20 天
+        # 分级窗口（修复硬伤2）：日线/周线信号用 30 天，60F/15F 用 20 天
         cutoff_day = (pd.Timestamp(T) - pd.Timedelta(days=30)).strftime('%Y-%m-%d')
         cutoff_short = (pd.Timestamp(T) - pd.Timedelta(days=20)).strftime('%Y-%m-%d')
         trend_score = 0
