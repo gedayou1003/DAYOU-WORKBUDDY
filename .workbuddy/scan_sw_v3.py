@@ -36,8 +36,11 @@ def fetch_sw_hist(code):
     return df.dropna(subset=['date']).sort_values('date').reset_index(drop=True)
 
 def fetch_datayes_sw(code):
-    """Datayes 申万指数日行情（getMktIdxdSw），补 8-22~8-24，口径与 akshare 一致（点位）"""
-    u = f'https://gw.datayes.com/aladdin_proxy/data_api/api/market/getMktIdxdSw.json?ticker={code}&beginDate=20260822&endDate=20260824&pagesize=20'
+    """Datayes 申万指数日行情（getMktIdxdSw），补最近 20 天（覆盖 akshare 滞后缺口），口径与 akshare 一致（点位）"""
+    from datetime import date, timedelta
+    end = date.today().strftime('%Y%m%d')
+    begin = (date.today() - timedelta(days=20)).strftime('%Y%m%d')
+    u = f'https://gw.datayes.com/aladdin_proxy/data_api/api/market/getMktIdxdSw.json?ticker={code}&beginDate={begin}&endDate={end}&pagesize=20'
     d = dy_get(u)
     rows = []
     for x in d.get('data', []):
