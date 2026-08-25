@@ -68,7 +68,7 @@
 - 代理：优先直连 GitHub；不通时 Clash 7890/7897；认证 PAT 存 ~/.git-credentials
 - .gitignore：zsxq_cookie.txt / zsxq_fetch_raw.json / forecast_chain.json / consensus_chain.json / zsxq_images/ / outputs/ / automations/ / memory/20*.md / __pycache__/
 - 公司电脑已知 bug：PortableGit 2.55.0 3 层 ref 不落盘（不影响 pull/push）；补齐命令 `mkdir -p .git/refs/remotes/origin && git ls-remote origin main | awk '{print $1}' > .git/refs/remotes/origin/main`；已关闭 maintenance/gc auto
-- ⚠️ 事故教训：**避免 `git rm` 中文路径**（Windows Git Bash 文件系统 bug 会误删工作区文件），用 `git add -A` 指定文件；重要未提交文件先 commit
+- ⚠️ 事故教训（已 3 次）：**避免 `git rm` 中文路径、避免 `git stash`**（本 Windows Git Bash 环境会误删工作区文件甚至整个 .git 目录）。替代：直接 `git add <文件> && git commit` 保住改动，或 `cp` 到仓库外备份；重要未提交文件先 commit
 
 ### 11. 定时任务时间（2026-08-24 调整）
 - 晨报 8:30（automation-1786669064976，"Operation Dawn"）、午间 12:30（-1786674776188）、收盘 16:00（-1786694342329）；家中 4 档定时任务全部 PAUSED，仅手动喊触发
