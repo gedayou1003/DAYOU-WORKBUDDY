@@ -8,8 +8,11 @@ from datetime import datetime, timezone, timedelta
 
 CST = timezone(timedelta(hours=8))
 
-# 时间窗口：优先级 环境变量 > --window 参数 > 默认 morning（前一天16:00 ~ 当天8:00）
-# 三档：morning(前一天16:00~8:00) / noon(8:00~12:30) / afternoon(12:30~16:00)
+# 时间窗口铁律（2026-08-26 用户明确，自检必查项）：
+#   - 8点自动（默认 morning）：前一天16:00 ~ 当前时刻（8点跑时≈前一天16:00~8:00）
+#   - 手动跑：必须取「8:00 ~ 当前时刻」最新内容，用 --window noon（8:00~now）
+#   - 结束时间一律用「当前时刻 now」，禁止写死（否则手动延迟跑会漏掉预设时间之后的内容，如 T&J 12:36）
+#   - 优先级：环境变量 ZSXQ_WIN_START/END > --window 参数 > 默认 morning
 _win_arg = None
 if "--window" in sys.argv:
     try:
