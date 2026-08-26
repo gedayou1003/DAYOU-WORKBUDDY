@@ -22,21 +22,18 @@ def _resolve_window():
     if os.environ.get("ZSXQ_WIN_START") and os.environ.get("ZSXQ_WIN_END"):
         return (datetime.fromisoformat(os.environ["ZSXQ_WIN_START"]),
                 datetime.fromisoformat(os.environ["ZSXQ_WIN_END"]))
-    today = datetime.now(CST).strftime("%Y-%m-%d")
-    prev = (datetime.now(CST) - timedelta(days=1)).strftime("%Y-%m-%d")
-    # 2) --window 参数
-    if _win_arg == "noon":    # 午间：当天 8:00 ~ 12:30
-        return (datetime.fromisoformat(f"{today}T08:00:00+08:00"),
-                datetime.fromisoformat(f"{today}T12:30:00+08:00"))
-    if _win_arg == "afternoon": # 下午：当天 12:30 ~ 16:00
-        return (datetime.fromisoformat(f"{today}T12:30:00+08:00"),
-                datetime.fromisoformat(f"{today}T16:00:00+08:00"))
-    if _win_arg == "evening":   # 晚间：当天 12:00 ~ 19:00（2026-08-21 补齐，此前会误退回 morning）
-        return (datetime.fromisoformat(f"{today}T12:00:00+08:00"),
-                datetime.fromisoformat(f"{today}T19:00:00+08:00"))
-    # 3) 默认 morning：前一天 16:00 ~ 当天 8:00
-    return (datetime.fromisoformat(f"{prev}T16:00:00+08:00"),
-            datetime.fromisoformat(f"{today}T08:00:00+08:00"))
+    now = datetime.now(CST)
+    today = now.strftime("%Y-%m-%d")
+    prev = (now - timedelta(days=1)).strftime("%Y-%m-%d")
+    # 2) --window 参数（结束时间统一用「当前时间」，避免手动延迟跑漏掉预设时间之后的内容，如 T&J 12:36）
+    if _win_arg == "noon":    # 午间：当天 8:00 ~ 当前时间
+        return (datetime.fromisoformat(f"{today}T08:00:00+08:00"), now)
+    if _win_arg == "afternoon": # 下午：当天 12:30 ~ 当前时间
+        return (datetime.fromisoformat(f"{today}T12:30:00+08:00"), now)
+    if _win_arg == "evening":   # 晚间：当天 12:00 ~ 当前时间
+        return (datetime.fromisoformat(f"{today}T12:00:00+08:00"), now)
+    # 3) 默认 morning：前一天 16:00 ~ 当前时间
+    return (datetime.fromisoformat(f"{prev}T16:00:00+08:00"), now)
 
 WIN_START, WIN_END = _resolve_window()
 
