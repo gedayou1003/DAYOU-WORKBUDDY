@@ -84,8 +84,9 @@
   第一步接入 git —— 备份 `.workbuddy/zsxq_cookie.txt` → 测直连（`git ls-remote`）不通再配 Clash 代理 → 配认证（`credential.helper store` + PAT 写 `~/.git-credentials`，不写具体值）→ `git init && git remote add origin <仓库>` → `git fetch origin && git reset --hard origin/main` → 确认 cookie 还在；
   第二步改晨报 prompt 第五块（本机 SQLite 不入 git）—— 把「第五块：行业判断」的 scan_sw_v3.py（申万+Datayes）整段替换为 scan_ths.py（同花顺 90 归组到申万一级 31 大类 + 沪深300/上证50/中证1000/恒生），读 `scan_result_ths.json` 的 `sw_agg` 字段，晨报末尾加「## 行业判断」申万大类 TOP2 + 宽基/恒生 TOP1，删所有 Datayes/token 描述，akshare 报错降级仅宽基。
 
-### 11. 定时任务时间（2026-08-25 调整：只留晨报 8:00）
-- 晨报 8:00（automation-1786669064976，"Operation Dawn"）；午间 12:30（-1786674776188）、收盘 16:00（-1786694342329）**已暂停**；家中 4 档定时任务全部 PAUSED，仅手动喊触发
+### 11. 定时任务时间（2026-08-27 调整：全部暂停，改手动触发）
+- **三档全部 PAUSED（2026-08-27 用户要求"全部手动触发"）**：晨报 8:00（automation-1786669064976）、午间 12:30（-1786674776188）、收盘 16:00（-1786694342329）；家中同理全部 PAUSED，仅手动喊触发
+- 晨报 prompt 同步方式：家里维护 `.workbuddy/morning_prompt_std.txt` 权威模板，跑 `.workbuddy/sync_morning_prompt.py` 幂等同步（按 name 定位，已最新则跳过）
 - **fetch_zsxq.py 窗口铁律（2026-08-26 用户明确，自检必查）**：结束时间一律「当前时刻 now」禁止写死；8点自动=默认 morning（前一天16:00~8:00）；**手动跑=取「8:00~当前时刻」用 `--window noon`**（8:00~now），保证拿到手动时刻之前最新内容和信息变化
 - v5 规则已固化进三档 automation prompt（引用预判规则_v5.md）；automation 配置存本机 SQLite 不走 git，换设备需重配
 
