@@ -30,16 +30,16 @@ def clean_point(p):
     return c.strip()
 
 def format_post(time, title, points):
-    # 标题一行 + 每个要点单独换行（不用分号硬连，避免"面条"）
+    # 标题一行 + 每个要点单独换行（4 空格缩进嵌套列表，markdown 才能正确换行）
     r = [f'- **[{time}] {title}**']
     for p in points:
         c = clean_point(p)
         if not c:
             continue
         if re.match(r'^\d+\.', c):
-            r.append(f'    {c}')     # 数字列表深缩进
+            r.append(f'        {c}')     # 8 空格（嵌套数字列表）
         else:
-            r.append(f'  - {c}')
+            r.append(f'    - {c}')       # 4 空格（嵌套子列表）
     return '\n'.join(r)
 
 def convert_block1(text):
@@ -59,6 +59,7 @@ def convert_block1(text):
         nonlocal current_group, posts
         if current_group is not None:
             out.append(f'**{current_group}**：')
+            out.append('')          # 空行：让 markdown 识别下方为列表（否则挤成一段）
             for t, ti, pts in posts:
                 out.append(format_post(t, ti, pts))
             out.append('')
