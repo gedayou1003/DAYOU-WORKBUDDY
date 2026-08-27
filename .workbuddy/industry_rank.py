@@ -75,9 +75,24 @@ def derive(realtime, sw_agg, star_views=None):
             'bounce': bounce, 'defense_out': defense_out}
 
 
-def render(rank, ts):
-    """生成行业强弱榜 markdown（做多榜 TOP3 + 滞后背离 + 规避榜 TOP3 + 共振/背离说明 + 口径）。"""
+def render(rank, ts, realtime=None, sw_agg=None, star_views=None):
+    """生成行业强弱榜 markdown（三要素数据底 + 做多榜 TOP3 + 滞后背离 + 规避榜 TOP3 + 共振/背离说明 + 口径）。"""
     L = []
+    if realtime and sw_agg:
+        L.append('### 一、三要素数据底\n')
+        sv = star_views or DEFAULT_STAR_VIEWS
+        L.append('**要素① · 星球观点**：' + '；'.join(f'{k}→{v}' for k, v in sv.items()) + '\n')
+        pos = sorted([f"{n} {i['direction']:+.1f}" for n, i in sw_agg.items() if i['direction'] > 0.5],
+                     key=lambda x: -float(x.split()[-1]))
+        neg = sorted([f"{n} {i['direction']:+.1f}" for n, i in sw_agg.items() if i['direction'] < -0.5],
+                     key=lambda x: float(x.split()[-1]))
+        L.append('**要素② · 缠论方向分**：')
+        L.append('- 偏多：' + ' / '.join(pos))
+        L.append('- 偏空：' + ' / '.join(neg) + '\n')
+        items = sorted(realtime.items(), key=lambda x: -x[1])
+        L.append('**要素③ · 实时涨跌幅**：')
+        L.append('- 领涨：' + ' / '.join(f'{k} {v:+.2f}' for k, v in items[:8]))
+        L.append('- 领跌：' + ' / '.join(f'{k} {v:+.2f}' for k, v in items[-5:]) + '\n')
     L.append('### 二、做多榜 TOP 3（三要素共振：缠论偏多 + 实时领涨 + 星球共振）\n')
     L.append('| 排名 | 行业 | 实时涨跌 | 缠论方向分 | 星球依据 | 置信度 | 推导 |')
     L.append('|------|------|---------|-----------|---------|--------|------|')
@@ -131,7 +146,7 @@ def main():
     rt, realtime, sw_agg = load_data()
     rank = derive(realtime, sw_agg)
     ts = rt.get('ts', '')
-    md = render(rank, ts)
+    md = render(rank, ts, realtime, sw_agg)
 
     out = {'ts': ts, 'rank': rank, 'markdown': md}
     json.dump({'ts': ts,
