@@ -30,18 +30,17 @@ def clean_point(p):
     return c.strip()
 
 def format_post(time, title, points):
-    long = len(points) > 5 or any(p.startswith('**图') for p in points)
-    if long:
-        r = [f'- **[{time}] {title}**']
-        for p in points:
-            c = clean_point(p)
-            if re.match(r'^\d+\.', c):
-                r.append(f'    {c}')
-            else:
-                r.append(f'  - {c}')
-        return '\n'.join(r)
-    joined = '；'.join(clean_point(p) for p in points).strip('；')
-    return f'- **[{time}] {title}** —— {joined}' if joined else f'- **[{time}] {title}**'
+    # 标题一行 + 每个要点单独换行（不用分号硬连，避免"面条"）
+    r = [f'- **[{time}] {title}**']
+    for p in points:
+        c = clean_point(p)
+        if not c:
+            continue
+        if re.match(r'^\d+\.', c):
+            r.append(f'    {c}')     # 数字列表深缩进
+        else:
+            r.append(f'  - {c}')
+    return '\n'.join(r)
 
 def convert_block1(text):
     lines = text.split('\n')

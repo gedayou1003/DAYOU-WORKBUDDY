@@ -21,8 +21,7 @@ if m:
     svg_path = os.path.normpath(os.path.join(os.path.dirname(MD), m.group(1)))
     if os.path.exists(svg_path):
         svg_raw = io.open(svg_path, encoding='utf-8').read()
-        # 右侧关键位标注超出原 viewBox 680，扩宽到 900
-        svg_raw = re.sub(r'viewBox="0 0 \d+ \d+"', 'viewBox="0 0 900 470"', svg_raw, count=1)
+        # viewBox 由 gen_forecast_svg.py 统一维护（900 宽，右侧标注不裁剪），此处不再硬改
         svg_raw = re.sub(r'<\?xml[^>]*\?>', '', svg_raw)
         svg_inline = svg_raw.replace(
             '<svg ', '<svg style="width:100%;height:auto;max-width:880px;display:block;margin:20px auto;" '
