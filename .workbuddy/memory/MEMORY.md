@@ -80,7 +80,7 @@
 - 代理：优先直连 GitHub；不通时 Clash 7890/7897；认证 PAT 存 ~/.git-credentials
 - .gitignore：zsxq_cookie.txt / zsxq_fetch_raw.json / forecast_chain.json / consensus_chain.json / zsxq_images/ / outputs/ / automations/ / memory/20*.md / __pycache__/
 - 公司电脑已知 bug：PortableGit 2.55.0 3 层 ref 不落盘（不影响 pull/push）；补齐命令 `mkdir -p .git/refs/remotes/origin && git ls-remote origin main | awk '{print $1}' > .git/refs/remotes/origin/main`；已关闭 maintenance/gc auto
-- ⚠️ 事故教训（已 3 次）：**避免 `git rm` 中文路径、避免 `git stash`**（本 Windows Git Bash 环境会误删工作区文件甚至整个 .git 目录）。替代：直接 `git add <文件> && git commit` 保住改动，或 `cp` 到仓库外备份；重要未提交文件先 commit
+- ⚠️ 事故教训（已 4 次，2026-08-27 第 4 次）：**绝对禁止 `git rm`（中英文路径都会触发）和 `git stash`**（本 Windows Git Bash 环境会误删整个工作区文件，甚至 .git 目录）。第 4 次事故：`git rm .workbuddy/gen_report_demo.py` 触发，误删 .workbuddy 下全部文件（含 forecast_chain/consensus_chain/cookie/memory 日志，均不入 git）。**恢复靠回收站**：被删目录进了 `C:\$Recycle.Bin\...\$RH1ITOQ.workbuddy`，`cp -rf` 恢复成功。**删文件正确做法**：用文件系统 `rm` 或让 git 自然检测，`git add -A` 记录删除；重要未提交文件先 commit 或 cp 备份
 - 公司电脑首次接入话术（含改晨报第五块，2026-08-25 定稿）：
   第一步接入 git —— 备份 `.workbuddy/zsxq_cookie.txt` → 测直连（`git ls-remote`）不通再配 Clash 代理 → 配认证（`credential.helper store` + PAT 写 `~/.git-credentials`，不写具体值）→ `git init && git remote add origin <仓库>` → `git fetch origin && git reset --hard origin/main` → 确认 cookie 还在；
   第二步改晨报 prompt 第五块（本机 SQLite 不入 git）—— 把「第五块：行业判断」的 scan_sw_v3.py（申万+Datayes）整段替换为 scan_ths.py（同花顺 90 归组到申万一级 31 大类 + 沪深300/上证50/中证1000/恒生），读 `scan_result_ths.json` 的 `sw_agg` 字段，晨报末尾加「## 行业判断」申万大类 TOP2 + 宽基/恒生 TOP1，删所有 Datayes/token 描述，akshare 报错降级仅宽基。

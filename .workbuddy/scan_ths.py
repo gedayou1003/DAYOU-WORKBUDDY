@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """多标的扫描 v2：同花顺行业(实时OHLC,8-24) + 宽基指数/恒生(腾讯,8-25)
 按「方向明确度 × 波动幅度」选出高确定性+高波动标的"""
-import sys, os, json, warnings
+import sys, os, json, warnings, time
 warnings.filterwarnings('ignore')
 import pandas as pd
 import urllib.request
@@ -187,6 +187,14 @@ def aggregate_sw(results_ths):
 
 
 def main():
+    # 缓存：缠论方向分是 T+1 慢变量，当天已跑过则复用，不重算（省 90 次 akshare + 90 次引擎）
+    cache_path = os.path.join(HERE, 'backtest_data', 'scan_result_ths.json')
+    if os.path.exists(cache_path):
+        mt = os.path.getmtime(cache_path)
+        if time.strftime('%Y-%m-%d', time.localtime(mt)) == time.strftime('%Y-%m-%d'):
+            print(f'[缓存] scan_result_ths.json 今天已生成（{time.strftime("%H:%M", time.localtime(mt))}），跳过重算')
+            return
+
     import akshare as ak
     results_ths = []
     results_idx = []
