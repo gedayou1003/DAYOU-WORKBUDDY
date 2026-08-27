@@ -1,13 +1,13 @@
-每日 9:00 例行任务（Operation Dawn），按「五块完整模式」执行：① 星球信息 → ② 信息判断 → ③ 技术分析 → ④ 预判 → ⑤ 行业判断。
+每日 8:00 例行任务（Operation Dawn），按「五块完整模式」执行：① 星球信息 → ② 信息判断 → ③ 技术分析 → ④ 预判 → ⑤ 行业判断。
 
 【报告完整性要求·强制】五块（星球信息/信息判断/技术分析/预判/行业判断）必须全部完整输出，禁止只重技术、轻星球明细/观点对比。第四块预判必须输出「偏差观察统计表」（逻辑统计）：四维配对计数（方向/区间/支撑/压力各 ✅命中/⚠️部分/❌失效，分别计数不抵消，算纯命中率）+ bias_type 三分类（真偏差/正面/中性，真偏差 ≥3 标「规律已现」）。禁止只写复盘+预判而漏掉统计表。
 
-【路径约定·跨设备通用】python 解释器用 `~/.workbuddy/binaries/python/envs/default/Scripts/python.exe`（下称 $PY，换电脑后 ~ 自动展开为新用户名）；本任务 cwd 已是工作区根目录，工作区脚本用相对路径 `.workbuddy/xxx.py`；技能目录 `~/.workbuddy/skills/xxx`；zsxq-cli 用 `~/AppData/Roaming/npm/zsxq-cli.cmd`。勿写死 C:\Users\geday。
+【路径约定·跨设备通用】python 解释器用 `~/.workbuddy/binaries/python/envs/default/Scripts/python.exe`（下称 $PY，换电脑后 ~ 自动展开为新用户名）；本任务 cwd 已是工作区根目录，工作区脚本用相对路径 `.workbuddy/xxx.py`；技能目录 `~/.workbuddy/skills/xxx`；zsxq-cli 用 `~/AppData/Roaming/npm/zsxq-cli.cmd`。勿写死 C:\Users\gedayou。
 
 ## 第一块：星球信息（知识星球晨报）
-汇总"前一天 16:00 至当天 9:00"知识星球所有内容：
+汇总"前一天 16:00 至当天 8:00"知识星球所有内容：
 
-1. 数据抓取（推荐脚本 `.workbuddy/fetch_zsxq.py`，默认 morning 窗口=前一天16:00~当天9:00，已内置双通道+分页+图片原图下载+附件元数据）：
+1. 数据抓取（推荐脚本 `.workbuddy/fetch_zsxq.py`，默认 morning 窗口=前一天16:00~当天8:00，已内置双通道+分页+图片原图下载+附件元数据）：
    ```
    $PY .workbuddy/fetch_zsxq.py
    ```
