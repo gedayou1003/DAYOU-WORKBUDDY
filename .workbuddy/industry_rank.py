@@ -136,7 +136,7 @@ def render(rank, ts, realtime=None, sw_agg=None, star_views=None):
         L.append(f"- **命中最强空头却实时反弹**：{names} → 观察，缩量回落则印证「假突破/反抽」。")
 
     L.append(f'\n### 五、口径备注\n')
-    L.append(f'- 实时涨跌幅 `ts={ts}`（东财妙想，当前分钟），30/30 申万一级（「综合」缺失属正常）。')
+    L.append(f'- 涨跌幅 `ts={ts}`（东财妙想实时 / akshare 收盘兜底），覆盖申万一级行业（「综合」可能缺失）。')
     L.append('- 缠论方向分 = 前一交易日收盘 T+1（慢变量），`sw_agg` 成员 = 同花顺细分行业数、趋势 = 成员多数投票。')
     L.append('- 推导逻辑与 v5 一致：|direction|≤1 或缠论与星球背离 → 标「方向不明」不硬猜；缠论方向与实时相反 → 提示「趋势反转期买卖点滞后」谨慎。')
     return '\n'.join(L)

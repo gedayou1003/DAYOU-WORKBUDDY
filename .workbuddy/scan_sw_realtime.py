@@ -51,6 +51,21 @@ def call_mx(names):
     return new[-1] if new else None
 
 
+def fetch_akshare_fallback():
+    """东财妙想失败（API Key 风控等）时的 akshare 兜底：
+    index_realtime_sw 拿申万一级 31 行业收盘涨跌幅，返回 items 列表。"""
+    import akshare as ak
+    df = ak.index_realtime_sw(symbol='一级行业')
+    items = []
+    for _, row in df.iterrows():
+        name = row['指数名称']
+        prev = float(row['昨收盘']); cur = float(row['最新价'])
+        pct = round((cur - prev) / prev * 100, 2)
+        items.append({'name': name, 'pct': pct})
+    items.sort(key=lambda x: -x['pct'])
+    return items
+
+
 def parse_realtime(xlsx_path):
     """解析 xlsx 里「当前的涨跌幅」sheet，返回 {行业名: 涨跌幅%, 时间戳}
     兼容两种格式：长表（列名「涨跌幅」，行=行业名+值）与宽表（列名=行业名，行=涨跌幅+值，单实体查时出现）
@@ -94,8 +109,8 @@ def parse_realtime(xlsx_path):
 
 
 def main():
-    data, ts = {}, None
-    # 1) 批量查 29 个
+    data, ts, source = {}, None, "eastmoney-miaoxiang"
+    # 1) 批量查 29 个（东财妙想）
     p = call_mx(BATCH)
     if p:
         r, t = parse_realtime(p)
@@ -103,15 +118,21 @@ def main():
         ts = t or ts
         print(f"[批量] 拿到 {len(r)} 个行业")
     else:
-        print("[批量] ❌ 未生成 xlsx")
+        print("[批量] ❌ 东财妙想未生成 xlsx（API Key 风控?），fallback akshare")
+        import datetime
+        for x in fetch_akshare_fallback():
+            data[x['name']] = f"{x['pct']:+.2f}%"
+        ts = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+        source = "akshare-shenwan-close"
 
-    # 2) 单独查机械设备
-    p2 = call_mx(SOLO)
-    if p2:
-        r2, t2 = parse_realtime(p2)
-        data.update(r2)
-        ts = t2 or ts
-        print(f"[单独] 机械设备 = {r2.get('机械设备', '缺失')}")
+    # 2) 单独查机械设备（仅东财成功时，akshare 兜底已全覆盖）
+    if source == "eastmoney-miaoxiang":
+        p2 = call_mx(SOLO)
+        if p2:
+            r2, t2 = parse_realtime(p2)
+            data.update(r2)
+            ts = t2 or ts
+            print(f"[单独] 机械设备 = {r2.get('机械设备', '缺失')}")
 
     # 3) 排序 + 输出
     items = []
@@ -127,7 +148,7 @@ def main():
     items.sort(key=lambda x: -x["pct"])
 
     out = {
-        "source": "eastmoney-miaoxiang",
+        "source": source,
         "ts": ts,
         "count": len(items),
         "missing": [n for n in SW_LIST if n not in data],
