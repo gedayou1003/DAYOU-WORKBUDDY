@@ -12,7 +12,7 @@
    $PY .workbuddy/fetch_zsxq.py
    ```
    产物：`.workbuddy/zsxq_fetch_raw.json` + `.workbuddy/zsxq_images/`（原图）。
-   - 若脚本不可用，手工走双通道：通道A（Skill/zsxq-cli，`~/AppData/Roaming/npm/zsxq-cli.cmd`，星球：卫斯李48888151228258、基业长青+28855811424141、Truth and Justice88512145458842、口罩哥51285445548824）；通道B（Cookie 直连 `https://api.zsxq.com/v2/groups/<group_id>/topics?scope=all&count=20`，星球：大鹏鸟48841181481248、短评&信息48418411254128、信息平权88888558554112、投行圈子28858555421441、180K Research28888222154481、AI产业链51115885414844）。
+   - 若脚本不可用，手工走双通道：通道A（Skill/zsxq-cli，`~/AppData/Roaming/npm/zsxq-cli.cmd`，星球：卫斯李48888151228258、基业长青+28855811424141、Truth and Justice88512145458842）；通道B（Cookie 直连 `https://api.zsxq.com/v2/groups/<group_id>/topics?scope=all&count=20`，星球：大鹏鸟48841181481248、短评&信息48418411254128、180K Research28888222154481、AI产业链51115885414844）。
    - Cookie 失效（HTTP 401）说明原因并提示更新 `.workbuddy/zsxq_cookie.txt`，不中断。
 
 2. **图片正文读取（重点）**：`images` 非空的帖子，用 Read 工具读 `.workbuddy/zsxq_images/` 下本地图片提取正文，不能只写标题占位。`files` 非空标注附件文件名与大小。

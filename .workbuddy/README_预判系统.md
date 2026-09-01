@@ -81,7 +81,7 @@ python forecast_analyze.py 000300
 本轮覆盖所有定时任务（晨报/午间/晚间/收盘后）调用的脚本，发现并修复 4 个问题：
 
 1. **【严重】`run_000001_multi.py` 日线/周线硬编码日期 `'2026-08-14'`**：多维引擎（引擎A）日线/周线取数 end 日期写死为 workspace 创建日，导致日线/周线级别用**过期数据**（比当天少 N 个交易日）。已改为 `datetime.now().strftime('%Y-%m-%d')`。影响：此前晨报/晚间快报里引擎A的日线/周线信号是过期的。修复后日线数据 400→401 根，最新到当天，日线趋势与引擎B一致。
-2. **【严重】`fetch_zsxq.py` 的 `norm_topic` 图片/附件提取 bug**：Skill 通道（zsxq-cli `topics_brief`）结构里 `images`/`files` 在**顶层**（`talk` 字段为 None），但代码只从 `body=t['talk']` 里取，导致 **Skill 通道星球（基业长青+、卫斯李、Truth and Justice、口罩哥）的图片正文全部丢失**。已加顶层兜底：`body` 取不到时从顶层 `t` 取。验证：Skill 通道 7 张图可正确提取。Cookie 通道（嵌套 talk）不受影响（body 已取到则不触发兜底）。
+2. **【严重】`fetch_zsxq.py` 的 `norm_topic` 图片/附件提取 bug**：Skill 通道（zsxq-cli `topics_brief`）结构里 `images`/`files` 在**顶层**（`talk` 字段为 None），但代码只从 `body=t['talk']` 里取，导致 **Skill 通道星球（基业长青+、卫斯李、Truth and Justice）的图片正文全部丢失**。已加顶层兜底：`body` 取不到时从顶层 `t` 取。验证：Skill 通道 7 张图可正确提取。Cookie 通道（嵌套 talk）不受影响（body 已取到则不触发兜底）。
 3. **【中等】`run_000001_chansignal.py` HTML 面板日期硬编码 `'2026-08-14'`**：信号面板副标题写死日期，已改为动态 `{TODAY}`。
 4. **【中等】`anonymize_report.py` 硬编码 8/19 路径**：无法复用，已参数化（`python anonymize_report.py [YYYY-MM-DD]`，默认今天）。
 

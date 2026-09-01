@@ -10,7 +10,7 @@
 
 ### 2. 报告匿名化 + 改进版格式（2026-08-21 起只产改进版一份）
 - 正文直接表达观点不标来源代号；通道信息放文末附录 A；代号对照放附录 B
-- 代号：①=基业长青+、②=卫斯李、③=Truth and Justice、④=大鹏鸟、⑤=短评&信息、⑥=180K、⑦=AI产业链、⑧=口罩哥、⑨=信息平权、⑩=投行圈子；游资A=流沙河、游资B=好运哥；知识库A/B/C=IMA 基业长青/浑水调研/xxpq
+- 代号：①=基业长青+、②=卫斯李、③=Truth and Justice、④=大鹏鸟、⑤=短评&信息、⑥=180K、⑦=AI产业链；游资A=流沙河、游资B=好运哥；知识库A/B/C=IMA 基业长青/浑水调研/xxpq（⑧口罩哥/⑨信息平权/⑩投行圈子已于 2026-09-01 取关停抓）
 - 明细按板块/主题组织（AI 算力/光通信/存储/生物医药/苹果/宏观/美股/A股/调研纪要/外资研报），每条含时间+核心要点+图片正文
 - 产出命名：`作战报告_档位_YYYY-MM-DD.md`（晨报/午间/收盘/晚间四档统一）；缠论引擎 HTML 为中间产物不复制不 present，对比表原样抄入
 
@@ -58,6 +58,7 @@
 - ⚠️ 2026-08-25 晚 **Datayes API 用量用尽停用**：行业数据源回退**同花顺行业（akshare `stock_board_industry_index_ths`，8-24 T+1）**，晨报第五块改用 `scan_ths.py`（日期已动态化）。免费渠道最新行业数据只有 T+1（行业指数盘后发布机制限制）：申万一级 akshare 滞后 4 天（8-21）、东财 push2 被本机网络拦、新浪 49 行业分类不符且无板块指数点位、腾讯板块接口空。**结论：Datayes 停用后，免费可得的最新行业数据 = 同花顺行业（T+1），当天行业指数数据无免费渠道**
 - 2026-08-25 晚 行业判断归组（用户要"大一级"）：同花顺 90 细分行业太多，且同花顺行业无官方更大分级；申万一级 31 个是标准大一级但 akshare 滞后 2 交易日。方案=**用最新同花顺数据归组到申万一级 31 大类**。已给 `scan_ths.py` 加 `THS_TO_SW` 映射表（90 同花顺行业 → 31 申万一级）+ `aggregate_sw()` 聚合（大类方向=成员均值、振幅=均值、趋势=多数），输出 `sw_agg` 字段；晨报第五块读 `sw_agg` 输出「申万一级大类 TOP2」。校验：90/90 细分全覆盖、31/31 大类全覆盖。
 - ✅ 2026-08-27 **东方财富妙想（mx-finance-data skill）接入，能抓申万一级行业「实时」数据**（解决行业指数 T+1 硬限制）：脚本 `~/.workbuddy/skills/mx-finance-data/scripts/get_data.py`，走 `ai-saas.eastmoney.com` SaaS API（非 push2 公开接口，本机不被拦），鉴权内置 EM_API_KEY。用法 `--query "查询申万电子、申万通信...行业的涨跌幅" --indicators "涨跌幅"`，东财妙想认识「申万」分类（返回「XX(申万)(指数)」）。**实测一次批量查到 30/31 申万一级行业实时涨跌幅（时间戳到当前分钟），缺「综合」兜底分类（名称太泛识别不出）+「机械设备」需单独问**。依赖 httpx（已装 venv）。输出 xlsx+md 到 `miaoxiang/mx_finance_data/`。**数据源优先级更新：东财妙想（实时）> 同花顺 ths（T+1）> akshare 申万（滞后）> Datayes（停用）**
+- ⚠️ **2026-09-01 东财妙想弃用**：反复 API Key 风控（403），且实测同花顺 thsdk `ths_industry()` 是同花顺行业 90 个（非申万一级）、`wencai_nlp("申万行业排名")` 理解成「申万宏源」个股，均不能替代。**扶正 akshare `index_realtime_sw(symbol='一级行业')` 为唯一主源**（31 行业盘中实时，含「综合」，无缺失）。`scan_sw_realtime.py` 已重写（移除东财妙想依赖），`source` 恒为 `akshare-shenwan-realtime`。新装两个 skill 定位：ths-advanced-analysis（同花顺行业 90 个，另一套分类，暂不引入第五块）、sw-industry-index（申万历史日线，仅作收盘复盘/交叉验证，非实时）
 
 ### 8. v5 规则要点（2026-08-24 回测固化，详见预判规则_v5.md）
 - 方向量化打分：趋势因子日/周线 ±2；买卖点因子日±2/周±2/60F±2/15F±1；**confidence 降权**（无背驰一买/一卖 confidence<0.6 降半权，回测相反率 30.3%→28.2%）；总分 ≥3 偏多、≤-3 偏空、|总分|≤1 或 15F BOLL 带宽<1% → **方向不明不硬猜**（给 A/B 双向剧本）
@@ -69,8 +70,8 @@
 ## 三、抓取通道与运维
 
 ### 9. 抓取通道应急（2026-08-21）
-- 通道A zsxq-cli Skill：token 失效需 `zsxq-cli auth login`；通道B Cookie 直连对全部 10 球有权限
-- 兜底脚本 `.workbuddy/fetch_zsxq_fallback.py`（全 10 球 Cookie + env vars 自定义窗口）
+- 通道A zsxq-cli Skill：token 失效需 `zsxq-cli auth login`；通道B Cookie 直连对当前 7 球有权限（原 10 球，2026-09-01 取关口罩哥/信息平权/投行圈子）
+- 兜底脚本 `.workbuddy/fetch_zsxq_fallback.py`（7 球 Cookie + env vars 自定义窗口）
 - 应急 SOP：①fetch_zsxq.py ②Skill 全 auth 失败→fallback ③双通道按 topic_id 去重合并
 - 已修 bug：evening 窗口分支缺失；norm_topic 缺 content 兜底；改造前备份 `skills/_backup_20260821/`
 - 待办：`analyze_000001_multi.py` 四周期联动尚未参数化
@@ -109,3 +110,10 @@
 **⑥ 信号失效机制：不改（回测证明当前 30 天窗口更好）**：
 - 对照回测 188 样本：30 天窗口相反率 30.3% vs 反向覆盖失效 41.0%（恶化 +10.7pct）、规避率 15.4%→2.1%
 - 结论：买卖点信号价值在「刚发生时」，时间越久越不可靠，30 天窗口硬切反而是合理失效阈值。脚本 `.workbuddy/backtest_v6_compare.py` 留档。
+
+### 14. 脚本运行约定（2026-09-01 诊断后固化）
+- **统一用 venv python 跑所有 .py**：`scan_sw_realtime` / `scan_ths` / `backtest_*` / `run_sw_chansignal` / `analyze_000001_multi` 依赖 pandas；`md_to_html_report` 依赖 markdown——都只装在 `~/.workbuddy/binaries/python/envs/default`，系统 `python` 跑必报 `ModuleNotFoundError`
+- 统一入口：`python .workbuddy/run.py <脚本名.py> [参数]`（自动切 venv + 切项目根目录）
+- 纯标准库脚本（get_daily_ohlc / gen_forecast_svg / fetch_zsxq / industry_rank / report_builder）系统 python 也能跑，但统一走 run.py 最省心
+- 星球访问健康（2026-09-01）：✅ 7 球正常（基业长青+/卫斯李/T&J/大鹏鸟/短评/180K/AI产业链）；口罩哥⑧/信息平权⑨/投行圈子⑩ 已取关（2026-09-01 用户确认），已从 fetch_zsxq.py、fetch_zsxq_fallback.py、anonymize_report.py、morning_prompt_std.txt 移除
+- 行业榜新增「主线回调」规则（2026-09-01）：`d>0.5 且星球看多 且 pct<0` → 主线回调观察（此前电子 -2.37% 领跌因不满足任何规则而落空没进榜）

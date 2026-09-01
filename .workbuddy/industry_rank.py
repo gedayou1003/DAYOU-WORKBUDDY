@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-"""三要素推导：星球观点 + 缠论方向 + 实时涨跌幅 → 行业强弱榜（做多/滞后背离/规避/反弹观察）。
+"""三要素推导：星球观点 + 缠论方向 + 实时涨跌幅 → 行业强弱榜（做多/主线回调/滞后背离/规避/反弹观察）。
 
 分类规则（与 v5 预判模型一致）：
 - 做多榜：direction > 0.5 且 pct > 0，星球不冲突 → 三要素共振做多
+- 主线回调：direction > 0.5 且星球看多 且 pct < 0 → 强势主线回撤，观察洗盘 or 见顶
 - 滞后背离：星球看多 且 pct > 0 且 direction < 0 → 星球+实时 vs 缠论空（T+1 慢变量滞后）
 - 规避榜：direction < -0.5 且 pct < 0 → 同向偏空
 - 反弹观察：direction < -1 且 pct > 0 → 强空+反弹，假突破/反抽
@@ -41,7 +42,7 @@ def load_data():
 def derive(realtime, sw_agg, star_views=None):
     """三要素交叉分类，返回结构化榜单。"""
     star = {**DEFAULT_STAR_VIEWS, **(star_views or {})}
-    long_list, diverge, avoid, bounce, defense_out = [], [], [], [], []
+    long_list, pullback, diverge, avoid, bounce, defense_out = [], [], [], [], [], []
 
     for name, info in sw_agg.items():
         d = info.get('direction', 0)
@@ -55,6 +56,9 @@ def derive(realtime, sw_agg, star_views=None):
         if d > 0.5 and pct > 0 and sv != '看空':
             rec['resonance'] = '三要素共振' if sv == '看多' else '缠论+实时共振'
             long_list.append(rec)
+        elif d > 0.5 and pct < 0 and sv == '看多':
+            rec['resonance'] = '主线回调'
+            pullback.append(rec)
         elif sv == '看多' and pct > 0 and d < 0:
             diverge.append(rec)
         elif d < -0.5 and pct < 0:
@@ -64,14 +68,15 @@ def derive(realtime, sw_agg, star_views=None):
         elif d > 0 and pct < 0 and name in DEFENSIVE:
             defense_out.append(rec)
 
-    # 排序：做多榜按实时涨幅降序（领涨优先）；规避榜按跌幅升序；背离按涨幅降序
+    # 排序：做多榜按实时涨幅降序（领涨优先）；主线回调/规避榜按跌幅升序（领跌优先）；背离按涨幅降序
     long_list.sort(key=lambda x: -x['pct'])
+    pullback.sort(key=lambda x: x['pct'])
     diverge.sort(key=lambda x: -x['pct'])
     avoid.sort(key=lambda x: x['pct'])
     bounce.sort(key=lambda x: -abs(x['direction']))
     defense_out.sort(key=lambda x: x['pct'])
 
-    return {'long': long_list, 'diverge': diverge, 'avoid': avoid,
+    return {'long': long_list, 'pullback': pullback, 'diverge': diverge, 'avoid': avoid,
             'bounce': bounce, 'defense_out': defense_out}
 
 
@@ -108,6 +113,11 @@ def render(rank, ts, realtime=None, sw_agg=None, star_views=None):
             ded += '；缠论弱多，需实时确认站稳'
         L.append(f"| **{i}** | **{r['name']}** | **{r['pct']:+.2f}%** | **{r['direction']:+.1f} {r['trend']}**（成员{r['members']}） | {basis} | **{conf}** | {ded} |")
 
+    if rank.get('pullback'):
+        L.append('\n> ⚠️ 主线回调观察（星球看多 + 缠论偏多，但实时领跌——强势主线回撤，观察洗盘 or 见顶，不急于抄底）：')
+        for r in rank['pullback']:
+            L.append(f"> - **{r['name']} {r['pct']:+.2f}%**（缠论 {r['direction']:+.1f} {r['trend']}）→ 主线首次回调，等企稳信号或跌破确认")
+
     if rank['diverge']:
         L.append('\n> 滞后背离主线（星球强共振 + 实时涨，但缠论 T+1 慢变量仍偏空）：')
         for r in rank['diverge']:
@@ -136,7 +146,7 @@ def render(rank, ts, realtime=None, sw_agg=None, star_views=None):
         L.append(f"- **命中最强空头却实时反弹**：{names} → 观察，缩量回落则印证「假突破/反抽」。")
 
     L.append(f'\n### 五、口径备注\n')
-    L.append(f'- 涨跌幅 `ts={ts}`（东财妙想实时 / akshare 收盘兜底），覆盖申万一级行业（「综合」可能缺失）。')
+    L.append(f'- 涨跌幅 `ts={ts}`（akshare index_realtime_sw 实时），覆盖申万一级 31 行业。')
     L.append('- 缠论方向分 = 前一交易日收盘 T+1（慢变量），`sw_agg` 成员 = 同花顺细分行业数、趋势 = 成员多数投票。')
     L.append('- 推导逻辑与 v5 一致：|direction|≤1 或缠论与星球背离 → 标「方向不明」不硬猜；缠论方向与实时相反 → 提示「趋势反转期买卖点滞后」谨慎。')
     return '\n'.join(L)
@@ -150,7 +160,7 @@ def main():
 
     out = {'ts': ts, 'rank': rank, 'markdown': md}
     json.dump({'ts': ts,
-               'long': rank['long'], 'diverge': rank['diverge'],
+               'long': rank['long'], 'pullback': rank['pullback'], 'diverge': rank['diverge'],
                'avoid': rank['avoid'], 'bounce': rank['bounce'],
                'defense_out': rank['defense_out']},
               open(os.path.join(DATA, 'industry_rank_result.json'), 'w', encoding='utf-8'),
