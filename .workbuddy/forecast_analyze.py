@@ -19,7 +19,7 @@
   "prev_forecast": {...} or null            # 上期预判内容
 }
 """
-import sys, os, json, subprocess, datetime
+import sys, os, json, subprocess, datetime, urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.expanduser("~/.workbuddy"))
@@ -56,6 +56,13 @@ def _normalize_direction(d):
     return 'sideways'
 
 
+def _num(v):
+    """兼容支撑/压力字段的两种形态：数字 或 {'primary': x, 'primary_basis': ...}"""
+    if isinstance(v, dict):
+        return v.get('primary') if v.get('primary') is not None else v.get('value')
+    return v
+
+
 def mechanical_review(prev, ohlc):
     """机械复盘：把上期预判 vs 实际 OHLC 逐项判定"""
     if not prev or 'error' in ohlc:
@@ -65,8 +72,8 @@ def mechanical_review(prev, ohlc):
     if not all([high, low, close]):
         return None
     direction = _normalize_direction(prev.get('direction', ''))
-    support = prev.get('support')
-    resistance = prev.get('resistance')
+    support = _num(prev.get('support'))
+    resistance = _num(prev.get('resistance'))
     verdicts = {}
 
     # 方向判定（收盘涨跌幅符号 vs 预判方向）
@@ -101,6 +108,80 @@ def mechanical_review(prev, ohlc):
     return verdicts
 
 
+def fetch_history(tencent_code, count=60):
+    """拉最近 count 根日线（腾讯 fqkline），返回 [{'date','close'},...] 升序"""
+    url = (f"https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?"
+           f"param={tencent_code},day,,,{count},qfq")
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+    node = data["data"][tencent_code]
+    kline = node.get("qfqday") or node.get("day") or []
+    rows = []
+    for r in kline:  # r: [date, open, close, high, low, volume, ...]
+        rows.append({"date": r[0], "close": float(r[2])})
+    return rows
+
+
+def compute_tj_bypass(tencent_code):
+    """TJ 旁路状态检测（backtest_tj_v2.py 回测已验证的两个短线辅助信号）。
+
+    只标注、绝不进 v5 方向打分。依据回测结论：
+    - 持续极强：日线 55 线上方连续加速 2 日 → 短线不追高（次日跌 46.6% vs 涨 32.8%）
+    - 解除极弱：55 线下方减速 → 超跌反弹（越跌越买）
+    无触发时 signal/note 为 None。
+    """
+    try:
+        rows = fetch_history(tencent_code, 60)
+    except Exception as e:
+        return {"error": str(e)}
+    if len(rows) < 56:
+        return {"error": f"历史K线不足（{len(rows)}根 < 56）"}
+
+    closes = [r["close"] for r in rows]
+    n = len(closes)
+
+    def ma(k, i):
+        if i + 1 < k:
+            return None
+        return sum(closes[i - k + 1:i + 1]) / k
+
+    states = []
+    for i in range(n):
+        m55 = ma(55, i)
+        m55p = ma(55, i - 1)
+        if m55 is None or m55p is None:
+            states.append("nan")
+            continue
+        dev = (closes[i] - m55) / m55 * 100
+        devp = (closes[i - 1] - m55p) / m55p * 100
+        if closes[i] > m55 and dev > devp:
+            states.append("极强")
+        elif closes[i] < m55 and dev < devp:
+            states.append("极弱")
+        else:
+            states.append("其他")
+
+    s_now, s_prev = states[-1], states[-2]
+    out = {
+        "close": closes[-1],
+        "ma20": round(ma(20, n - 1) or 0, 2),
+        "ma55": round(ma(55, n - 1) or 0, 2),
+        "state_now": s_now,
+        "state_prev": s_prev,
+    }
+    if s_prev == "极强" and s_now == "极强":
+        out["signal"] = "持续极强"
+        out["note"] = "日线连续加速上涨（55线上方），短线不追高、警惕回踩中轨；仅旁路提示，不进方向打分"
+    elif s_prev == "极弱" and s_now != "极弱":
+        out["signal"] = "解除极弱"
+        out["note"] = "55线下方减速，超跌反弹逻辑（越跌越买）；仅旁路提示，不进方向打分"
+    else:
+        out["signal"] = None
+        out["note"] = None
+    return out
+
+
 def run_engine(code):
     out = run_py(os.path.join(CHAN_DIR, 'run_000001_chansignal.py'), '--code', code)
     # 从输出中找 JSON 路径
@@ -116,9 +197,12 @@ def run_engine(code):
 
 def load_chain():
     if not os.path.exists(CHAIN):
-        return {"records": []}
+        return []
     with open(CHAIN, encoding='utf-8') as f:
-        return json.load(f)
+        data = json.load(f)
+    if isinstance(data, dict):
+        return data.get('records', [])
+    return data if isinstance(data, list) else []
 
 
 def save_chain(chain):
@@ -157,7 +241,7 @@ def main():
     # 3. 预判链：读该标的最后一条 pending
     chain = load_chain()
     prev = None
-    for rec in chain.get('records', []):
+    for rec in chain:
         if rec.get('code', '000001') == std_code and rec.get('status') == 'pending':
             prev = rec
     result['prev_forecast'] = prev
@@ -165,6 +249,9 @@ def main():
     # 4. 机械复盘（不落盘，交给 AI 综合判断后写回）
     if prev and 'error' not in result['ohlc']:
         result['review'] = mechanical_review(prev, result['ohlc'])
+
+    # 5. TJ 旁路状态（只标注，不进 v5 方向打分）
+    result['tj_bypass'] = compute_tj_bypass(resolved['tencent'])
 
     print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
 

@@ -178,7 +178,7 @@ def build_block5():
     rank = industry_rank.derive(realtime, sw_agg)
     body = industry_rank.render(rank, rt.get('ts', ''), realtime, sw_agg)
     return ('## 第五块 · 行业强弱榜\n\n'
-            '> 数据源：东财妙想实时（`scan_sw_realtime.py`，ts=' + rt.get('ts', '') + '）+ 同花顺缠论方向分（`scan_ths.py`，T+1）\n'
+            '> 数据源：akshare 实时（`scan_sw_realtime.py`，ts=' + rt.get('ts', '') + '）+ 同花顺缠论方向分（`scan_ths.py`，T+1）\n'
             '> 推导逻辑：与 v5 预判模型一致的三要素——①星球观点 ②缠论信号 ③复盘经验，**不只看涨跌幅**。\n\n'
             + body + '\n\n---\n\n')
 

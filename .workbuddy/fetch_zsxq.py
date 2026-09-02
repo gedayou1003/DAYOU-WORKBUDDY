@@ -68,7 +68,14 @@ def fetch_skill(gid, limit=30):
         cmd = [cli, "group", "+topics", "--group-id", gid, "--limit", str(limit), "--json"]
         if end_time:
             cmd += ["--end-time", end_time]
-        r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8")
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=90)
+        except subprocess.TimeoutExpired:
+            print(f"[skill-err {gid}] zsxq-cli 超时(>90s)，本星球本次跳过", file=sys.stderr)
+            break
+        except Exception as e:
+            print(f"[skill-err {gid}] {e}", file=sys.stderr)
+            break
         try:
             d = json.loads(r.stdout)
         except Exception as e:
