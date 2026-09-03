@@ -16,8 +16,12 @@ for r in fc:
 if not lv:
     print('未找到 intraday levels'); sys.exit(1)
 
-# 9/3 盘中实况（09:45 快照）
-act = {'open': 3952.79, 'high': 3966.96, 'low': 3952.79, 'close': 3962.48}
+# 9/3 盘中实况（10:10 快照）
+act = {'open': 3952.79, 'high': 3968.11, 'low': 3952.79, 'close': 3961.46}
+
+# 现价锚点对齐实况收盘，避免「现价」标签与「C」标签两张皮（levels.now 是 09:45 快照）
+lv = dict(lv)
+lv['now'] = act['close']
 
 out = os.path.normpath(os.path.join(HERE, '..', 'outputs', '000001_forecast_2026-09-03.svg'))
 n = g.build_svg(lv, act, out)

@@ -138,4 +138,4 @@
 - 新增 `_calc_boll.py`（BOLL 三周期三轨 15F/60F/日线）+ `add_morning_2026-09-03.py`；已提交 push（`f98bc35`）。
 - **今日看点：60F55（3931）得失是全天分水岭**。
 - **盘中预判 `9/3-intraday`（09:48 手动）**：现价 3962.48（+0.54%）已站上晨报压力位 15F55(3961.62)——T&J"反抽必须站稳 15F55"关键位盘中已过。震荡偏空，核心带 3960-3968，60F 中枢上沿 3967.59 是反抽第一考验：放量站稳看 3994、遇阻回落再测 3931 分水岭。morning 盘中复盘：方向⚠️/支撑✅/压力❌（3961.62 被盘中破，高 3966.96）。
-- **经验：`gen_forecast_svg.py` 的「当日实况」固定读最新 verified 记录 review.actual，盘中预判（当日未收盘、无 verified）会错显上一交易日走势**；需 wrapper 手动 `build_svg(lv, act)` 传当日盘中 OHLC（新增 `gen_intraday_svg.py`）。另 levels 里 down_support/down_lower 价差 <1% 时 gen_forecast_svg 会省略后者文字标签（只画线），信号需从 signals 字段带出。
+- **经验：`gen_forecast_svg.py` 的「当日实况」固定读最新 verified 记录 review.actual，盘中预判（当日未收盘、无 verified）会错显上一交易日走势**；需 wrapper 手动 `build_svg(lv, act)` 传当日盘中 OHLC（新增 `gen_intraday_svg.py`）。另 levels 里 down_support/down_lower 价差 <1% 时 gen_forecast_svg 会省略后者文字标签（只画线），信号需从 signals 字段带出。再者 **`levels.now`（预判时刻快照）与 `act.close`（生成时刻快照）会「两张皮」——SVG「现价」标签≠「C」标签**，wrapper 里必须 `lv=dict(lv); lv['now']=act['close']` 对齐，否则一张图两个现价（9/3 盘中曾差 1.02 点，已修）。
