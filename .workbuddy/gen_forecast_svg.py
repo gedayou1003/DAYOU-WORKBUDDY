@@ -95,7 +95,7 @@ def build_svg(lv, act, out_path):
         t += 20
 
     svg = []
-    svg.append('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 580" font-family="-apple-system,\'PingFang SC\',sans-serif">')
+    svg.append('<svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 0 940 580" font-family="-apple-system,\'PingFang SC\',sans-serif">')
     svg.append('<defs><style>')
     svg.append('.grid{stroke:#d8d2c4;stroke-width:0.5;stroke-dasharray:2 3}')
     svg.append('.axis{stroke:#3a4a4a;stroke-width:1;fill:none}')
@@ -108,7 +108,7 @@ def build_svg(lv, act, out_path):
     svg.append('.ts{font-size:9px}')
     svg.append('</style></defs>')
 
-    svg.append(f'<text x="450" y="18" text-anchor="middle" class="tt" fill="#1f3a3a" font-size="15">上证综指 {D} 预判 · 震荡区间 + 变盘路径图（v5）</text>')
+    svg.append(f'<text x="430" y="18" text-anchor="middle" class="tt" fill="#1f3a3a" font-size="15">上证综指 {D} 预判 · 震荡区间 + 变盘路径图（v5）</text>')
 
     for p in ticks:
         svg.append(f'<line class="grid" x1="20" y1="{y(p):.1f}" x2="600" y2="{y(p):.1f}"/>')
