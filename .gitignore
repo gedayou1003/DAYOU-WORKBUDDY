@@ -1,6 +1,9 @@
 # ===== 敏感凭证（绝对不能提交）=====
 zsxq_cookie.txt
 
+# ===== 家里同步包（含星球ID敏感信息 + 运行时数据，勿提交）=====
+_sync_家里/
+
 # ===== 运行产物（各自演化，不同步）=====
 zsxq_fetch_raw.json
 zsxq_evening_clean.txt
