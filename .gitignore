@@ -7,8 +7,6 @@ _sync_家里/
 # ===== 运行产物（各自演化，不同步）=====
 zsxq_fetch_raw.json
 zsxq_evening_clean.txt
-forecast_chain.json
-consensus_chain.json
 *信号流缓存.json
 *周线快照缓存.json
 automations/
