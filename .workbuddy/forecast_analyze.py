@@ -47,11 +47,15 @@ def fetch_ohlc(code):
 
 
 def _normalize_direction(d):
-    """方向归一化：英文/中文 -> bullish/bearish/sideways"""
+    """方向归一化：英文/中文 -> bullish/bearish/sideways
+
+    注意：direction 字段实际常带后缀（如「震荡偏多（v5 -2 方向不明偏多）」「偏空（Bearish）」），
+    必须用子串匹配而非精确匹配，否则带后缀的方向会全部落回 sideways。
+    """
     s = str(d or '').strip().lower()
-    if s in ('bullish', 'bull', '偏多', '看多', '震荡偏多', '偏强'):
+    if any(k in s for k in ('偏多', '看多', '偏强', 'bullish', 'bull')):
         return 'bullish'
-    if s in ('bearish', 'bear', '偏空', '看空', '震荡偏空', '偏弱'):
+    if any(k in s for k in ('偏空', '看空', '偏弱', 'bearish', 'bear')):
         return 'bearish'
     return 'sideways'
 
