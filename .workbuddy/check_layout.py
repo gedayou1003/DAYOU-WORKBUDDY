@@ -82,6 +82,27 @@ def _verified_count():
         return None
 
 
+def _sub_required_check(text, pos, res):
+    """块内部子内容校验：某些块除标题外，内部还必须含指定子标题（如信息判断块内须有「共同观点」「相反观点」）。"""
+    if not getattr(spec, 'SUB_REQUIRED', None):
+        return
+    lines = text.split('\n')
+    for key, subs in spec.SUB_REQUIRED.items():
+        if key not in pos:
+            continue
+        start_idx = pos[key] - 1  # 0-based 标题行索引
+        end_idx = len(lines)
+        for j in range(start_idx + 1, len(lines)):
+            if re.match(r'^##\s', lines[j]):
+                end_idx = j
+                break
+        body = '\n'.join(lines[start_idx:end_idx])
+        for sub_name, sub_pats in subs:
+            if not any(re.search(p, body) for p in sub_pats):
+                res['errors'].append(
+                    '块内缺子内容：%s 内缺「%s」' % (spec.BLOCKS[key][0], sub_name))
+
+
 def check(path):
     tier = detect_tier(os.path.basename(path))
     res = {'path': path, 'tier': tier, 'errors': [], 'warns': []}
@@ -143,6 +164,9 @@ def check(path):
             res['warns'].append(
                 '偏差期数过时：报告标 %d 期，链当前 %d 期（历史报告为快照属正常，当日报告需核对）'
                 % (report_n, chain_n))
+
+    # 5) 块内部子内容校验（防止「块标题在、内部核心子内容缺失」）
+    _sub_required_check(text, pos, res)
 
     return res
 
