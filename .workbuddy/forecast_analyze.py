@@ -67,6 +67,22 @@ def _num(v):
     return v
 
 
+def _direction_verdict(direction, pct):
+    """单口径方向判定：涨跌幅符号 vs 预判方向"""
+    if direction == 'sideways' and abs(pct) < 0.5:
+        return '✅ hit (sideways)'
+    elif direction == 'bullish' and pct > 0:
+        return '✅ hit (bullish)'
+    elif direction == 'bearish' and pct < 0:
+        return '✅ hit (bearish)'
+    elif direction == 'bullish' and pct < 0:
+        return '❌ miss (forecast bullish, actual down)'
+    elif direction == 'bearish' and pct > 0:
+        return '❌ miss (forecast bearish, actual up)'
+    else:
+        return '⚠️ partial'
+
+
 def mechanical_review(prev, ohlc):
     """机械复盘：把上期预判 vs 实际 OHLC 逐项判定"""
     if not prev or 'error' in ohlc:
@@ -80,20 +96,20 @@ def mechanical_review(prev, ohlc):
     resistance = _num(prev.get('resistance'))
     verdicts = {}
 
-    # 方向判定（收盘涨跌幅符号 vs 预判方向）
+    # 方向判定：双口径
+    #   direction          = 收盘 vs 前收盘（全天净方向，含高低开跳空）
+    #   direction_intraday = 开盘 vs 收盘（日内真实方向，剔除跳空）
     pct = ohlc.get('pct_chg', 0)
-    if direction == 'sideways' and abs(pct) < 0.5:
-        verdicts['direction'] = '✅ hit (sideways)'
-    elif direction == 'bullish' and pct > 0:
-        verdicts['direction'] = '✅ hit (bullish)'
-    elif direction == 'bearish' and pct < 0:
-        verdicts['direction'] = '✅ hit (bearish)'
-    elif direction == 'bullish' and pct < 0:
-        verdicts['direction'] = '❌ miss (forecast bullish, actual down)'
-    elif direction == 'bearish' and pct > 0:
-        verdicts['direction'] = '❌ miss (forecast bearish, actual up)'
-    else:
-        verdicts['direction'] = '⚠️ partial'
+    verdicts['direction'] = _direction_verdict(direction, pct)
+    open_p = ohlc.get('open')
+    if open_p is not None and open_p != 0:
+        intraday_pct = round((close - open_p) / open_p * 100, 2)
+        verdicts['direction_intraday'] = _direction_verdict(direction, intraday_pct)
+        # 高低开导致的「全天 vs 日内」方向背离（低开高走 / 高开低走）
+        if (pct > 0) != (intraday_pct > 0):
+            gap = ohlc.get('gap_type', '跳空')
+            verdicts['gap_note'] = (f'⚠️ {gap}导致背离：全天 {pct:+.2f}% vs 日内 {intraday_pct:+.2f}%，'
+                                    f'收盘方向受跳空干扰，日内真实方向为 {"涨" if intraday_pct > 0 else "跌"}')
 
     # 支撑判定
     if support is not None:
@@ -186,6 +202,37 @@ def compute_tj_bypass(tencent_code):
     return out
 
 
+def build_gap_context(ohlc, prev):
+    """高低开上下文：今日跳空 + 上期支撑/压力位相对昨收/今开的双锚点。
+
+    目的：开盘跳空会让"相对现价百分比"失真（现价锚点从昨收跳到今开），
+    显式给出两个锚点的百分比，供 AI 复盘/写报告时修正。
+    """
+    if not ohlc or 'error' in ohlc:
+        return None
+    ctx = {
+        'gap_pct': ohlc.get('gap_pct'),
+        'gap': ohlc.get('gap'),
+        'gap_type': ohlc.get('gap_type'),
+        'open': ohlc.get('open'),
+        'prev_close': ohlc.get('prev_close'),
+    }
+    open_p = ohlc.get('open')
+    prev_close = ohlc.get('prev_close')
+    if prev and open_p is not None and prev_close is not None:
+        anchors = {}
+        for key in ('support', 'resistance'):
+            v = _num(prev.get(key))
+            if v is not None:
+                anchors[key] = {
+                    'price': v,
+                    'vs_prev_close_pct': round((v - prev_close) / prev_close * 100, 2),
+                    'vs_open_pct': round((v - open_p) / open_p * 100, 2),
+                }
+        ctx['anchors'] = anchors
+    return ctx
+
+
 def run_engine(code):
     out = run_py(os.path.join(CHAN_DIR, 'run_000001_chansignal.py'), '--code', code)
     # 从输出中找 JSON 路径
@@ -256,6 +303,9 @@ def main():
 
     # 5. TJ 旁路状态（只标注，不进 v5 方向打分）
     result['tj_bypass'] = compute_tj_bypass(resolved['tencent'])
+
+    # 6. 高低开上下文（双锚点：相对昨收 / 相对今开）
+    result['gap_context'] = build_gap_context(result['ohlc'], prev)
 
     print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
 

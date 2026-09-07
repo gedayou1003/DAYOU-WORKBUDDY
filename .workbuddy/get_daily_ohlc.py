@@ -8,7 +8,7 @@
     code: 标准代码或名称，如 000001 / 000300 / 沪深300 / sh000905 / 中证1000（默认 000001 上证综指）
     days: 往回取几个交易日（默认 1=最近交易日）
 
-输出: JSON {code, name, date, open, high, low, close, prev_close, pct_chg, source}
+输出: JSON {code, name, date, open, high, low, close, prev_close, pct_chg, gap_pct, gap, gap_type, source}
 """
 import sys, json, datetime, urllib.request, os
 
@@ -43,6 +43,16 @@ def fetch_daily_ohlc(tencent_code, days=1):
         prev_close = float(kline[-2][2])  # kline 行格式 [date, open, close, high, low, ...]
         result["prev_close"] = prev_close
         result["pct_chg"] = round((result["close"] - prev_close) / prev_close * 100, 2)
+        # 开盘跳空（gap）：今日开盘 vs 昨日收盘，量化高低开幅度（供预判"现价锚点"修正用）
+        gap_pct = round((result["open"] - prev_close) / prev_close * 100, 2)
+        result["gap_pct"] = gap_pct
+        result["gap"] = round(result["open"] - prev_close, 2)  # 跳空绝对点数
+        if gap_pct > 0.15:
+            result["gap_type"] = "高开"
+        elif gap_pct < -0.15:
+            result["gap_type"] = "低开"
+        else:
+            result["gap_type"] = "平开"
     return result
 
 
