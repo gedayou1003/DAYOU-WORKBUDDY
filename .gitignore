@@ -10,6 +10,8 @@ zsxq_evening_clean.txt
 *信号流缓存.json
 *周线快照缓存.json
 automations/
+.workbuddy/forecast_chain.json
+.workbuddy/consensus_chain.json
 
 # ===== 图片与报告产物（大文件/各自生成）=====
 zsxq_images/
