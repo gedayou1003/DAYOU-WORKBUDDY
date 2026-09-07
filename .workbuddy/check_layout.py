@@ -31,19 +31,28 @@ def detect_tier(filename):
 
 
 def extract_headings(text):
-    """抓取 H2~H4 标题，返回 [(行号, 标题文本)]。"""
+    """抓取 H2~H4 标题，返回 [(行号, 层级, 标题文本)]，层级=# 个数（2/3/4）。"""
     out = []
     for i, line in enumerate(text.split('\n')):
         m = re.match(r'^(#{2,4})\s+(.+?)\s*$', line)
         if m:
-            out.append((i + 1, m.group(2)))
+            out.append((i + 1, len(m.group(1)), m.group(2)))
     return out
 
 
 def find_block(headings, key):
-    """在标题列表中找第一个匹配 key 的标题，返回 (行号, 标题) 或 (None, None)。"""
+    """在标题列表中找匹配 key 的块标题，返回 (行号, 标题) 或 (None, None)。
+
+    优先匹配 H2（块标题层级），避免 H3 子标题（如「变盘概率预判」「本期预判」）
+    抢在真正的块标题（如「## 五、第四块 · 预判」）之前被误命中。
+    无 H2 命中时 fallback 到 H3/H4（兼容「偏差观察统计表」等有时写成 H3 的块）。
+    """
     for p in spec.BLOCKS[key][1]:
-        for lineno, title in headings:
+        for lineno, level, title in headings:
+            if level == 2 and re.search(p, title):
+                return lineno, title
+    for p in spec.BLOCKS[key][1]:
+        for lineno, level, title in headings:
             if re.search(p, title):
                 return lineno, title
     return None, None
@@ -82,6 +91,19 @@ def _verified_count():
         return None
 
 
+def _report_date(path):
+    m = re.search(r'(\d{4}-\d{2}-\d{2})', os.path.basename(path))
+    return m.group(1) if m else None
+
+
+def _is_today_report(path):
+    d = _report_date(path)
+    if not d:
+        return False
+    import datetime
+    return d == datetime.datetime.now().strftime('%Y-%m-%d')
+
+
 def _sub_required_check(text, pos, res):
     """块内部子内容校验：某些块除标题外，内部还必须含指定子标题（如信息判断块内须有「共同观点」「相反观点」）。"""
     if not getattr(spec, 'SUB_REQUIRED', None):
@@ -99,8 +121,12 @@ def _sub_required_check(text, pos, res):
         body = '\n'.join(lines[start_idx:end_idx])
         for sub_name, sub_pats in subs:
             if not any(re.search(p, body) for p in sub_pats):
-                res['errors'].append(
-                    '块内缺子内容：%s 内缺「%s」' % (spec.BLOCKS[key][0], sub_name))
+                msg = '块内缺子内容：%s 内缺「%s」' % (spec.BLOCKS[key][0], sub_name)
+                # 走势图缺失：仅当日报告算 ERROR（硬约束），历史报告快照降级 WARN
+                if sub_name == '走势图' and not _is_today_report(res['path']):
+                    res['warns'].append(msg + '（历史报告快照，可选回补）')
+                else:
+                    res['errors'].append(msg)
 
 
 def check(path):
