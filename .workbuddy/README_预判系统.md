@@ -39,11 +39,7 @@ python run_000001_chansignal.py --code 000300
 # 3. BOLL×缠论 变盘概率
 python run_000001_boll_chan.py --code 000300
 
-# 4. 多维融合引擎
-cd ../chanlun-multidimensional-tech-analysis__skillhub
-python run_000001_multi.py --code 000300
-
-# 5. 一键预判数据包（行情+引擎+上期复盘）
+# 4. 一键预判数据包（行情+引擎+上期复盘）
 cd ../../.workbuddy
 python forecast_analyze.py 000300
 ```

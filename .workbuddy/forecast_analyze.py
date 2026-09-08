@@ -111,19 +111,23 @@ def mechanical_review(prev, ohlc):
             verdicts['gap_note'] = (f'⚠️ {gap}导致背离：全天 {pct:+.2f}% vs 日内 {intraday_pct:+.2f}%，'
                                     f'收盘方向受跳空干扰，日内真实方向为 {"涨" if intraday_pct > 0 else "跌"}')
 
-    # 支撑判定
+    # 支撑判定（v5 第六节：区分真假破位——盘中破但收盘收回 = 假破位/下跌衰竭）
     if support is not None:
         if low >= support:
             verdicts['support'] = f'✅ held (support {support}, low {low})'
+        elif close >= support:
+            verdicts['support'] = f'⚠️ 假破位 (support {support}, 盘中低 {low} 跌破但收盘 {close} 收回)'
         else:
-            verdicts['support'] = f'❌ broken (support {support}, low {low})'
+            verdicts['support'] = f'❌ broken (support {support}, low {low}, close {close})'
 
-    # 压力判定
+    # 压力判定（v5 第六节：区分真假突破——盘中突破但收盘回落 = 假突破，不追多）
     if resistance is not None:
         if high <= resistance:
             verdicts['resistance'] = f'✅ held (resistance {resistance}, high {high})'
+        elif close <= resistance:
+            verdicts['resistance'] = f'⚠️ 假突破 (resistance {resistance}, 盘中高 {high} 突破但收盘 {close} 回落)'
         else:
-            verdicts['resistance'] = f'❌ broken (resistance {resistance}, high {high})'
+            verdicts['resistance'] = f'❌ broken (resistance {resistance}, high {high}, close {close})'
 
     return verdicts
 
