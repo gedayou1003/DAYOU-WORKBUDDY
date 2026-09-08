@@ -60,8 +60,9 @@ SLOTS = {
         'required': ['core', 'star', 'judge', 'tech', 'forecast', 'bias', 'industry'],
         'optional': ['appendix_a', 'appendix_b', 'products'],
     },
+    # 午间/收盘为「四块」（无行业榜），行业榜仅晨报「五块」——2026-09-08 精简去重后
     'noon': {
-        'required': ['core', 'star', 'judge', 'tech', 'forecast', 'bias', 'industry'],
+        'required': ['core', 'star', 'judge', 'tech', 'forecast', 'bias'],
         'optional': ['appendix_a', 'appendix_b'],
     },
     'intraday': {
@@ -69,7 +70,7 @@ SLOTS = {
         'optional': ['appendix_a', 'appendix_b', 'products'],
     },
     'close': {
-        'required': ['core', 'star', 'judge', 'tech', 'forecast', 'bias', 'industry'],
+        'required': ['core', 'star', 'judge', 'tech', 'forecast', 'bias'],
         'optional': ['appendix_a', 'appendix_b'],
     },
     'review': {
