@@ -13,7 +13,7 @@
 | `.workbuddy/forecast_chain.json` | 预判链存储（每条带 code，多标的隔离） | ✅ |
 | `skills/chan-signal__skillhub/run_000001_chansignal.py` | chan-signal 买卖点引擎（五周期） | ✅ `--code 000300` |
 | `skills/chan-signal__skillhub/run_000001_boll_chan.py` | BOLL×缠论交叉验证+变盘概率 | ✅ `--code 000300` |
-| `skills/chanlun-multidimensional-tech-analysis__skillhub/run_000001_multi.py` | 多维融合引擎（四级别） | ✅ `--code 000300` |
+| ~~`skills/chanlun-multidimensional-tech-analysis__skillhub/run_000001_multi.py`~~ | ~~多维融合引擎（四级别）~~ ⚠️ **已废弃（2026-09-08，方向信号无效）** | — |
 | `.workbuddy/analyze_000001_multi.py` | 四周期联动+区间套（收盘后档用） | ⚠️ 待改造 |
 | `skills/_backup_20260821/` | 改造前引擎脚本备份 | — |
 
