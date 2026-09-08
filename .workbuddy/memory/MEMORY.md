@@ -37,7 +37,7 @@
 - 脚本 `run_000001_boll_chan.py`（15/60/120分钟+日线）；变盘概率=多因子打分（±2×5 因子）映射 5%~95%；缠论信号仅近 2 交易日计入
 - 产物：`000001_YYYYMMDD_BOLL缠论交叉验证.md` + json
 
-### 6. 技术预判链（三档自动化核心）
+### 6. 技术预判链（三档手动触发核心，automation 已废弃 2026-09-08）
 - 文件：`.workbuddy/forecast_chain.json`；OHLC 获取：`.workbuddy/get_daily_ohlc.py`
 - 验证配对：晨报(8:30)→验证前一日收盘预判；午间(12:30)→验证晨报；收盘(16:00)→验证午间
 - 预判对象：晨报=今日全天、午间=下午、收盘=次日；复盘判定 ✅/⚠️/❌
@@ -86,11 +86,13 @@
   第一步接入 git —— 备份 `.workbuddy/zsxq_cookie.txt` → 测直连（`git ls-remote`）不通再配 Clash 代理 → 配认证（`credential.helper store` + PAT 写 `~/.git-credentials`，不写具体值）→ `git init && git remote add origin <仓库>` → `git fetch origin && git reset --hard origin/main` → 确认 cookie 还在；
   第二步改晨报 prompt 第五块（本机 SQLite 不入 git）—— 把「第五块：行业判断」的 scan_sw_v3.py（申万+Datayes）整段替换为 scan_ths.py（同花顺 90 归组到申万一级 31 大类 + 沪深300/上证50/中证1000/恒生），读 `scan_result_ths.json` 的 `sw_agg` 字段，晨报末尾加「## 行业判断」申万大类 TOP2 + 宽基/恒生 TOP1，删所有 Datayes/token 描述，akshare 报错降级仅宽基。
 
-### 11. 定时任务时间（2026-08-27 调整：全部暂停，改手动触发）
-- **三档全部 PAUSED（2026-08-27 用户要求"全部手动触发"）**：晨报 8:00（automation-1786669064976）、午间 12:30（-1786674776188）、收盘 16:00（-1786694342329）；家中同理全部 PAUSED，仅手动喊触发
-- 晨报 prompt 同步方式：家里维护 `.workbuddy/morning_prompt_std.txt` 权威模板，跑 `.workbuddy/sync_morning_prompt.py` 幂等同步（按 name 定位，已最新则跳过）
+### 11. 定时任务（2026-09-08 已废弃删除，纯手动触发）
+- **automation 定时任务已彻底删除**（2026-09-08 用户要求"完全删掉不弄了"）：`.workbuddy/automations/` 执行记录、`_sync_家里/automation_三档_prompt.md` 三档 prompt 均已删
+- 三档流程知识已沉淀到 `.workbuddy/报告生成流程.md`（去 automation/Operation 化，只记「怎么跑」）
+- 触发方式：纯手动喊「跑晨报 / 跑午间 / 跑收盘」，不再依赖定时任务
+- 晨报 prompt 同步方式（历史 morning_prompt_std.txt）：已随 automation 废弃，无需维护
 - **fetch_zsxq.py 窗口铁律（2026-08-26 用户明确，自检必查）**：结束时间一律「当前时刻 now」禁止写死；8点自动=默认 morning（前一天16:00~8:00）；**手动跑=取「8:00~当前时刻」用 `--window noon`**（8:00~now），保证拿到手动时刻之前最新内容和信息变化
-- v5 规则已固化进三档 automation prompt（引用预判规则_v5.md）；automation 配置存本机 SQLite 不走 git，换设备需重配
+- v5 规则引用 `.workbuddy/预判规则_v5.md`（权威文件）；报告流程见 `.workbuddy/报告生成流程.md`
 
 ### 12. 预判历史关键记录（2026-08-24）
 - 8-24 上证盘中 -0.77% 跌至 3874.99 跌破早间预判支撑 3883.79；连续 2 次预判（8-21-close + 8-24-morning）被打脸 → 变盘临界点方向覆盖不足
