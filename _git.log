@@ -1,0 +1,49 @@
+﻿git : warning: in the working copy of '.workbuddy/add_close_2026-09-15.py', LF 
+will be replaced by CRLF the next time Git touches it
+所在位置 行:445 字符: 64
++ ... Users\gedayou\WorkBuddy\2026-08-14-09-01-12"; git add -A 2>&1 | Out-F ...
++                                                   ~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (warning: in the... Git touches it 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+warning: in the working copy of '.workbuddy/build_dims_data.py', LF will be 
+replaced by CRLF the next time Git touches it
+warning: in the working copy of '.workbuddy/build_range_band.py', LF will be 
+replaced by CRLF the next time Git touches it
+warning: in the working copy of '.workbuddy/calc_tech_0915.py', LF will be 
+replaced by CRLF the next time Git touches it
+warning: in the working copy of '.workbuddy/digest_zsxq.py', LF will be 
+replaced by CRLF the next time Git touches it
+warning: in the working copy of '.workbuddy/gen_dims_html.py', LF will be 
+replaced by CRLF the next time Git touches it
+warning: in the working copy of '.workbuddy/gen_range_band_html.py', LF will 
+be replaced by CRLF the next time Git touches it
+warning: in the working copy of 
+'.workbuddy/review_consensus_close_2026-09-15.py', LF will be replaced by CRLF 
+the next time Git touches it
+[main 567b3c6] 澶嶇洏 2026-09-15 + 棰勫垽鍖洪棿甯?鍥涚淮鍛戒腑鐜囧彲瑙嗗寲
+ 22 files changed, 1287 insertions(+)
+ create mode 100644 .workbuddy/_addclose.log
+ create mode 100644 .workbuddy/_band_log.txt
+ create mode 100644 .workbuddy/_check.log
+ create mode 100644 .workbuddy/_dims_log.txt
+ create mode 100644 .workbuddy/_engine_b.log
+ create mode 100644 .workbuddy/_engine_c.log
+ create mode 100644 .workbuddy/_html.log
+ create mode 100644 .workbuddy/_sw.log
+ create mode 100644 .workbuddy/_tech_0915.json
+ create mode 100644 .workbuddy/_zsxq.log
+ create mode 100644 .workbuddy/_zsxq_digest.txt
+ create mode 100644 .workbuddy/add_close_2026-09-15.py
+ create mode 100644 .workbuddy/build_dims_data.py
+ create mode 100644 .workbuddy/build_range_band.py
+ create mode 100644 .workbuddy/calc_tech_0915.py
+ create mode 100644 .workbuddy/digest_zsxq.py
+ create mode 100644 .workbuddy/dims_hitrate_data.json
+ create mode 100644 .workbuddy/gen_dims_html.py
+ create mode 100644 .workbuddy/gen_range_band_html.py
+ create mode 100644 .workbuddy/range_band_data.json
+ create mode 100644 .workbuddy/review_consensus_close_2026-09-15.py
+ create mode 100644 _git.log
+567b3c61cebba6e180cd0948fe376df8595bc1e3
