@@ -214,4 +214,38 @@
 
 **改进清单** 14 项（I-1~I-14，已交用户确认，**未动手**）：P0 = I-1 第四块去重（-34%）、I-2 第一块粒度约束（-47%）、I-3 `check_layout.py` 加重复检查；P1 = I-4 OHLC 当日缓存、I-5 401 fail-fast、I-6 脚本参数化、I-7 清理失效副本。体检脚本 `_audit_*.{py,txt}` 已 gitignore。
 
+---
+
+## 22. 维护落地（2026-09-16，提交 a1e857b）
+
+用户四个决策全选最激进路径：**连第一块粒度一起收 / 现在就重构脚本 / 今天收盘档就用新规范 / 授权现在改小修**。I-1~I-7 全部落地。
+
+**链操作统一入口（最重要，日常必用）**
+```
+$PY .workbuddy/chain_apply.py --init-template morning 2026-09-17     # 生成 payload 骨架
+$PY .workbuddy/chain_apply.py --payload .workbuddy/payload_YYYY-MM-DD_<tier>.json
+$PY .workbuddy/chain_apply.py --payload <同上> --dry-run              # 预演
+$PY .workbuddy/chain_apply.py --bias-only                            # 只打偏差统计表
+```
+- payload 三段（均可选）：`forecast{validate_prev, review, record}` / `consensus{同上}` / `bias{print, write}`
+- **三条硬保证**：① 幂等（review 已存在 / record.id 已存在 → 跳过）② **机器回读断言**（写盘后从磁盘重读校验 status，不符即非零退出 —— **替代「跑完记得回读 chain」的人工纪律**，9/15 漏落盘事故的根治）③ pending 守卫（>1 条即提示漏复盘）
+- `chainlib.py` 公共库：`bias_stats()` **精确复现报告手写数字**（47 期 / 57.4 / 38.3 / 67.4 / 60.9%），偏差统计表不再手写；支持 `CHAIN_DIR` 环境变量重定向供沙箱自测
+
+**42 个每日脚本族已归档** → `.workbuddy/archive/daily_scripts/`（add_morning×9、review_consensus_morning×7、add_noon×5、review_close×5 等）。根目录 .py 从 91 → 54。
+- `calc_tech.py --code` 取代 calc_tech_MMDD（0915/0916 行重合度 0.85）
+- `digest_zsxq.py` 取代 digest_MMDD（旧版存 `.old-pre20260916`）
+- `update_chains.py` / `append_consensus.py` → `archive/`
+- `skill_patches/chan_signal.py` → `.bak.20260827` + README（防被误当补丁而回滚引擎）
+
+**OHLC 缓存铁律**：`get_daily_ohlc.py` 按「日期+槽位」落盘，**统一 TTL 30 分钟**（不是槽位长期有效——否则 14:25 盘中快照会污染 16:00 收盘价）。`--slot/--ttl/--force/--no-cache`。报告流程建议传 `--slot <档位>`。
+
+**Cookie 401 fail-fast**：`fetch_zsxq.py` 遇 401/403 立即终止该星球且只提示一次（原先 4 球×3 次 = 每期 12 次必然失败的请求）。输出含 `COOKIE_AUTH_FAILED=n`。
+
+**check_layout 第 6 类检查（排版重复）**：规则在 `layout_spec.py·DUP_RULES`（价格关键位>8 次 / 结论短语>8 次 / 事件说明>4 次 / 字段表与关键位表双写）。**仅对当日报告执行**（历史快照跳过，保住「0 ERROR/0 WARN」闸门）。
+
+**排版硬约束（规范_v2 新增 3.8）**：核心速览每行≤90字 / 第一块每条≤120字·整块≤5,000字 / **一句话预判≤150字纯结论**（不复述三因子/剧本/纪律）/ 剧本触发条件≤80字 / **纪律与观察合并为一节** / 整份晨报≤35,000字。关键位唯一落地点 = 关键位相对现价表（字段表只写主位+指针）。
+
+**安全流程（下次改脚本照做）**：① 先备份两条链到 `archive/backup_YYYYMMDD/`（gitignore，仅本机）② 用 `CHAIN_DIR` 指向沙箱链验证幂等/dry-run/回读断言 ③ 确认真链未被改动 ④ 全脚本语法编译 + 关键链路实测 ⑤ 残余引用检查（旧脚本名是否还有真实代码依赖）。
+
+
 
