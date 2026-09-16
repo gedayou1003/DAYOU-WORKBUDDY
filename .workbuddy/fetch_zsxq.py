@@ -3,7 +3,7 @@
 """批量拉取知识星球主题并筛选时间窗口内容 (Skill通道 + Cookie通道)
 v2：新增图片原图下载 + PDF/文件附件信息记录，确保晨报内容详尽不丢图
 """
-import json, subprocess, urllib.request, os, sys, time
+import json, subprocess, urllib.request, urllib.error, os, sys, time
 from datetime import datetime, timezone, timedelta
 
 CST = timezone(timedelta(hours=8))
@@ -57,6 +57,9 @@ COOKIE_FILE = os.path.join(_HERE, "zsxq_cookie.txt")
 IMG_DIR = os.path.join(_HERE, "zsxq_images")
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
 
+# 本轮已确认 Cookie 鉴权失败的星球 gid（401/403 fail-fast 去重，避免重复提示与重复请求）
+auth_failed = set()
+
 def _cookie():
     return open(COOKIE_FILE, encoding="utf-8").read().strip()
 
@@ -97,7 +100,16 @@ def fetch_skill(gid, limit=30):
     return all_topics
 
 def fetch_cookie(gid, count=20):
-    """通过 Cookie 直连官方 API（带分页 + 重试与限流规避）"""
+    """通过 Cookie 直连官方 API（带分页 + 重试与限流规避）
+
+    401/403 鉴权失败不重试（fail-fast，2026-09-16 维护改动）：
+      旧逻辑对 401 也重试 3 次 —— 鉴权失败重试必然同样失败，每期白跑 12 次请求
+      （4 星球 × 3 次），连续 4 期共 48 次无效请求。现改为遇 401/403 立即终止该星球，
+      且同一轮抓取内只提示一次（auth_failed 去重），仅 5xx / 超时保留重试。
+    """
+    if gid in auth_failed:
+        print(f"[cookie-skip {gid}] 本轮已确认 Cookie 失效，跳过该星球（不重复提示）", file=sys.stderr)
+        return []
     cookie = _cookie()
     all_topics, seen, end_time = [], set(), None
     while True:
@@ -116,6 +128,15 @@ def fetch_cookie(gid, count=20):
                 if d.get("succeeded"):
                     topics = d.get("resp_data", {}).get("topics", [])
                     break
+                time.sleep(3 + attempt * 2)
+            except urllib.error.HTTPError as e:
+                # 401/403 = 鉴权失败，重试必然同样失败（Cookie 失效）→ 立即终止该星球，不浪费请求
+                if e.code in (401, 403):
+                    print(f"[cookie-auth {gid}] HTTP {e.code} 鉴权失败：Cookie 已失效，"
+                          f"立即终止该星球抓取（不重试）。请更新 .workbuddy/zsxq_cookie.txt", file=sys.stderr)
+                    auth_failed.add(gid)
+                    break
+                print(f"[cookie-err {gid}] try{attempt}: {e}", file=sys.stderr)
                 time.sleep(3 + attempt * 2)
             except Exception as e:
                 print(f"[cookie-err {gid}] try{attempt}: {e}", file=sys.stderr)
@@ -260,6 +281,9 @@ def main():
     n_img = sum(len(x["images"]) for x in results)
     n_file = sum(len(x["files"]) for x in results)
     print(f"TOTAL_WINDOW={len(results)}  IMAGES={n_img}  FILES={n_file}")
+    if auth_failed:
+        print(f"COOKIE_AUTH_FAILED={len(auth_failed)} (gid: {', '.join(sorted(auth_failed))}) "
+              f"→ 需更新 .workbuddy/zsxq_cookie.txt")
     print(f"SAVED={os.path.normpath(out)}")
 
 if __name__ == "__main__":

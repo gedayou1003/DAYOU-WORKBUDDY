@@ -6,6 +6,9 @@
   2. 顺序错位（WARN）：区块出现顺序与规范不符
   3. 附录 A·B 语义（WARN）：A 应为「抓取通道」、B 应为「星球代号」，若对调则提示
   4. 偏差期数一致性（WARN）：报告标注期数 vs forecast_chain.json verified 条数
+  5. 块内子内容（ERROR/WARN）：如信息判断块须含「共同观点/相反观点」、预判块须内嵌走势图
+  6. 排版重复（WARN，仅当日报告）：信息原子全篇复述超限 / 字段表与关键位表双写
+     —— 规则见 layout_spec.DUP_RULES，对应《规范_v2》「信息原子唯一落地」
 
 用法：
     $PY check_layout.py [报告.md ...]
@@ -129,6 +132,56 @@ def _sub_required_check(text, pos, res):
                     res['errors'].append(msg)
 
 
+def _dup_check(text, res):
+    """第 6 类检查：排版重复（信息原子唯一落地）。
+
+    规则见 layout_spec.DUP_RULES。仅对「当日报告」执行 —— 历史报告是快照，
+    重复检查无意义且会让「0 WARN」这道闸门永久失效。
+    """
+    rules = getattr(spec, 'DUP_RULES', None)
+    if not rules:
+        return
+    if not _is_today_report(res['path']):
+        return
+
+    lines = text.split('\n')
+
+    # --- 价格关键位 / 结论短语 / 事件说明：全篇计数
+    for key in ('price', 'phrase', 'event'):
+        rule = rules.get(key)
+        if not rule:
+            continue
+        max_n = rule.get('max', 8)
+        hits = {}
+        if 'pattern' in rule:
+            rx = re.compile(rule['pattern'])
+            for i, ln in enumerate(lines, 1):
+                for m in rx.findall(ln):
+                    hits.setdefault(m, []).append(i)
+        else:
+            for ph in rule.get('phrases', []):
+                ls = [i for i, ln in enumerate(lines, 1) if ph in ln]
+                if ls:
+                    hits[ph] = ls
+        over = {k: v for k, v in hits.items() if len(v) > max_n}
+        if over:
+            top = sorted(over.items(), key=lambda x: -len(x[1]))[:4]
+            detail = '；'.join('%s×%d（行 %s）' % (
+                k, len(v), ','.join(str(x) for x in v[:10]) + ('…' if len(v) > 10 else ''))
+                for k, v in top)
+            res['warns'].append(
+                '排版重复·%s 超限（阈值 %d）：%s。%s'
+                % (rule['label'], max_n, detail, rule.get('hint', '')))
+
+    # --- 结构性双写：字段表 ↔ 关键位表
+    st = rules.get('structural')
+    if st:
+        has_field = bool(re.search(st['field_row'], text))
+        has_level = bool(re.search(st['level_section'], text))
+        if has_field and has_level:
+            res['warns'].append('排版重复·%s：%s' % (st['label'], st.get('hint', '')))
+
+
 def check(path):
     tier = detect_tier(os.path.basename(path))
     res = {'path': path, 'tier': tier, 'errors': [], 'warns': []}
@@ -193,6 +246,9 @@ def check(path):
 
     # 5) 块内部子内容校验（防止「块标题在、内部核心子内容缺失」）
     _sub_required_check(text, pos, res)
+
+    # 6) 排版重复检查（信息原子唯一落地，2026-09-16 维护新增）
+    _dup_check(text, res)
 
     return res
 
