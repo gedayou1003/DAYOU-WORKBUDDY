@@ -37,6 +37,10 @@ _*.log
 .workbuddy/_*.log
 .workbuddy/_*_log.txt
 .workbuddy/_*_digest.txt
+.workbuddy/_*_digest_*.txt
+.workbuddy/_tech_*.json
+.workbuddy/_tj_raw_*.txt
+.workbuddy/_recon*.log
 
 # ===== 系统文件 =====
 .DS_Store
