@@ -129,7 +129,7 @@
 
 ### 16. tj_bypass 落地 + 9/2 收盘复盘（2026-09-02）
 - **`forecast_analyze.py` 新增 `tj_bypass` 旁路字段**：把回测验证的两短线信号（持续极强→不追高、解除极弱→超跌反弹）落地为数据包标注，只标注绝不进 v5 方向打分；用腾讯 fqkline 拉 60 根日线实时算 MA20/MA55 状态机。**顺带修掉预判入口此前从未跑通的 3 个叠加 bug**：①`load_chain()` 假设 forecast_chain.json 是 dict 实际是 list（32 条）②`mechanical_review()` 假设 support/resistance 是数字实际是 dict，加 `_num()` 提取 primary ③`import` 补 `urllib.request`。
-- **新增收盘复盘脚本 `review_close_YYYY-MM-DD.py`（可复用）**：把 pending 预判转 verified + 写 review（四维 verdict + bias_type + actual OHLC）+ 程序化重算偏差统计。复盘数据源：全天用 `get_daily_ohlc.py`，午后时段用腾讯 `minute/query` 接口（noon 预判针对"午后~收盘"需分时拆高低点）。
+- **【已归档·2026-09-16】收盘复盘脚本 `review_close_YYYY-MM-DD.py`（可复用）**：把 pending 预判转 verified + 写 review（四维 verdict + bias_type + actual OHLC）+ 程序化重算偏差统计。复盘数据源：全天用 `get_daily_ohlc.py`，午后时段用腾讯 `minute/query` 接口（noon 预判针对"午后~收盘"需分时拆高低点）。**现由 `chain_apply.py --payload` 统一取代，勿再新建此类脚本。**
 - **9/2 复盘结果（两条满分）**：morning（震荡偏空 v5 -2）+ noon（震荡偏弱 v5 -1）双双四维全 ✅。T&J 判断连中三元（昨夜"有效跌破15F中轨→回踩60F55" + 盘中10:46"反抽必过15F55否则60F下跌"全部兑现），60F55(3931) 分水岭连续两日精准（9/1 未触及 + 9/2 低点 3932.25 差 1.25 点）。**32 期偏差统计：方向 46.9% / 区间 46.9% / 支撑 68.8% / 压力 56.2%**——支撑/压力仍是最稳两维，再次印证「关键位工具」定位。
 
 ### 17. 9/3 晨报（2026-09-03）
@@ -159,7 +159,7 @@
 ### 19. 数据完整性审计 + 修复（2026-09-04）
 - **命名规则统一**：`forecast_chain` 的 id 规则 = `{created日期}-{档位}`（档位 morning/intraday/noon/close）。历史 3 条 id 用了 target 日期已改回：`8/28-close`(created 8/27)→`8/27-close`、`8/31-close`(created 8/28)→`8/28-close`、`9/1-close`(created 8/31)→`8/31-close`。
 - **actual 字段规范**：旧版 `pct` 统一为 `pct_chg`；`date` 字段必填（=target 交易日）；6 条历史无 actual 的已回填真实 OHLC（腾讯 fqkline）。补录遗漏的 `9/1-noon`（四维 4✅）。
-- **新增防再漏工具**：`check_integrity.py`（比对交易日 vs T&J归档/forecast档位/consensus时效/actual字段，每次抓取后跑一次）+ `append_consensus.py`（consensus_chain 通用追加，幂等）。
+- **新增防再漏工具**：`check_integrity.py`（比对交易日 vs T&J归档/forecast档位/consensus时效/actual字段，每次抓取后跑一次；**【3】档位覆盖偏薄属固定噪声、【1】T&J 缺档需人工确认**）+ `append_consensus.py`（**已于 2026-09-16 归档，由 `chain_apply.py` 取代**）。
 - **consensus_chain 停更期**：2026-08-28~09-04 未维护（共识只写在报告第二块），已恢复机制；历史缺口不硬补（语义判断不可自动化）。
 - **T&J 归档已确认缺 4 天（8/24/8/28/8/31/9/1）且 raw 已滚动覆盖、无法恢复**——教训：zsxq_fetch_raw.json 是滚动覆盖，T&J 归档必须当日做，否则原文永久丢失。
 - **偏差统计重算 36 期**（补录 noon 后 +1）：方向 50.0% / 区间 44.4% / 支撑 66.7% / 压力 58.3%。

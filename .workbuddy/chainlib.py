@@ -20,6 +20,15 @@
 """
 import json, os, sys, io
 
+# 控制台编码加固（2026-09-16 巡检补丁）：Windows cmd 默认 cp936，无法编码 ✅/⚠️/❌，
+# 直接 print 会 UnicodeEncodeError 崩溃（chainlib 自检 / chain_apply --bias-only 都中过）。
+# errors='replace' 保证不崩（中文正常显示，无法表示的符号降级为 ?）；表格另有 ascii_safe 兜底。
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(errors='replace')
+    except Exception:
+        pass
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # 允许用环境变量重定向链目录（供自测/沙箱验证用，正常运行不设即可）
@@ -29,6 +38,30 @@ FORECAST = os.path.join(CHAIN_DIR, 'forecast_chain.json')
 CONSENSUS = os.path.join(CHAIN_DIR, 'consensus_chain.json')
 
 CHAINS = {'forecast': FORECAST, 'consensus': CONSENSUS}
+
+
+# ---------------------------------------------------------------- 控制台符号
+
+def _emoji_ok():
+    """当前 stdout 能否编码三态 emoji（cp936 控制台不能）"""
+    enc = getattr(sys.stdout, 'encoding', None) or 'utf-8'
+    try:
+        '\u2705\u26a0\ufe0f\u274c'.encode(enc)
+        return True
+    except Exception:
+        return False
+
+
+_SYM = {'hit': '\u2705', 'partial': '\u26a0\ufe0f', 'miss': '\u274c',
+        'ok': '\u2705', 'bad': '\u274c', 'warn': '\u26a0\ufe0f'}
+_SYM_ASCII = {'hit': '[O]', 'partial': '[~]', 'miss': '[X]',
+              'ok': '[OK]', 'bad': '[FAIL]', 'warn': '[WARN]'}
+
+
+def sym(kind):
+    """三态/状态符号：控制台不支持 emoji 时自动降级为 ASCII，避免打印崩溃"""
+    tbl = _SYM if _emoji_ok() else _SYM_ASCII
+    return tbl.get(kind, '')
 
 
 # ---------------------------------------------------------------- 读写
@@ -70,8 +103,47 @@ def status_of(name, rid):
 
 # ---------------------------------------------------------------- 变更
 
-def apply_review(recs, rid, review, verified_at=None):
+VERDICT_DIMS = ('direction', 'range', 'support', 'resistance')
+# apply_review 校验未通过时 msg 的固定前缀，供调用方判定是否应非零退出
+REJECT_PREFIX = '[拒绝]'
+# 模板占位符标记：值里含此标记即视为「尚未填写」，
+# 使 --init-template 既能用哨兵提示该填什么，又仍会被空壳校验拦下
+PLACEHOLDER_MARK = '<<<'
+
+
+def _is_unfilled(v):
+    """非空字符串且不含占位符标记，才算真的填了"""
+    return not (isinstance(v, str) and v.strip() and PLACEHOLDER_MARK not in v)
+
+
+def review_is_blank(review):
+    """判断 review 是否为「空壳」（模板占位 / 忘填）。
+
+    空壳判定：四个维度判定全部为空，且 actual 无有效 close。
+    这正是 `--init-template` 直接产出的形态。若放行，会把上一条 pending 误标为
+    verified（四维 verdict 全空、actual.close=0），而幂等规则又使其**永久无法修正**
+    （再提交只会打印「已有 review，幂等，不覆盖」），只能手改 JSON。
+    """
+    if not isinstance(review, dict):
+        return True
+    filled = 0
+    for d in VERDICT_DIMS:
+        v = review.get(d + '_verdict')
+        if v is None:
+            v = review.get(d)
+        if not _is_unfilled(v):
+            filled += 1
+    actual = review.get('actual')
+    has_close = bool(actual.get('close')) if isinstance(actual, dict) else False
+    return filled == 0 and not has_close
+
+
+def apply_review(recs, rid, review, verified_at=None, strict=True):
     """给某条记录写 review 并转 verified。幂等：已有 review 则跳过。
+
+    strict=True（默认）时拒绝「空壳 review」：四维判定全空且无 actual.close 一律不写，
+    返回 msg 以 '[拒绝]' 开头，调用方应据此非零退出。这是 2026-09-16 巡检发现的
+    「模板忘填 → 上一条被误标 verified → 回读断言还报绿」陷阱的修复。
 
     返回 (changed: bool, msg: str)
     """
@@ -80,6 +152,11 @@ def apply_review(recs, rid, review, verified_at=None):
         return False, f'[跳过] 未找到 {rid}'
     if r.get('review'):
         return False, f'[跳过] {rid} 已有 review（幂等，不覆盖）'
+    if strict and review_is_blank(review):
+        return False, (
+            f'{REJECT_PREFIX} {rid} 的 review 是空壳（四维判定全空、actual.close 缺失），已拒绝写入。'
+            f'请先填写 {" / ".join(d + "_verdict" for d in VERDICT_DIMS)} 与 actual，'
+            f'否则该条会被误标 verified 且因幂等无法再修正。')
     r['review'] = review
     r['status'] = 'verified'
     if verified_at:
@@ -89,16 +166,28 @@ def apply_review(recs, rid, review, verified_at=None):
     return True, f'[复盘] {rid} 已写 review，status -> verified'
 
 
+def record_has_placeholder(record):
+    """record 的定调字段里是否残留模板占位符（说明忘改模板就提交了）"""
+    for k in ('direction', 'range', 'confidence'):
+        v = record.get(k)
+        if isinstance(v, str) and PLACEHOLDER_MARK in v:
+            return True
+    return False
+
+
 def upsert_pending(recs, record):
     """追加一条 pending 记录。幂等：id 已存在则跳过。
 
-    返回 (changed: bool, msg: str)
+    返回 (changed: bool, msg: str)；msg 以 REJECT_PREFIX 开头表示被拒。
     """
     rid = record.get('id')
     if not rid:
         return False, '[跳过] record 缺 id 字段'
     if find(recs, rid) is not None:
         return False, f'[跳过] {rid} 已存在（幂等）'
+    if record_has_placeholder(record):
+        return False, (f'{REJECT_PREFIX} {rid} 的 direction/range/confidence 仍含模板占位符 '
+                       f'（{PLACEHOLDER_MARK}），已拒绝写入。请改为实填内容。')
     record.setdefault('status', 'pending')
     recs.append(record)
     return True, f'[追加] {rid} 已写入，status={record["status"]}'
@@ -141,10 +230,18 @@ def bias_stats(name='forecast', dims=None):
     return out
 
 
-def render_bias_table(stats):
-    """渲染偏差统计 Markdown 表（供报告直接粘贴）"""
+def render_bias_table(stats, ascii_safe=None):
+    """渲染偏差统计 Markdown 表（供报告直接粘贴）
+
+    ascii_safe=None 时按当前 stdout 能力自动判定：cp936 控制台自动降级为
+    [O]/[~]/[X]，避免 UnicodeEncodeError（报告文件仍应写完整 emoji，
+    程序化写文件时显式传 ascii_safe=False）。
+    """
+    if ascii_safe is None:
+        ascii_safe = not _emoji_ok()
+    sh, sp, sm = ('[O]', '[~]', '[X]') if ascii_safe else ('\u2705', '\u26a0\ufe0f', '\u274c')
     label = {'direction': '方向', 'range': '区间', 'support': '支撑', 'resistance': '压力'}
-    lines = ['| 维度 | ✅ 命中 | ⚠️ 部分 | ❌ 失效 | 纯命中率 | 含部分口径 |',
+    lines = ['| 维度 | %s 命中 | %s 部分 | %s 失效 | 纯命中率 | 含部分口径 |' % (sh, sp, sm),
              '|---|---|---|---|---|---|']
     d = stats['dims']
     for k in ['direction', 'range', 'support', 'resistance']:
@@ -184,10 +281,10 @@ def assert_status(name, expectations):
     for rid, want in expectations.items():
         got = status_of(name, rid)
         if got == want:
-            msgs.append('[回读✓] %s status=%s' % (rid, got))
+            msgs.append('[回读OK] %s status=%s' % (rid, got))
         else:
             ok = False
-            msgs.append('[回读✗] %s 期望 status=%s，实际=%s（落盘失败！）' % (rid, want, got))
+            msgs.append('[回读FAIL] %s 期望 status=%s，实际=%s（落盘失败！）' % (rid, want, got))
     return ok, msgs
 
 

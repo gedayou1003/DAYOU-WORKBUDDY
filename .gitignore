@@ -46,6 +46,8 @@ _*.log
 .workbuddy/_*.py
 # OHLC 取数缓存（当日有效，各自演化）
 .workbuddy/_ohlc_cache/
+# 链操作 payload（每期临时生成，含当日数据）
+.workbuddy/payload_*.json
 # 链回滚快照（数据链本身不同步，快照也仅留本机）
 .workbuddy/archive/backup_*/
 

@@ -45,10 +45,10 @@ import chainlib as CL
 
 
 def _apply_section(chain_name, section, dry_run=False):
-    """处理一条链的 review + record，返回 (changed, msgs, expects)"""
-    msgs, expects = [], {}
+    """处理一条链的 review + record，返回 (changed, msgs, expects, errors)"""
+    msgs, expects, errors = [], {}, {}
     if not section:
-        return False, msgs, expects
+        return False, msgs, expects, errors
 
     recs, is_dict = CL.load(chain_name)
     changed = False
@@ -76,7 +76,9 @@ def _apply_section(chain_name, section, dry_run=False):
         c, m = CL.apply_review(recs, rid, rv.get('review'), rv.get('verified_at'))
         changed |= c
         msgs.append(m)
-        if c:
+        if m.startswith(CL.REJECT_PREFIX):
+            errors[rid] = m
+        elif c:
             expects[rid] = 'verified'
 
     # 3) 追加本期
@@ -85,12 +87,14 @@ def _apply_section(chain_name, section, dry_run=False):
         c, m = CL.upsert_pending(recs, rec)
         changed |= c
         msgs.append(m)
-        if c:
+        if m.startswith(CL.REJECT_PREFIX):
+            errors[rec.get('id') or '<record 缺 id>'] = m
+        elif c:
             expects[rec['id']] = 'pending'
 
     if changed and not dry_run:
         CL.save(chain_name, recs, is_dict)
-    return changed, msgs, expects
+    return changed, msgs, expects, errors
 
 
 def main():
@@ -105,27 +109,42 @@ def main():
     # ---- 模板生成
     if args.init_template:
         tier, date = args.init_template
+        # 预填「上一条」id：取该链最后一条。原先留 'YYYY-MM-DD-<tier>' 字面量，
+        # 与已填好的 record.id 不一致，极易忘改（2026-09-16 巡检修复）。
+        prev_ids = {}
+        for n in ('forecast', 'consensus'):
+            try:
+                recs, _ = CL.load(n)
+                prev_ids[n] = recs[-1].get('id') if recs else ''
+            except Exception:
+                prev_ids[n] = ''
+        S = CL.PLACEHOLDER_MARK + ' 必填'
         tpl = {
             'forecast': {
-                'validate_prev': 'YYYY-MM-DD-<tier>',
-                'review': {'id': 'YYYY-MM-DD-<tier>',
+                'validate_prev': prev_ids['forecast'],
+                'review': {'id': prev_ids['forecast'],
                            'review': {'reviewed_at': f'{date} HH:MM（复盘）',
                                       'actual': {'date': '', 'open': 0, 'high': 0, 'low': 0,
                                                  'close': 0, 'pct_chg': 0, 'prev_close': 0, 'note': ''},
-                                      'direction_verdict': '', 'range_verdict': '',
-                                      'support_verdict': '', 'resistance_verdict': '',
+                                      'direction_verdict': f'{S}：✅/⚠️/❌ + 说明',
+                                      'range_verdict': f'{S}：✅/⚠️/❌ + 说明',
+                                      'support_verdict': f'{S}：✅/⚠️/❌ + 说明',
+                                      'resistance_verdict': f'{S}：✅/⚠️/❌ + 说明',
                                       'bias_type': [], 'foreseeable': '', 'foresee_reason': '', 'note': ''}},
                 'record': {'id': f'{date}-{tier}', 'report_type': '', 'created_at': f'{date} HH:MM',
-                           'target': '', 'code': '000001', 'direction': '', 'range': '',
+                           'target': '', 'code': '000001',
+                           'direction': f'{S}：偏多/偏空/震荡',
+                           'range': f'{S}：下沿~上沿',
                            'support': {'primary': 0, 'primary_basis': ''},
                            'support_basis': '', 'resistance': {'primary': 0, 'primary_basis': ''},
-                           'resistance_basis': '', 'confidence': '', 'evidence': {},
-                           'summary': '', 'scenario': {}, 'macd_factor': '',
+                           'resistance_basis': '', 'confidence': f'{S}：高/中/低',
+                           'evidence': {}, 'summary': '', 'scenario': {}, 'macd_factor': '',
                            'reversal_discipline': '', 'levels': {}, 'status': 'pending'}
             },
             'consensus': {
-                'validate_prev': 'YYYY-MM-DD-<tier>',
-                'review': {'id': 'YYYY-MM-DD-<tier>', 'review': {'review_time': '', 'items': []}},
+                'validate_prev': prev_ids['consensus'],
+                'review': {'id': prev_ids['consensus'],
+                           'review': {'review_time': '', 'items': []}},
                 'record': {'id': f'{date}-{tier}', 'report_type': '', 'created_at': f'{date} HH:MM',
                            'window': '', 'consensus': [], 'opposing': []}
             },
@@ -134,6 +153,9 @@ def main():
         p = os.path.join(CL.HERE, f'payload_{date}_{tier}.json')
         CL.write_json(p, tpl)
         print('模板已生成:', p)
+        print(f'  已预填 validate_prev / review.id = {prev_ids["forecast"]}（forecast 链最后一条）')
+        print(f'  所有「{S}」标记处必须替换为实填内容。')
+        print(f'  残留占位符或四维判定全空 → 会被空壳校验拒绝并以退出码 2 结束（不会污染链）。')
         print('填好后执行: python .workbuddy/chain_apply.py --payload', p)
         return 0
 
@@ -150,11 +172,12 @@ def main():
         ap.print_help()
         return 1
     if not os.path.exists(args.payload):
-        print(f'❌ payload 不存在: {args.payload}')
+        print(f'{CL.sym("bad")} payload 不存在: {args.payload}')
         return 1
 
     payload = CL.read_payload(args.payload)
     all_expects = {}
+    all_errors = {}
     any_changed = False
 
     for chain_name in ('forecast', 'consensus'):
@@ -162,10 +185,11 @@ def main():
         if not section:
             continue
         print(f'--- {chain_name} ---')
-        changed, msgs, expects = _apply_section(chain_name, section, args.dry_run)
+        changed, msgs, expects, errors = _apply_section(chain_name, section, args.dry_run)
         for m in msgs:
             print(' ', m)
         all_expects[chain_name] = expects
+        all_errors.update(errors)
         any_changed |= changed
         print()
 
@@ -193,7 +217,7 @@ def main():
             pc = CL.count_pending(n)
             line = f'  {n}: pending={pc}'
             if pc > 1:
-                line += '  ⚠️ pending > 1，检查是否漏复盘上一条'
+                line += '  %s pending > 1，检查是否漏复盘上一条' % CL.sym('warn')
             print(line)
 
     # ---- 链状态
@@ -213,8 +237,13 @@ def main():
             CL.write_json(wp, st)
             print('\n已写出:', wp)
 
-    if not ok_all:
-        print('\n❌ 回读断言失败：有记录未按预期落盘，请检查！')
+    if all_errors or not ok_all:
+        print()
+        if all_errors:
+            print('%s 有 %d 条 review 被拒（空壳/校验未过），本次未完整落盘，请填完再跑。'
+                  % (CL.sym('bad'), len(all_errors)))
+        if not ok_all:
+            print('%s 回读断言失败：有记录未按预期落盘，请检查！' % CL.sym('bad'))
         return 2
     return 0
 
