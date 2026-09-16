@@ -44,6 +44,8 @@ _*.log
 .workbuddy/_audit*
 # 维护/体检类临时脚本（一次性，跑完即弃）
 .workbuddy/_*.py
+# 回归测试沙箱（临时链副本，不入库）
+.workbuddy/_test_sandbox/
 # OHLC 取数缓存（当日有效，各自演化）
 .workbuddy/_ohlc_cache/
 # 链操作 payload（每期临时生成，含当日数据）

@@ -122,5 +122,10 @@ for n in ('forecast', 'consensus'):
     p = sum(1 for x in recs if x.get('status') == 'pending')
     print(f'   {n}: 总 {len(recs)} | verified {v} | pending {p}')
 
-shutil.rmtree(SB, ignore_errors=True)
-print('\n(沙箱已清理)')
+try:
+    shutil.rmtree(SB)
+    print('\n(沙箱已清理)')
+except FileNotFoundError:
+    print('\n(沙箱已清理)')
+except Exception as e:
+    print('\n(沙箱清理失败：%s —— 可手动删除 %s)' % (e, SB))
