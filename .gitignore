@@ -41,6 +41,7 @@ _*.log
 .workbuddy/_tech_*.json
 .workbuddy/_tj_raw_*.txt
 .workbuddy/_recon*.log
+.workbuddy/_audit*
 
 # ===== 系统文件 =====
 .DS_Store
