@@ -57,15 +57,28 @@ def _apply_section(chain_name, section, dry_run=False):
     vp = section.get('validate_prev')
     if vp:
         st = CL.status_of(chain_name, vp)
+        # 本次 payload 是否就要复盘这一条？是的话 pending 属预期内，
+        # 不应再报「可能上一档脚本未落盘」（2026-09-17 修正：原先会误报，噪音淹没真告警）
+        reviewing_now = ((section.get('review') or {}).get('id') == vp)
         if st is None:
             msgs.append(f'[警告] 未找到 {vp}')
         elif st == 'verified':
             rv = (CL.find(recs, vp) or {}).get('review') or {}
-            msgs.append('[校验通过] %s 已 verified；四维：%s / %s / %s / %s' % (
-                vp, rv.get('direction_verdict') or rv.get('direction', '?'),
-                rv.get('range_verdict') or rv.get('range', '?'),
-                rv.get('support_verdict') or rv.get('support', '?'),
-                rv.get('resistance_verdict') or rv.get('resistance', '?')))
+            if ('per_topic' in rv) or ('opposite_review' in rv):
+                # 共识链 review 没有四维字段，按共识 schema 回显（否则会打出误导性的 4 个 ?）
+                pt = rv.get('per_topic') or []
+                hits = sum(1 for it in pt if isinstance(it, dict)
+                           and str(it.get('verdict', '')).startswith('\u2705'))
+                msgs.append('[校验通过] %s 已 verified；共识复盘 %d 条（\u2705 %d 条）、对立观点复盘：%s' % (
+                    vp, len(pt), hits, (rv.get('opposite_review') or {}).get('verdict', '?')))
+            else:
+                msgs.append('[校验通过] %s 已 verified；四维：%s / %s / %s / %s' % (
+                    vp, rv.get('direction_verdict') or rv.get('direction', '?'),
+                    rv.get('range_verdict') or rv.get('range', '?'),
+                    rv.get('support_verdict') or rv.get('support', '?'),
+                    rv.get('resistance_verdict') or rv.get('resistance', '?')))
+        elif reviewing_now:
+            msgs.append(f'[待复盘] {vp} 仍为 {st}——本次 payload 已包含其 review，将在本步骤内转 verified')
         else:
             msgs.append(f'[警告] {vp} 仍为 {st}，需先复盘（可能上一档脚本未落盘）')
 
@@ -234,8 +247,25 @@ def main():
         print(CL.render_bias_table(st))
         wp = (payload.get('bias') or {}).get('write')
         if wp and not args.dry_run:
-            CL.write_json(wp, st)
-            print('\n已写出:', wp)
+            # 相对路径统一按 .workbuddy/ 解析（payload 里惯写 ".workbuddy/_bias_xxx.json"
+            # 或 "_bias_xxx.json" 两种形态）。2026-09-17 修复：原先直接按 cwd 解析，
+            # 从 .workbuddy 内执行时会变成 .workbuddy/.workbuddy/... 而 FileNotFound 崩掉；
+            # 且崩溃发生在链已成功落盘之后，导致退出码 1 误导为「链没写成功」。
+            try:
+                wp2 = wp
+                if not os.path.isabs(wp2):
+                    norm = wp2.replace('\\', '/')
+                    if norm.startswith('.workbuddy/'):
+                        norm = norm[len('.workbuddy/'):]
+                    wp2 = os.path.join(CL.HERE, norm)
+                d = os.path.dirname(wp2)
+                if d:
+                    os.makedirs(d, exist_ok=True)
+                CL.write_json(wp2, st)
+                print('\n已写出:', wp2)
+            except Exception as e:
+                # 附属统计文件写失败不应污染「链是否落盘」的判定，降级为警告
+                print('\n%s 偏差统计文件写出失败（不影响链落盘）：%r' % (CL.sym('warn'), e))
 
     if all_errors or not ok_all:
         print()

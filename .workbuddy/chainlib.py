@@ -116,16 +116,48 @@ def _is_unfilled(v):
     return not (isinstance(v, str) and v.strip() and PLACEHOLDER_MARK not in v)
 
 
+def _consensus_review_is_blank(review):
+    """共识链（consensus）review 的空壳判定。
+
+    共识链 review 的 schema 与 forecast 完全不同：它用 `per_topic`（逐条观点的
+    兑现判定）+ `opposite_review`（对立观点/剧本复盘）承载内容，根本没有
+    `direction_verdict` 之类的四维字段、也没有 `actual`。有效标志是：
+    per_topic 里至少有一条 verdict 实填，或 opposite_review.verdict 实填。
+    """
+    pt = review.get('per_topic')
+    if isinstance(pt, list):
+        for it in pt:
+            if isinstance(it, dict) and not _is_unfilled(it.get('verdict')):
+                return False
+    orv = review.get('opposite_review')
+    if isinstance(orv, dict) and not _is_unfilled(orv.get('verdict')):
+        return False
+    # 兼容 --init-template 生成的早期形态 {review_time, items:[...]}
+    items = review.get('items')
+    if isinstance(items, list):
+        for it in items:
+            if isinstance(it, dict) and not _is_unfilled(it.get('verdict')):
+                return False
+    return True
+
+
 def review_is_blank(review):
     """判断 review 是否为「空壳」（模板占位 / 忘填）。
 
-    空壳判定：四个维度判定全部为空，且 actual 无有效 close。
+    forecast 链空壳判定：四个维度判定全部为空，且 actual 无有效 close。
     这正是 `--init-template` 直接产出的形态。若放行，会把上一条 pending 误标为
     verified（四维 verdict 全空、actual.close=0），而幂等规则又使其**永久无法修正**
     （再提交只会打印「已有 review，幂等，不覆盖」），只能手改 JSON。
+
+    2026-09-17 修复：本函数原先只按 forecast schema 判定，而 `chain_apply.py`
+    对 consensus 链调用同一个 `apply_review`，导致**共识链 review 一律被判空壳而拒写**
+    （共识链 review 里既没有 *_verdict 四维字段、也没有 actual，必然命中空壳条件）。
+    现按 schema 分派：含 per_topic / opposite_review / items 的走共识链判定。
     """
     if not isinstance(review, dict):
         return True
+    if ('per_topic' in review) or ('opposite_review' in review) or ('items' in review):
+        return _consensus_review_is_blank(review)
     filled = 0
     for d in VERDICT_DIMS:
         v = review.get(d + '_verdict')
@@ -153,10 +185,18 @@ def apply_review(recs, rid, review, verified_at=None, strict=True):
     if r.get('review'):
         return False, f'[跳过] {rid} 已有 review（幂等，不覆盖）'
     if strict and review_is_blank(review):
+        # 按 schema 给出对应的填写指引（共识链没有四维字段，照抄 forecast 的文案会误导）
+        is_consensus = isinstance(review, dict) and (
+            ('per_topic' in review) or ('opposite_review' in review) or ('items' in review))
+        if is_consensus:
+            hint = ('请先在 per_topic 中填入至少一条 verdict（✅/⚠️/❌ + 说明），'
+                    '或填入 opposite_review.verdict（对立观点/剧本复盘结论）')
+        else:
+            hint = ('请先填写 %s 与 actual'
+                    % ' / '.join(d + '_verdict' for d in VERDICT_DIMS))
         return False, (
-            f'{REJECT_PREFIX} {rid} 的 review 是空壳（四维判定全空、actual.close 缺失），已拒绝写入。'
-            f'请先填写 {" / ".join(d + "_verdict" for d in VERDICT_DIMS)} 与 actual，'
-            f'否则该条会被误标 verified 且因幂等无法再修正。')
+            f'{REJECT_PREFIX} {rid} 的 review 是空壳（未填任何实质判定），已拒绝写入。'
+            f'{hint}，否则该条会被误标 verified 且因幂等无法再修正。')
     r['review'] = review
     r['status'] = 'verified'
     if verified_at:
