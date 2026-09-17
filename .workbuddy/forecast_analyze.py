@@ -237,17 +237,67 @@ def build_gap_context(ohlc, prev):
     return ctx
 
 
-def run_engine(code):
-    out = run_py(os.path.join(CHAN_DIR, 'run_000001_chansignal.py'), '--code', code)
-    # 从输出中找 JSON 路径
-    json_path = None
-    for line in out.split('\n'):
-        if 'chansignal.json' in line and '已保存' in line:
-            json_path = line.split('已保存:')[-1].strip()
-    if json_path and os.path.exists(json_path):
-        with open(json_path, encoding='utf-8') as f:
-            return json.load(f)
+def _engine_json_path(code):
+    """推算 chan-signal 引擎的 JSON 产物路径。
+
+    引擎固定写到 `<技能目录>/output/<CODE>_<YYYYMMDD>_chansignal.json`（见
+    `run_000001_chansignal.py` 的 `out = os.path.join(HERE, 'output', ...)`），
+    路径**完全可推算**，不需要问 stdout。
+
+    旧实现靠解析 stdout 里的「已保存:」文案取路径 —— 引擎改一句日志文案、
+    或改成别的措辞，就静默返回 None，预判数据包会缺掉整块引擎结果而无人察觉
+    （脚本地图 §四 待办 #8）。2026-09-17 改为直接推算 + 目录兜底。
+    """
+    day = datetime.datetime.now().strftime('%Y%m%d')
+    std = code
+    try:
+        info = resolve(code)
+        if info:
+            std = info['code']
+    except Exception:
+        pass
+    d = os.path.join(CHAN_DIR, 'output')
+    exact = os.path.join(d, '%s_%s_chansignal.json' % (std, day))
+    if os.path.exists(exact):
+        return exact
+    # 兜底：注册表解析结果与引擎内部不一致时，按 CODE 片段取当日最新一份
+    if os.path.isdir(d):
+        cands = [os.path.join(d, f) for f in os.listdir(d)
+                 if f.endswith('_chansignal.json') and ('_%s_' % std) in f]
+        if cands:
+            return max(cands, key=os.path.getmtime)
     return None
+
+
+def run_engine(code):
+    """跑 chan-signal 引擎并读回 JSON。返回 (data, error)。
+
+    **读不到数据时必须显式报错**：旧实现在「引擎崩溃」和「文案变了」两种情况下
+    都静默返回 None，调用方拿到 engine=None 却无从判断原因。
+    另：以 `cwd=CHAN_DIR` 启动，消除引擎对工作目录的隐式依赖
+    （脚本地图 §四 待办 #10：在项目根跑会报 `[Errno 2] No such file`，
+    而文件其实存在，报错误导）。
+    """
+    try:
+        r = subprocess.run([PY, os.path.join(CHAN_DIR, 'run_000001_chansignal.py'),
+                            '--code', code],
+                           capture_output=True, text=True, encoding='utf-8',
+                           errors='replace', cwd=CHAN_DIR)
+    except Exception as e:
+        return None, '引擎启动失败：%r' % e
+    if r.returncode != 0:
+        tail = (r.stderr or r.stdout or '')[-300:].replace('\n', ' ')
+        return None, '引擎退出码 %d：%s' % (r.returncode, tail)
+    p = _engine_json_path(code)
+    if not p:
+        return None, ('引擎已正常退出，但推算不到 JSON 产物 —— 检查 %s/output/ 下'
+                      '是否有当日 %s 文件（引擎输出路径约定可能已变更）'
+                      % (os.path.basename(CHAN_DIR), code))
+    try:
+        with open(p, encoding='utf-8') as f:
+            return json.load(f), None
+    except Exception as e:
+        return None, '引擎 JSON 解析失败（%s）：%r' % (p, e)
 
 
 def load_chain():
@@ -291,7 +341,12 @@ def main():
 
     # 2. 引擎（可跳过）
     if not skip_engine:
-        result['engine'] = run_engine(std_code)
+        eng, eng_err = run_engine(std_code)
+        result['engine'] = eng
+        if eng_err:
+            # 显式报错而非静默 None：调用方/AI 需知道「引擎没跑出来」还是「引擎没信号」
+            result['engine_error'] = eng_err
+            print('⚠️ 引擎未取到数据：%s' % eng_err, file=sys.stderr)
 
     # 3. 预判链：读该标的最后一条 pending
     chain = load_chain()

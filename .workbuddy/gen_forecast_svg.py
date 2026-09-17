@@ -2,8 +2,11 @@
 """条件触发决策路径图 SVG：当日实况形态 + 震荡区间带 + 上下两个变盘点（三态：震荡/突破/跌破）。
 红涨绿跌。y 轴铁律：y = 底部 - (价格-最低)/价差*图高。
 
-参数化：从 forecast_chain.json 最新 pending 预判的 `levels` 字段读关键位/信号/概率；
-已走路径 OHLC 从最新 verified 记录的 review.actual 读；缺失回退 DEFAULT。
+数据来源（**缺数据即报错，不回退**，2026-09-17 加固）：
+  - 关键位/信号/概率：forecast_chain.json 最新 pending 预判的 `levels` 字段
+  - 已走路径 OHLC：最新 verified 记录的 `review.actual`
+  ⚠️ 旧版在两者任一缺失时**静默回退到写死的 2026-08-31 数据** —— 会把 8/31 的
+     走势图塞进 9 月的报告，且只打印一行 `SVG written` 看不出异常。已彻底移除。
 
 三态结构（弃用旧的"二分支要么涨要么跌"）：
 1) 核心震荡带（down_support ~ decision）浅色填充，现价在带内
@@ -11,46 +14,68 @@
 3) 上沿决策位（decision）→ 突破路径（红，向上到 up_target），线宽随 prob.up
 4) 下沿决策位（down_support）→ 跌破路径（绿，向下到 down_lower），线宽随 prob.down
 另：当日实况形态（上影线/下影线判断）+ 假突破标注 + 当日关键信号。
+
+用法：
+    python gen_forecast_svg.py                    # 用最新 pending 记录
+    python gen_forecast_svg.py --pred 2026-09-17-morning   # 指定记录重绘历史图
+    python gen_forecast_svg.py --out <路径.svg>   # 指定输出（默认 outputs/000001_forecast_<date>.svg）
 """
-import json, os
+import argparse
+import json
+import os
+import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CHAIN = os.path.join(HERE, 'forecast_chain.json')
 
-# 回退默认值（8/31）
-DEFAULT_LEVELS = {
-    'date': '2026-08-31',
-    'now': 3952.18,
-    'decision': {'price': 3968.48, 'label': '上沿·假突破失败位'},
-    'up_target': {'price': 4034.08, 'label': '周线中枢上沿'},
-    'down_support': {'price': 3927.85, 'label': '下沿·周线一买三共振'},
-    'down_lower': {'price': 3909.79, 'label': '15F三买'},
-    'signals': ['3970 假突破 3968 失败', '周线转弱（向上→向下）', '15F 极度收口·变盘在即'],
-    'prob': {'up': 0.25, 'range': 0.45, 'down': 0.30},
-}
-DEFAULT_ACTUAL = {'open': 3950.24, 'high': 3970.31, 'low': 3947.80, 'close': 3952.18}
 
+def load_data(pred_id=None):
+    """读取绘图数据。返回 (levels, actual_ohlc, pred_id)。
 
-def load_data():
-    """返回 (levels, actual_ohlc, pred_id)。读不到就用 DEFAULT。"""
-    lv, act, rid = dict(DEFAULT_LEVELS), dict(DEFAULT_ACTUAL), None
+    ⚠️ 2026-09-17 加固：原实现在读不到数据时**静默回退到写死的 2026-08-31 数据**
+    （DEFAULT_LEVELS / DEFAULT_ACTUAL）。后果比崩溃严重得多 —— 链上没有可用 pending 时，
+    9 月的报告会被塞进一张 **8/31 的走势图**：图看着正常、四个价位全错、
+    而调用方只看到一行 `SVG written` 便以为成功。
+    现改为缺数据即明确报错退出（非零），不再渲染任何陈旧数据；
+    需要重绘历史图时用 `--pred <id>` 显式指定记录。
+    """
     try:
-        chain = json.load(open(CHAIN, encoding='utf-8'))
-    except Exception:
-        return lv, act, rid
-    pend = [r for r in chain if r.get('status') == 'pending']
-    if pend:
+        with open(CHAIN, encoding='utf-8') as f:
+            chain = json.load(f)
+    except Exception as e:
+        raise SystemExit('[FAIL] 无法读取预判链 %s：%r' % (CHAIN, e))
+
+    if pred_id:
+        cand = [r for r in chain if r.get('id') == pred_id]
+        if not cand:
+            raise SystemExit('[FAIL] 链中找不到记录 id=%s' % pred_id)
+        p = cand[0]
+    else:
+        pend = [r for r in chain if r.get('status') == 'pending']
+        if not pend:
+            raise SystemExit(
+                '[FAIL] 预判链中没有任何 pending 记录，无法确定本期预判。\n'
+                '       请先跑 chain_apply 落链（追本期预判），或用 --pred <id> 指定历史记录重绘。')
         p = pend[-1]
-        rid = p.get('id')
-        if isinstance(p.get('levels'), dict):
-            need = ['now', 'decision', 'up_target', 'down_support', 'down_lower']
-            if all(k in p['levels'] for k in need):
-                lv = p['levels']
-    ver = [r for r in chain if r.get('status') == 'verified' and isinstance(r.get('review'), dict)]
-    if ver:
-        a = ver[-1]['review'].get('actual')
+
+    rid = p.get('id')
+    lv = p.get('levels')
+    need = ['now', 'decision', 'up_target', 'down_support', 'down_lower']
+    if not isinstance(lv, dict) or not all(k in lv for k in need):
+        raise SystemExit('[FAIL] %s 的 levels 不完整（需含 %s），无法绘图。'
+                         % (rid, ' / '.join(need)))
+
+    act = None
+    for r in reversed([x for x in chain
+                       if x.get('status') == 'verified' and isinstance(x.get('review'), dict)]):
+        a = r['review'].get('actual')
         if isinstance(a, dict) and all(k in a for k in ['open', 'high', 'low', 'close']):
             act = a
+            break
+    if act is None:
+        raise SystemExit('[FAIL] 链中找不到含 open/high/low/close 的 verified.review.actual，'
+                         '走势图无法叠加真实走势。\n'
+                         '       请先完成上一条的复盘（chain_apply 的 review 段）再生成图。')
     return lv, act, rid
 
 
@@ -233,12 +258,50 @@ def build_svg(lv, act, out_path):
     return len(content)
 
 
-if __name__ == '__main__':
-    lv, act, rid = load_data()
-    d = lv.get('date', '') or '2026-08-31'
-    out = os.path.join(HERE, '..', 'outputs', f'000001_forecast_{d.replace("/", "-")}.svg')
-    out = os.path.normpath(out)
+def main(argv=None):
+    ap = argparse.ArgumentParser(
+        description='生成条件触发决策路径图 SVG（当日实况形态 + 震荡区间带 + 上下两个变盘点）',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='例:\n'
+               '  python gen_forecast_svg.py\n'
+               '  python gen_forecast_svg.py --pred 2026-09-17-morning\n'
+               '  python gen_forecast_svg.py --pred 2026-09-17-morning --out /tmp/x.svg')
+    ap.add_argument('--pred', default=None, metavar='ID',
+                    help='指定预判链记录 id 重绘历史图；不给则用最新 pending 记录')
+    ap.add_argument('--out', default=None, metavar='PATH',
+                    help='输出 SVG 路径；不给则默认 outputs/000001_forecast_<date>.svg')
+    a = ap.parse_args(argv)
+
+    lv, act, rid = load_data(a.pred)
+
+    # ⚠️ 2026-09-17 加固：原为 `d = lv.get('date','') or '2026-08-31'`，
+    # 缺日期时文件名会退化成写死的 8/31。现在：给了 --out 就与 date 无关；
+    # 没给 --out 才需要 date 来推默认文件名，缺了即报错。
+    if a.out:
+        out = os.path.abspath(a.out)
+    else:
+        d = lv.get('date', '')
+        if not d:
+            raise SystemExit(
+                '[FAIL] %s 的 levels 缺少 date 字段，推不出默认输出文件名。\n'
+                '       请用 --out <路径.svg> 显式指定输出。' % rid)
+        d = str(d).replace('/', '-')
+        out = os.path.normpath(os.path.join(HERE, '..', 'outputs', '000001_forecast_%s.svg' % d))
+
+    od = os.path.dirname(out)
+    if od and not os.path.isdir(od):
+        raise SystemExit('[FAIL] 输出目录不存在：%s' % od)
+
     n = build_svg(lv, act, out)
-    print(f'SVG written, size={n} chars, pred={rid}')
-    print(f'now={lv["now"]}, band=({lv["down_support"]["price"]}~{lv["decision"]["price"]}), up={lv["up_target"]["price"]}, lower={lv["down_lower"]["price"]}')
-    print(f'signals={lv.get("signals", [])}, prob={lv.get("prob", {})}')
+    size = os.path.getsize(out)
+    print('SVG written: %s' % out)
+    print('  chars=%d bytes=%d pred=%s' % (n, size, rid))
+    print('  now=%s band=(%s~%s) up=%s lower=%s'
+          % (lv['now'], lv['down_support']['price'], lv['decision']['price'],
+             lv['up_target']['price'], lv['down_lower']['price']))
+    print('  signals=%s prob=%s' % (lv.get('signals', []), lv.get('prob', {})))
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

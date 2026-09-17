@@ -38,7 +38,7 @@ payload.json 结构（各段均可选）
 3. **pending 数守卫**：写完若 pending > 1 条，提示可能是漏复盘
 4. `--dry-run` 全流程预演，不落盘
 """
-import os, sys, json, argparse, io
+import os, sys, json, argparse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import chainlib as CL

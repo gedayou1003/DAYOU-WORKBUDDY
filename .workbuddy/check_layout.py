@@ -5,16 +5,22 @@
   1. 缺块（ERROR=required 缺失 / WARN=optional 缺失）
   2. 顺序错位（WARN）：区块出现顺序与规范不符
   3. 附录 A·B 语义（WARN）：A 应为「抓取通道」、B 应为「星球代号」，若对调则提示
-  4. 偏差期数一致性（WARN）：报告标注期数 vs forecast_chain.json verified 条数
+  4. 偏差期数一致性（**仅当日报告**判 WARN，历史报告降为 INFO）：
+     报告标注期数 vs forecast_chain.json verified 条数
   5. 块内子内容（ERROR/WARN）：如信息判断块须含「共同观点/相反观点」、预判块须内嵌走势图
   6. 排版重复（WARN，仅当日报告）：信息原子全篇复述超限 / 字段表与关键位表双写
      —— 规则见 layout_spec.DUP_RULES，对应《规范_v2》「信息原子唯一落地」
+  7. 篇幅超限（WARN，仅当日报告）：核心速览/第一块/一句话预判/剧本触发条件/纪律节数
+     —— 规则见 layout_spec.LENGTH_RULES，对应《规范_v2》3.8
+
+「仅当日报告」的口径：这三项对历史报告是快照差异（链每天前进、规范逐步收紧），
+判定它们"不达标"没有意义，只会让「0 WARN」这道闸门永久失效。历史报告一律降为 INFO。
 
 用法：
     $PY check_layout.py [报告.md ...]
     不传参数：自动扫描 outputs/ 下最新 4 档报告（晨/午/盘/复）。
 
-退出码：0=通过，1=有 ERROR，2=仅 WARN。
+退出码：0=通过，1=有 ERROR，2=仅 WARN（INFO 不影响退出码）。
 """
 import os, re, sys, json, glob
 
@@ -278,7 +284,7 @@ def _length_check(text, res):
 
 def check(path):
     tier = detect_tier(os.path.basename(path))
-    res = {'path': path, 'tier': tier, 'errors': [], 'warns': []}
+    res = {'path': path, 'tier': tier, 'errors': [], 'warns': [], 'infos': []}
     if tier is None:
         res['errors'].append('无法从文件名识别档位（需含 晨报/午间/盘中/收盘/复盘）')
         return res
@@ -329,14 +335,19 @@ def check(path):
             res['warns'].append('附录 B 语义疑似对调：应为「星球代号」，实际写成了「抓取通道」')
 
     # 4) 偏差期数一致性
+    #    仅「当日报告」判 WARN：历史报告是当时快照，链每天 +1，它必然"过时"——
+    #    原先对历史报告也报 WARN，导致每次扫描都把退出码拉到 2，
+    #    连 3 份零问题报告也一起背锅，「0 WARN」这道闸门实际永久失效（2026-09-17 修正）。
     if 'bias' in pos:
         m = re.search(r'[（(](\d+)\s*期', text)
         report_n = int(m.group(1)) if m else None
         chain_n = _verified_count()
         if report_n is not None and chain_n is not None and report_n != chain_n:
-            res['warns'].append(
-                '偏差期数过时：报告标 %d 期，链当前 %d 期（历史报告为快照属正常，当日报告需核对）'
-                % (report_n, chain_n))
+            msg = ('偏差期数：报告标 %d 期，链当前 %d 期' % (report_n, chain_n))
+            if _is_today_report(res['path']):
+                res['warns'].append(msg + '（当日报告需与链一致）')
+            else:
+                res['infos'].append(msg + '（历史报告快照，属正常）')
 
     # 5) 块内部子内容校验（防止「块标题在、内部核心子内容缺失」）
     _sub_required_check(text, pos, res)
@@ -362,6 +373,9 @@ def render(res):
             L.append('  [WARN ] %s' % w)
     if not res['errors'] and not res['warns']:
         L.append('  通过：无缺块 / 无错位 / 无语义问题')
+    # INFO 只提供上下文，不影响退出码（历史报告快照类差异都归这里）
+    for i in res.get('infos', []):
+        L.append('  [INFO ] %s' % i)
     return '\n'.join(L)
 
 
@@ -379,7 +393,7 @@ def main():
     files = sys.argv[1:]
     if not files:
         files = _latest_reports()
-    n_err = n_warn = 0
+    n_err = n_warn = n_info = 0
     for f in files:
         if not os.path.exists(f):
             print('跳过（不存在）：%s' % f)
@@ -389,7 +403,8 @@ def main():
         print()
         n_err += len(res['errors'])
         n_warn += len(res['warns'])
-    print('汇总：%d 份，ERROR %d，WARN %d' % (len(files), n_err, n_warn))
+        n_info += len(res.get('infos', []))
+    print('汇总：%d 份，ERROR %d，WARN %d，INFO %d' % (len(files), n_err, n_warn, n_info))
     sys.exit(1 if n_err else (2 if n_warn else 0))
 
 

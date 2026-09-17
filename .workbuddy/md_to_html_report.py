@@ -1,11 +1,42 @@
 # -*- coding: utf-8 -*-
 """把作战报告 md 渲染成 Editorial 风 HTML（内嵌预判走势图 SVG，解决 md 预览图不显示 + 排版拥挤）。
-用法：$PY .workbuddy/md_to_html_report.py <md路径>
-不传参数时默认 2026-08-27 演示版。"""
-import io, re, os, sys, markdown
 
-MD = sys.argv[1] if len(sys.argv) > 1 else 'outputs/作战报告_晨报_2026-08-27_行业强弱榜演示版.md'
-OUT = MD[:-3] + '.html' if MD.endswith('.md') else MD + '.html'
+用法：$PY .workbuddy/md_to_html_report.py <md路径>
+
+2026-09-17 加固（消除危险默认值 + 静默缺图）
+-------------------------------------------
+改前：**不传参数时默认渲染 `2026-08-27 行业强弱榜演示版.md`**，并把结果写回同目录同名 .html
+—— 一次手滑就把那份演示版**静默覆盖**（脚本地图 §四 待办 #9）。
+改后：不传参数直接报错退出并打印用法，不做任何默认渲染。
+
+另：md 里引用了 SVG 但文件不存在时，旧实现把占位符替换成空串 → HTML **静默少一张走势图**。
+现改为 stderr 明确告警（退出码仍为 0 —— 历史报告的图本就可能已清理，
+硬报错会让这条命令天天发假警报，与 check_layout 的「仅当日报告」口径一致）。
+"""
+import io
+import os
+import re
+import sys
+
+import markdown
+
+USAGE = '用法: python .workbuddy/md_to_html_report.py <报告.md路径>\n' \
+        '  例: python .workbuddy/md_to_html_report.py outputs/作战报告_晨报_2026-09-17.md'
+
+if len(sys.argv) < 2 or sys.argv[1] in ('-h', '--help'):
+    # 旧行为：无参数静默渲染 2026-08-27 演示版并覆盖其 .html（危险默认值），已移除。
+    sys.stderr.write(USAGE + '\n')
+    sys.exit(1)
+
+MD = sys.argv[1]
+if not os.path.exists(MD):
+    sys.stderr.write('[FAIL] 报告不存在：%s\n%s\n' % (MD, USAGE))
+    sys.exit(1)
+if not MD.endswith('.md'):
+    sys.stderr.write('[FAIL] 输入需为 .md 文件：%s\n' % MD)
+    sys.exit(1)
+
+OUT = MD[:-3] + '.html'
 
 md = io.open(MD, encoding='utf-8').read()
 
@@ -16,9 +47,9 @@ if m:
 
 # 从 md 内图片引用解析 SVG，并内嵌
 svg_inline = ''
-m = re.search(r'!\[[^\]]*\]\(([^)]*\.svg)\)', md)
-if m:
-    svg_path = os.path.normpath(os.path.join(os.path.dirname(MD), m.group(1)))
+svg_ref = re.search(r'!\[[^\]]*\]\(([^)]*\.svg)\)', md)
+if svg_ref:
+    svg_path = os.path.normpath(os.path.join(os.path.dirname(MD), svg_ref.group(1)))
     if os.path.exists(svg_path):
         svg_raw = io.open(svg_path, encoding='utf-8').read()
         # viewBox 由 gen_forecast_svg.py 统一维护（900 宽，右侧标注不裁剪），此处不再硬改
@@ -26,6 +57,14 @@ if m:
         svg_inline = svg_raw.replace(
             '<svg ', '<svg style="width:100%;height:auto;max-width:880px;display:block;margin:20px auto;" '
         )
+    else:
+        # 静默缺图是最难发现的一类问题：HTML「看起来正常」但少了整张走势图
+        sys.stderr.write('[WARN] 走势图引用存在但文件缺失，HTML 将不含走势图：%s\n'
+                         '       （md 引用：%s）\n' % (svg_path, svg_ref.group(1)))
+elif re.search(r'^\s*!\[.*?\]\(.*?\.(svg|png)\)', md, re.M):
+    sys.stderr.write('[WARN] md 引用了图片但非 .svg，本工具只内嵌 SVG，该图不会出现在 HTML 中\n')
+else:
+    sys.stderr.write('[WARN] md 内未找到走势图引用（![](*.svg)），HTML 将不含走势图\n')
 
 # 图片引用 → 占位符（转 HTML 后注入 inline svg）
 md = re.sub(r'!\[[^\]]*\]\([^)]*\.svg\)', '{{FORECAST_SVG}}', md)

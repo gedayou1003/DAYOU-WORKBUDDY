@@ -81,7 +81,12 @@ python forecast_analyze.py 000300
 3. **【中等】`run_000001_chansignal.py` HTML 面板日期硬编码 `'2026-08-14'`**：信号面板副标题写死日期，已改为动态 `{TODAY}`。
 4. **【中等】`anonymize_report.py` 硬编码 8/19 路径**：无法复用，已参数化（`python anonymize_report.py [YYYY-MM-DD]`，默认今天）。
 
-已废弃脚本（不再被定时任务调用，硬编码日期不影响运行）：`backtest_*.py`、`gen_evening_report.py`、旧 `run_000001.py`（单级别版）。
+已废弃脚本（不再被定时任务调用，硬编码日期不影响运行）：`backtest_*.py`、旧 `run_000001.py`（单级别版）。
+
+> **2026-09-17 更新**：`gen_evening_report.py` 已移出根目录 —— 它是写死 `DATE = "2026-08-17"` 的
+> 一次性生成器（36KB 硬编码正文），无任何脚本引用，已归档至 `.workbuddy/archive/hygiene_20260917/oneoff_script/`。
+> 同理归档 `gen_intraday_svg.py`（写死 9/3 盘中快照）。`backtest_*.py` 仍在根目录保留留档。
+> 根目录脚本规模与归档明细见《脚本地图.md》头部与 §〇·补3。
 
 ## 九、fetch_zsxq.py 分页 bug（2026-08-21 重跑暴露，已修复）
 

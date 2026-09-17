@@ -1,126 +1,286 @@
 # -*- coding: utf-8 -*-
-"""chain_apply 回归测试（2026-09-16 巡检新增）
+"""chain_apply 回归测试
 
-覆盖 6 组用例，全部在 _test_sandbox 沙箱内运行，不触碰真链：
-  B 空壳 review（模板哨兵） -> 应拒（退出码 2）
-  C 空壳 review（全空串）   -> 应拒（退出码 2）
-  D 正常填写                -> 应通过（退出码 0，status=verified）
-  E 占位符 record           -> 应拒（退出码 2）
-  F 重复提交                -> 幂等跳过
-  末段 真链条数校验         -> 应仍为 48/17
+v2（2026-09-17 重写）—— v1 有两个致命缺陷：
+
+  1. **日期脆弱导致假绿**：用例把待复盘的 id 写死为 `2026-09-16-morning`，同时沙箱
+     直接拷贝真链。而该条在 9/17 晨报时已被复盘成 verified，于是用例走进
+     `apply_review` 的「已有 review → 幂等跳过」分支，**空壳校验根本没被执行** ——
+     B/C 两个「应拒绝」用例静默变成「已跳过」，却仍被当成通过读过。
+  2. **期望不符仍返回 0**：脚本只打印「期望 / 实际」不做断言，无法当 gate 用。
+
+  另：ROOT 硬编码绝对路径 `C:\\Users\\gedayou\\...`，家里机器直接跑不起来。
+
+v2 改为：
+  - 沙箱内**自建合成链**，与真链状态彻底解耦，永不受链前进影响
+  - ROOT 由 `__file__` 推导
+  - 每条用例断言退出码 / 链状态 / 文件落盘，不符即 FAIL；末尾汇总，有 FAIL 则非零退出
+  - 覆盖 2026-09-17 修复的三个 BUG：**K-1** 共识链复盘路径、**K-2** bias 相对路径、
+    **K-3** validate_prev 误报
 
 用法：python .workbuddy/test_chain_apply.py
-改动 chainlib / chain_apply 后跑一遍，确认「拒得住 + 不误伤」。
+改动 chainlib / chain_apply 后必须跑一遍，确认「拒得住 + 不误伤 + 门是关的」。
 """
-import os, sys, json, shutil, subprocess
+import os
+import shutil
+import subprocess
+import sys
 
-ROOT = r'C:\Users\gedayou\WorkBuddy\2026-08-14-09-01-12'
-WB = os.path.join(ROOT, '.workbuddy')
+WB = os.path.dirname(os.path.abspath(__file__))
 SB = os.path.join(WB, '_test_sandbox')
 CA = os.path.join(WB, 'chain_apply.py')
 PY = sys.executable
-RID = '2026-09-16-morning'
 S = '<<< 必填'
+
+RID_F = 'T-2026-01-02-morning'      # forecast 待复盘靶子
+RID_C = 'T-2026-01-02-morning'      # consensus 待复盘靶子（两条链各自命名空间）
+PREV = 'T-2026-01-01-morning'       # 上一条（已 verified）
+BIAS_TMP = '_bias_test_tmp.json'    # 匹配 .gitignore 的 _bias_*.json，跑完自动清
+
+RESULTS = []
+
+
+# ---------------------------------------------------------------- 沙箱
+
+def synth_forecast():
+    """合成 forecast 链：1 条 verified（带上一条的回显数据）+ 1 条 pending（本次靶子）"""
+    return [
+        {'id': PREV, 'report_type': 'morning', 'created_at': '2026-01-01 08:50',
+         'direction': '偏多', 'range': '3000~3100', 'confidence': '中',
+         'status': 'verified',
+         'review': {'reviewed_at': '2026-01-01 15:00',
+                    'actual': {'date': '2026-01-01', 'close': 3050, 'pct_chg': 0.5},
+                    'direction_verdict': '✅ 命中', 'range_verdict': '⚠️ 部分',
+                    'support_verdict': '✅ 命中', 'resistance_verdict': '❌ 失效'}},
+        {'id': RID_F, 'report_type': 'morning', 'created_at': '2026-01-02 08:50',
+         'direction': '偏空', 'range': '3000~3100', 'confidence': '中', 'status': 'pending'},
+    ]
+
+
+def synth_consensus():
+    """合成 consensus 链：review 用 per_topic + opposite_review（与 forecast schema 不同）"""
+    return [
+        {'id': PREV, 'report_type': 'morning', 'created_at': '2026-01-01 08:50',
+         'window': 'x', 'consensus': [], 'opposing': [], 'status': 'verified',
+         'review': {'review_time': '2026-01-01 15:00',
+                    'per_topic': [{'topic': 't', 'type': 'consensus',
+                                   'verdict': '✅ 兑现', 'note': ''}],
+                    'opposite_review': {'topic': 'o', 'verdict': '✅ 未兑现', 'note': ''}}},
+        {'id': RID_C, 'report_type': 'morning', 'created_at': '2026-01-02 08:50',
+         'window': 'x', 'consensus': [], 'opposing': [], 'status': 'pending'},
+    ]
 
 
 def fresh():
     shutil.rmtree(SB, ignore_errors=True)
     os.makedirs(SB)
-    for n in ('forecast_chain.json', 'consensus_chain.json'):
-        shutil.copy(os.path.join(WB, n), os.path.join(SB, n))
+    for name, recs in (('forecast_chain.json', synth_forecast()),
+                       ('consensus_chain.json', synth_consensus())):
+        write(os.path.join(SB, name), recs)
+
+
+def write(path, obj):
+    import json
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(obj, f, ensure_ascii=False, indent=2)
+
+
+def read(path):
+    import json
+    with open(path, encoding='utf-8') as f:
+        return json.load(f)
 
 
 def run(payload):
     p = os.path.join(SB, 'payload.json')
-    with open(p, 'w', encoding='utf-8') as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
+    write(p, payload)
     env = dict(os.environ, CHAIN_DIR=SB)
     return subprocess.run([PY, CA, '--payload', p], capture_output=True, text=True,
                           encoding='utf-8', errors='replace', env=env)
 
 
-def stat(rid, name='forecast_chain.json'):
-    with open(os.path.join(SB, name), encoding='utf-8') as f:
-        d = json.load(f)
-    recs = d.get('records', d) if isinstance(d, dict) else d
-    r = next((x for x in recs if x.get('id') == rid), None)
-    return (r or {}).get('status'), bool((r or {}).get('review'))
+# ---------------------------------------------------------------- 断言
+
+def rec_of(rid, chain='forecast'):
+    fn = 'forecast_chain.json' if chain == 'forecast' else 'consensus_chain.json'
+    for r in read(os.path.join(SB, fn)):
+        if r.get('id') == rid:
+            return r
+    return None
 
 
-def brief(r):
-    keep = ('拒绝', '被拒', '回读', '幂等', '复盘')
-    return '\n'.join('   ' + l.strip() for l in r.stdout.splitlines() if any(k in l for k in keep))
+def chain_len(chain='forecast'):
+    fn = 'forecast_chain.json' if chain == 'forecast' else 'consensus_chain.json'
+    return len(read(os.path.join(SB, fn)))
 
 
-print('===== B) 空壳 review（模板哨兵）应被拒 =====')
+def check(desc, cond):
+    RESULTS.append((bool(cond), desc))
+    print('   %s %s' % ('PASS' if cond else 'FAIL', desc))
+
+
+def case(title):
+    print('\n===== %s =====' % title)
+
+
+def brief(r, keys=('拒绝', '被拒', '回读', '幂等', '复盘', '待复盘', '警告')):
+    return '\n'.join('     | ' + l.strip() for l in r.stdout.splitlines() if any(k in l for k in keys))
+
+
+# ---------------------------------------------------------------- 用例
+
+# --- B/C：forecast 空壳 review 必须被拒（K 系列的核心守卫）
+for label, rv in (
+    ('B) 空壳 review（模板哨兵）应被拒',
+     {'reviewed_at': S, 'actual': {'date': '', 'open': 0, 'high': 0, 'low': 0, 'close': 0},
+      'direction_verdict': S + '：✅/⚠️/❌ + 说明', 'range_verdict': S + '：x',
+      'support_verdict': S + '：x', 'resistance_verdict': S + '：x'}),
+    ('C) 空壳 review（全空串）应被拒',
+     {'reviewed_at': 'x', 'actual': {'close': 0}, 'direction_verdict': '',
+      'range_verdict': '', 'support_verdict': '', 'resistance_verdict': ''}),
+):
+    case(label)
+    fresh()
+    r = run({'forecast': {'review': {'id': RID_F, 'review': rv}}})
+    rec = rec_of(RID_F)
+    print(brief(r))
+    check('退出码 = 2（被拒）', r.returncode == 2)
+    check('链中仍为 pending', rec.get('status') == 'pending')
+    check('未写入 review', not rec.get('review'))
+
+# --- D：正常填写不应误伤
+case('D) 正常填写应通过（不误伤）')
 fresh()
-r = run({'forecast': {'review': {'id': RID, 'review': {
-    'reviewed_at': '2026-09-16 15:00（复盘）',
-    'actual': {'date': '', 'open': 0, 'high': 0, 'low': 0, 'close': 0},
-    'direction_verdict': S + '：✅/⚠️/❌ + 说明', 'range_verdict': S + '：x',
-    'support_verdict': S + '：x', 'resistance_verdict': S + '：x'}}}})
-print('EXIT =', r.returncode, '(期望 2)')
-print(brief(r))
-print('   链中 status =', stat(RID), '(期望 pending, False)')
-
-print()
-print('===== C) 空壳 review（全空串）应被拒 =====')
-fresh()
-r = run({'forecast': {'review': {'id': RID, 'review': {
-    'reviewed_at': 'x', 'actual': {'close': 0}, 'direction_verdict': '',
-    'range_verdict': '', 'support_verdict': '', 'resistance_verdict': ''}}}})
-print('EXIT =', r.returncode, '(期望 2)')
-print('   链中 status =', stat(RID), '(期望 pending, False)')
-
-print()
-print('===== D) 正常填写应通过（不误伤）=====')
-fresh()
-r = run({'forecast': {'review': {'id': RID, 'review': {
-    'reviewed_at': '2026-09-16 15:00（复盘）',
-    'actual': {'date': '2026-09-16', 'open': 3860, 'high': 3885, 'low': 3850,
-               'close': 3878, 'pct_chg': 0.5},
+r = run({'forecast': {'review': {'id': RID_F, 'review': {
+    'reviewed_at': '2026-01-02 15:00（复盘）',
+    'actual': {'date': '2026-01-02', 'open': 3000, 'high': 3050, 'low': 2980,
+               'close': 3040, 'pct_chg': 0.8},
     'direction_verdict': '✅ 命中', 'range_verdict': '⚠️ 部分',
-    'support_verdict': '✅ 命中', 'resistance_verdict': '❌ 失效'}}},
-    'consensus': {'record': {'id': '2026-09-16-close', 'report_type': 'close',
-                             'created_at': '2026-09-16 19:00', 'window': 'x',
-                             'consensus': [], 'opposing': []}}})
-print('EXIT =', r.returncode, '(期望 0)')
+    'support_verdict': '✅ 命中', 'resistance_verdict': '❌ 失效'}}}})
+rec = rec_of(RID_F)
 print(brief(r))
-print('   forecast status =', stat(RID), '(期望 verified, True)')
-print('   consensus status =', stat('2026-09-16-close', 'consensus_chain.json'), '(期望 pending)')
+check('退出码 = 0', r.returncode == 0)
+check('status -> verified', rec.get('status') == 'verified')
+check('review 已落盘', bool(rec.get('review')))
 
-print()
-print('===== E) 占位符 record 应被拒 =====')
+# --- E：record 残留占位符应被拒
+case('E) 占位符 record 应被拒')
 fresh()
-r = run({'forecast': {'record': {'id': '2026-09-16-close',
+n0 = chain_len()
+r = run({'forecast': {'record': {'id': 'T-2026-01-02-close',
                                  'direction': S + '：偏多/偏空/震荡',
                                  'range': S + '：下沿~上沿',
                                  'confidence': S + '：高/中/低'}}})
-print('EXIT =', r.returncode, '(期望 2)')
-print('   链中 status =', stat('2026-09-16-close'), '(期望 None)')
-
-print()
-print('===== F) 幂等：重复提交同一 review =====')
-fresh()
-pl = {'forecast': {'review': {'id': RID, 'review': {
-    'reviewed_at': 'x', 'actual': {'close': 3878},
-    'direction_verdict': '✅', 'range_verdict': '✅',
-    'support_verdict': '✅', 'resistance_verdict': '✅'}}}}
-run(pl)
-r = run(pl)
-print('第二次 EXIT =', r.returncode, '(期望 0)')
 print(brief(r))
+check('退出码 = 2', r.returncode == 2)
+check('未追加记录', chain_len() == n0)
 
-print()
-print('===== 真链校验（应仍 48/17，各 1 pending）=====')
-os.environ.pop('CHAIN_DIR', None)
-sys.path.insert(0, WB)
-import chainlib
-for n in ('forecast', 'consensus'):
-    recs, _ = chainlib.load(n)
-    v = sum(1 for x in recs if x.get('status') == 'verified')
-    p = sum(1 for x in recs if x.get('status') == 'pending')
-    print(f'   {n}: 总 {len(recs)} | verified {v} | pending {p}')
+# --- F：幂等 —— 重复提交不覆盖已有 review
+case('F) 幂等：重复提交同一 review 不覆盖')
+fresh()
+first = {'reviewed_at': 'a', 'actual': {'close': 3000},
+         'direction_verdict': '✅ 第一次', 'range_verdict': '✅', 'support_verdict': '✅',
+         'resistance_verdict': '✅'}
+run({'forecast': {'review': {'id': RID_F, 'review': first}}})
+r2 = run({'forecast': {'review': {'id': RID_F, 'review': {
+    'reviewed_at': 'b', 'actual': {'close': 9999},
+    'direction_verdict': '❌ 第二次（不应生效）', 'range_verdict': '❌', 'support_verdict': '❌',
+    'resistance_verdict': '❌'}}}})
+rec = rec_of(RID_F)
+print(brief(r2, keys=('幂等', '回读', '复盘')))
+check('第二次退出码 = 0', r2.returncode == 0)
+check('内容仍为第一次（未被覆盖）',
+      (rec.get('review') or {}).get('direction_verdict') == '✅ 第一次')
+
+# --- G/H/I：共识链复盘（K-1 回归）—— 修复前一律被误判空壳而拒写
+case('G) 共识链空壳 review 应被拒（K-1 回归）')
+fresh()
+r = run({'consensus': {'review': {'id': RID_C, 'review': {
+    'review_time': '', 'per_topic': [{'topic': 't', 'type': 'consensus',
+                                      'verdict': '', 'note': ''}],
+    'opposite_review': {'topic': 'o', 'verdict': S, 'note': ''}}}}})
+rec = rec_of(RID_C, 'consensus')
+print(brief(r))
+check('退出码 = 2', r.returncode == 2)
+check('链中仍为 pending', rec.get('status') == 'pending')
+
+case('H) 共识链实填 review 应通过（K-1 回归：修复前必被拒）')
+fresh()
+r = run({'consensus': {'review': {'id': RID_C, 'review': {
+    'review_time': '2026-01-02 15:00', 'phase': '收盘后',
+    'per_topic': [{'topic': '分歧点A', 'type': 'consensus', 'verdict': '✅ 兑现', 'note': 'x'},
+                  {'topic': '分歧点B', 'type': 'opposing', 'verdict': '❌ 未兑现', 'note': 'y'}],
+    'opposite_review': {'topic': '剧本C', 'verdict': '⚠️ 部分兑现', 'note': 'z'}}}}})
+rec = rec_of(RID_C, 'consensus')
+print(brief(r, keys=('拒绝', '被拒', '回读', '幂等', '复盘', '共识')))
+check('退出码 = 0', r.returncode == 0)
+check('status -> verified', rec.get('status') == 'verified')
+
+case('I) 共识链仅填 opposite_review 也应通过')
+fresh()
+r = run({'consensus': {'review': {'id': RID_C, 'review': {
+    'review_time': '2026-01-02 15:00',
+    'opposite_review': {'topic': '剧本C', 'verdict': '✅ 兑现', 'note': ''}}}}})
+rec = rec_of(RID_C, 'consensus')
+check('退出码 = 0', r.returncode == 0)
+check('status -> verified', rec.get('status') == 'verified')
+
+# --- J：consensus record 追加 + 幂等
+case('J) 共识链 record 追加应通过且幂等')
+fresh()
+pl = {'consensus': {'record': {'id': 'T-2026-01-02-close', 'report_type': 'close',
+                               'created_at': '2026-01-02 19:00', 'window': 'x',
+                               'consensus': [], 'opposing': []}}}
+r1 = run(pl)
+n1 = chain_len('consensus')
+r2 = run(pl)
+check('首次退出码 = 0', r1.returncode == 0)
+check('已追加（条数 +1）', n1 == chain_len('consensus') == 3)
+check('重复提交退出码 = 0', r2.returncode == 0)
+check('幂等：条数未变', chain_len('consensus') == 3)
+
+# --- K：validate_prev 指向「本次即将复盘的那条」不应误报（K-3 回归）
+case('K) validate_prev 指向本次将复盘对象时不误报（K-3 回归）')
+fresh()
+r = run({'forecast': {'validate_prev': RID_F,
+                      'review': {'id': RID_F, 'review': {
+                          'reviewed_at': 'x', 'actual': {'close': 3000},
+                          'direction_verdict': '✅', 'range_verdict': '✅',
+                          'support_verdict': '✅', 'resistance_verdict': '✅'}}}})
+print(brief(r))
+check('输出含「待复盘」', '待复盘' in r.stdout)
+check('输出不含误导性「需先复盘」', '需先复盘' not in r.stdout)
+check('退出码 = 0', r.returncode == 0)
+
+# --- L：bias.write 相对路径（K-2 回归）—— 两种写法都不得崩、且文件要落到 .workbuddy/
+case('L) bias.write 相对路径落盘（K-2 回归）')
+for label, wp, target in (
+    ('裸文件名', BIAS_TMP, os.path.join(WB, BIAS_TMP)),
+    ('.workbuddy/ 前缀', '.workbuddy/_bias_test_tmp2.json', os.path.join(WB, '_bias_test_tmp2.json')),
+):
+    fresh()
+    r = run({'forecast': {'review': {'id': RID_F, 'review': {
+                'reviewed_at': 'x', 'actual': {'close': 3000},
+                'direction_verdict': '✅', 'range_verdict': '✅',
+                'support_verdict': '✅', 'resistance_verdict': '✅'}}},
+            'bias': {'print': True, 'write': wp}})
+    check('%s：退出码 = 0（不再因附属文件崩成 1）' % label, r.returncode == 0)
+    check('%s：文件已写到 .workbuddy/ 下' % label, os.path.exists(target))
+    if os.path.exists(target):
+        os.remove(target)
+
+# --- 真链只读校验（仅信息，不作为通过条件 —— 链会随报告前进）
+print('\n===== 真链状态（只读，仅供对照）=====')
+env = dict(os.environ)
+env.pop('CHAIN_DIR', None)
+for n, fn in (('forecast', 'forecast_chain.json'), ('consensus', 'consensus_chain.json')):
+    try:
+        recs = read(os.path.join(WB, fn))
+        v = sum(1 for x in recs if x.get('status') == 'verified')
+        p = sum(1 for x in recs if x.get('status') == 'pending')
+        print('   %-9s 总 %d | verified %d | pending %d' % (n, len(recs), v, p))
+    except Exception as e:
+        print('   %-9s 读取失败：%r' % (n, e))
 
 try:
     shutil.rmtree(SB)
@@ -129,3 +289,17 @@ except FileNotFoundError:
     print('\n(沙箱已清理)')
 except Exception as e:
     print('\n(沙箱清理失败：%s —— 可手动删除 %s)' % (e, SB))
+
+# ---------------------------------------------------------------- 汇总
+bad = [d for ok, d in RESULTS if not ok]
+print('\n' + '=' * 60)
+print('用例合计 %d，通过 %d，失败 %d' % (len(RESULTS), len(RESULTS) - len(bad), len(bad)))
+if bad:
+    print('失败项：')
+    for d in bad:
+        print('  - %s' % d)
+    print('=' * 60)
+    sys.exit(1)
+print('全部通过 ✅')
+print('=' * 60)
+sys.exit(0)

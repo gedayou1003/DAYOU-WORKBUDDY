@@ -278,3 +278,67 @@ $PY .workbuddy/chain_apply.py --bias-only                            # 只打偏
 
 
 
+
+
+## 23. 校验体系与静默失败收口（2026-09-17）
+
+### 铁律：有退出码的断言体系，必须定期用「注入式变异」反向验证它真会红
+
+`test_chain_apply.py` 长期**假绿** —— 靶子 id `2026-09-16-morning` 被复盘成 verified 后走进
+「幂等跳过」分支，**空壳校验根本没执行**，且脚本从不返回非零。两个校验器亦同时失效
+（`check_layout` 被历史报告 WARN 永久拉红到退出码 2；`check_integrity` 每期刷 11 条永久告警**且恒返回 0**）。
+**三者都表现为「一切正常」。**
+
+- 检查器/测试的**靶子必须与真数据状态解耦**（用自建合成链，不用真链）
+- 断言必须在**正常业务演进**下依然有效（历史报告、已复盘记录都是常态）
+- 新增工具 `test_gen_forecast_svg_neg.py`：逐处注入旧行为，要求每次 ≥1 条 FAIL 且非零退出
+
+### 铁律：「非零退出」不等于「有意报错」
+
+变异测试发现：删掉 levels 完整性校验后，脚本崩在 `float(lv['down_lower']['price'])` 抛 `KeyError`
+—— 非零退出、报错文本恰好含 `down_lower`、也没出图，**三条断言全部误判为通过**。
+失败路径断言必须四连：**非零退出 + 不产副作用 + 有意报错而非裸崩溃（有 `[FAIL]` 且无 `Traceback`）+ 诊断含关键词**。
+
+### 已消除的三处静默失败/危险默认值
+
+1. `forecast_analyze.run_engine`：原靠 stdout 字符串匹配 `'已保存:'` 取引擎 JSON 路径 → 改
+   **路径推算** `_engine_json_path()` + `cwd=CHAN_DIR`（顺带消除引擎 cwd 依赖）+ 返回 `(data, error)`。
+   ⚠️ 引擎脚本本身**不起 `os.chdir`**，因为技能目录 `~/.workbuddy/skills/` 在项目 git 之外，
+   改了不会同步到公司机器 —— **修调用方才是正确位置**。
+2. `md_to_html_report.py`：无参数/文件不存在/非 `.md` → `[FAIL]` + 用法 + 退出码 1（原会静默覆盖旧 HTML）。
+3. `gen_forecast_svg.py`：**彻底删除写死 2026-08-31 的 DEFAULT 兜底** —— 原行为是把 8/31 走势图
+   塞进 9 月报告，图看着正常、四个价位全错，调用方只看到 `SVG written`。现缺 pending/levels/actual/date
+   **一律 SystemExit**；新增 `--pred`（重绘历史）、`--out`。已验证重构未改变输出（md5 一致）。
+
+### 卫生工具（常驻，不再写 `_` 前缀临时脚本）
+
+- `cleanup_workspace.py`：声明式 `ACTIONS` 清单 + **归档不删除** + 重复文件先验 md5 +
+  写 `MANIFEST.md` 可回滚 + 默认 dry-run。清理新东西只改文件头一行。
+- `cleanup_engine_output.py`：引擎 `output/` 保留最近 15 个交易日，更早归档到 `<output>/archive/YYYY-MM/`。
+- `.gitignore` 已加 `.workbuddy/archive/hygiene_*/`（本机临时件，不同步）。
+
+### 命名规范（I-6 重构 2026-09-16 起）
+
+`_tech_YYYY-MM-DD.json` / `_zsxq_digest_YYYY-MM-DD.txt` / `_tech_multi_YYYY-MM-DD.json`。
+`_MMDD` 旧写法已全部归档。**注意 `_tech_0916.json` 不是 `_tech_2026-09-16.json` 的重复** ——
+前者装的是 0915 收盘快照（盘前算的），后者才是 0916 数据。
+
+### 数字陷阱
+
+`len(str) != os.path.getsize()` —— 中文 UTF-8 差三倍。核对交付物大小必须用 `os.path.getsize` 或
+md5，不能用字符数，否则会误判「文件被写坏」。
+
+### 校验命令（改脚本后照跑）
+
+```
+python .workbuddy/test_chain_apply.py           # 改 chainlib / chain_apply 后
+python .workbuddy/test_gen_forecast_svg.py      # 改 gen_forecast_svg 后
+python .workbuddy/test_gen_forecast_svg_neg.py  # 再跑变异测试确认闸门有效
+python .workbuddy/check_layout.py               # 报告落盘后（0/1/2 = 通过/ERROR/WARN）
+python .workbuddy/check_integrity.py            # 抓取后（0/2 = 干净/有实质问题）
+```
+
+### 待用户拍板
+
+`2026-09-07-close` 的 `support`/`resistance` 仍为 `⏳ 跟踪中` → `bias_stats` 支撑/压力总期数
+**47 vs 方向/区间 48**。补判属语义判断，需人工决定（本次只补了客观 OHLC）。

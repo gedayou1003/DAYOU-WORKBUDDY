@@ -46,6 +46,8 @@ _*.log
 .workbuddy/_audit*
 # 维护/体检类临时脚本（一次性，跑完即弃）
 .workbuddy/_*.py
+# 临时文本中转（提交信息、命令回显落盘等）
+.workbuddy/_*.txt
 # 回归测试沙箱（临时链副本，不入库）
 .workbuddy/_test_sandbox/
 # OHLC 取数缓存（当日有效，各自演化）
@@ -54,6 +56,8 @@ _*.log
 .workbuddy/payload_*.json
 # 链回滚快照（数据链本身不同步，快照也仅留本机）
 .workbuddy/archive/backup_*/
+# 卫生归档（cleanup_workspace.py 产出：日志/一次性脚本/陈旧命名产物，本机临时件，不同步）
+.workbuddy/archive/hygiene_*/
 
 # ===== 系统文件 =====
 .DS_Store
