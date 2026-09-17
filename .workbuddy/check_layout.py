@@ -182,6 +182,100 @@ def _dup_check(text, res):
             res['warns'].append('排版重复·%s：%s' % (st['label'], st.get('hint', '')))
 
 
+def _nz(s):
+    """去空白后的字符数 —— 长度约束的统一计数口径（中文按 1 计）"""
+    return len(re.sub(r'\s', '', s))
+
+
+def _length_check(text, res):
+    """第 7 类检查：篇幅长度约束（《规范_v2》3.8）。
+
+    规则见 layout_spec.LENGTH_RULES。仅对「当日报告」执行（与 DUP_RULES 同口径）。
+
+    为什么要有这一类：3.8 自 2026-09-16 写进规范，但一直没有任何机器检查，
+    于是 9/16 报告（核心速览 195/224/108 字、第一块 8,492 字）全部超限却「通过」，
+    9/17 首版同样超限 —— 正是 DUP_RULES 当初被补上时的同一个缺口。
+    """
+    rules = getattr(spec, 'LENGTH_RULES', None)
+    if not rules or not _is_today_report(res['path']):
+        return
+    lines = text.split('\n')
+
+    def _bounds(pat, level=r'^##\s'):
+        """定位 pattern 匹配行 → 返回 (start, end)，end 为下一个二级标题之前。"""
+        start = None
+        for i, l in enumerate(lines):
+            if re.match(pat, l):
+                start = i
+                break
+        if start is None:
+            return None
+        end = len(lines)
+        for j in range(start + 1, len(lines)):
+            if re.match(level, lines[j]):
+                end = j
+                break
+        return start, end
+
+    for rule in rules.values():
+        unit = rule.get('unit')
+        over = []                       # [(定位, 实测值)]
+        limit = rule.get('max', 0)
+
+        if unit == 'section_lines':
+            b = _bounds(rule['section'])
+            if not b:
+                continue
+            for i in range(b[0] + 1, b[1]):
+                ln = lines[i]
+                if not ln.strip() or ln.startswith('---'):
+                    continue
+                if _nz(ln) > limit:
+                    over.append(('L%d' % (i + 1), _nz(ln)))
+
+        elif unit == 'section_block':
+            b = _bounds(rule['section'])
+            if not b:
+                continue
+            n = _nz('\n'.join(lines[b[0]:b[1]]))
+            if n > limit:
+                over.append(('整块', n))
+
+        elif unit == 'after_heading':
+            b = _bounds(rule['heading'])
+            if not b:
+                continue
+            for i in range(b[0] + 1, b[1]):
+                if lines[i].strip():
+                    if _nz(lines[i]) > limit:
+                        over.append(('L%d' % (i + 1), _nz(lines[i])))
+                    break
+
+        elif unit == 'table_col':
+            for i, ln in enumerate(lines, 1):
+                if not re.match(rule['row'], ln):
+                    continue
+                cells = ln.split('|')
+                ci = rule['col']
+                if ci < len(cells) and _nz(cells[ci]) > limit:
+                    over.append(('L%d' % i, _nz(cells[ci])))
+
+        elif unit == 'heading_count':
+            b = _bounds(rule['section'])
+            if not b:
+                continue
+            hits = [j + 1 for j in range(b[0] + 1, b[1])
+                    if re.match(rule['heading'], lines[j])]
+            if len(hits) > limit:
+                over.append(('共 %d 处（行 %s）' % (len(hits), ','.join(map(str, hits))),
+                             len(hits)))
+
+        if over:
+            detail = '；'.join('%s=%d' % (w, v) for w, v in over[:6])
+            res['warns'].append('篇幅超限·%s（上限 %d）：%s。%s'
+                                % (rule['label'], limit, detail, rule.get('hint', '')))
+
+
 def check(path):
     tier = detect_tier(os.path.basename(path))
     res = {'path': path, 'tier': tier, 'errors': [], 'warns': []}
@@ -249,6 +343,9 @@ def check(path):
 
     # 6) 排版重复检查（信息原子唯一落地，2026-09-16 维护新增）
     _dup_check(text, res)
+
+    # 7) 篇幅长度约束（规范_v2 3.8，2026-09-17 维护新增）
+    _length_check(text, res)
 
     return res
 
