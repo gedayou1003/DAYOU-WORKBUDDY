@@ -113,6 +113,35 @@ def _is_today_report(path):
     return d == datetime.datetime.now().strftime('%Y-%m-%d')
 
 
+def _superseded_same_date(path):
+    """当日是否已存在生成更晚的同日期报告？
+
+    用于「偏差期数一致性」判定：晨报 08:55 写入时链为 48 期，收盘档 17:05 复盘后
+    链前进到 49 期 —— 此时晨报的「48 期」是对的（它是当时的快照），却会被判 WARN，
+    使「0 WARN」这道闸门在每天跑完收盘档后永久失效（2026-09-17 第二次遇到同类噪声）。
+    口径：只有**当日最新生成的那一份**才需与链一致，被同日更晚报告取代者降为 INFO。
+    """
+    d = _report_date(path)
+    if not d:
+        return False
+    try:
+        mt = os.path.getmtime(path)
+    except OSError:
+        return False
+    out = os.path.join(ROOT, 'outputs')
+    for f in glob.glob(os.path.join(out, '作战报告_*.md')):
+        if os.path.abspath(f) == os.path.abspath(path):
+            continue
+        if d not in os.path.basename(f):
+            continue
+        try:
+            if os.path.getmtime(f) > mt:
+                return True
+        except OSError:
+            continue
+    return False
+
+
 def _sub_required_check(text, pos, res):
     """块内部子内容校验：某些块除标题外，内部还必须含指定子标题（如信息判断块内须有「共同观点」「相反观点」）。"""
     if not getattr(spec, 'SUB_REQUIRED', None):
@@ -344,10 +373,10 @@ def check(path):
         chain_n = _verified_count()
         if report_n is not None and chain_n is not None and report_n != chain_n:
             msg = ('偏差期数：报告标 %d 期，链当前 %d 期' % (report_n, chain_n))
-            if _is_today_report(res['path']):
+            if _is_today_report(res['path']) and not _superseded_same_date(res['path']):
                 res['warns'].append(msg + '（当日报告需与链一致）')
             else:
-                res['infos'].append(msg + '（历史报告快照，属正常）')
+                res['infos'].append(msg + '（快照：写于链前进之前，属正常）')
 
     # 5) 块内部子内容校验（防止「块标题在、内部核心子内容缺失」）
     _sub_required_check(text, pos, res)
@@ -380,12 +409,24 @@ def render(res):
 
 
 def _latest_reports():
+    """默认扫描：每个档位取最新一份。
+
+    2026-09-17 修正：原列表为 ['晨报','午间','盘中','复盘'] —— **漏了「收盘」**，
+    于是收盘档报告在不传参数时根本不进闸门（收盘一旦出错，默认检查看不见）。
+    现按 TIER_ALIAS 的档位全量取，并按 tier 去重（避免「收盘复盘」这类命名同时命中两词）。
+    """
     out = os.path.join(ROOT, 'outputs')
-    files = []
-    for t in ['晨报', '午间', '盘中', '复盘']:
-        g = glob.glob(os.path.join(out, '作战报告_%s_*.md' % t))
-        if g:
-            files.append(sorted(g)[-1])
+    files, seen = [], set()
+    for kw in spec.TIER_ALIAS:
+        g = glob.glob(os.path.join(out, '作战报告_%s_*.md' % kw))
+        if not g:
+            continue
+        f = sorted(g)[-1]
+        t = detect_tier(os.path.basename(f))
+        if t in seen:
+            continue
+        seen.add(t)
+        files.append(f)
     return files
 
 
