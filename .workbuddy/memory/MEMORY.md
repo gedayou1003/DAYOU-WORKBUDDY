@@ -338,7 +338,34 @@ python .workbuddy/check_layout.py               # 报告落盘后（0/1/2 = 通�
 python .workbuddy/check_integrity.py            # 抓取后（0/2 = 干净/有实质问题）
 ```
 
-### 待用户拍板
+### 已拍板并落地（2026-09-17）
 
-`2026-09-07-close` 的 `support`/`resistance` 仍为 `⏳ 跟踪中` → `bias_stats` 支撑/压力总期数
-**47 vs 方向/区间 48**。补判属语义判断，需人工决定（本次只补了客观 OHLC）。
+`2026-09-07-close` 的 `support`/`resistance` 已补齐 → `bias_stats` 支撑/压力总期数
+**48 vs 方向/区间 48**，四维对齐。详见 §24。
+
+## 24. 拍板项落地 + 缠论技能归档（2026-09-17，提交 dfaa137）
+
+**A. `2026-09-07-close` 补判**（用户拍板后按 §六口径补齐）
+
+- 支撑 3915（9/4 低 3915.22 + 9/7 低 3916.49 双底）：9/8 最低 3925.72 **未触及**（差 10.72 点）→ **✅ 守住**
+- 压力 3938.64（日线55·多空分水岭）：9/8 最高 3951.32 破 +12.68 点且**收盘站稳上方 1.91 点** → **❌ 突破**
+  （量比仅 **1.02x**，不构成有效放量 → 按 8/31「压力位突破确认」规则属**弱确认**，统计仍记「突破」）
+- 备份 `.workbuddy/archive/backup_20260917_srfix/`；补判脚本 `_fix_0907_sr.py` 已随卫生清理归档
+- 当前四维准确率：**支撑 66.7%**（命中 32 / 部分 7 / 失效 9）、**压力 58.3%**（28 / 11 / 9）
+
+**B. 4 个 off 缠论技能已归档**（用户拍板：整体移出 skills）
+
+- 移入 `~/.workbuddy/skills_archive/20260917_chanlun/`（含 `README.md` + `restore.py`，**可逆**）
+- 涉及：`chan-theory-analysis` / `chanlun-multidimensional-tech-analysis`（**历史「引擎 A」**，22.68 MB，
+  其中 20.91 MB 是 `output/` 82 份历史 HTML 中间产物、引擎代码本体仅 0.30 MB）/
+  `chanlun-stock-analysis` / `chanlun-trading-system`
+- **保留** `chan-signal__skillhub`（流水线「引擎 B」，持续在用，**勿动**）
+- 回收 **22.82 MB**；`skills/` 由 ~415 文件 23.9 MB → **233 文件 1.08 MB**
+- `settings.json` 的 4 条 off override **刻意保留**，防止 SkillHub 重装后复活
+  （off 来源：2026-09-01 08:53 平台迁移 `migrated: 4`，非手工设置；
+  **off 只阻断模型自动调用技能，不阻断直跑技能内脚本**）
+
+> ⚠️ **环境坑：`skillOverrides` 匹配 SKILL.md frontmatter 的 `name` 字段，不是目录名。**
+> `chanlun-multidimensional-tech-analysis__skillhub` 的 name 是中文 `缠论多维技术分析`，用目录名匹配会漏。
+>
+> ⚠️ **`~/.workbuddy/skills/` 是用户级本机目录，不随本仓库同步** —— 公司电脑需另行处置。
