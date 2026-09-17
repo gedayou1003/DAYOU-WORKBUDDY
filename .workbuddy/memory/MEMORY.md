@@ -245,6 +245,19 @@ $PY .workbuddy/chain_apply.py --bias-only                            # 只打偏
 
 **排版硬约束（规范_v2 新增 3.8）**：核心速览每行≤90字 / 第一块每条≤120字·整块≤5,000字 / **一句话预判≤150字纯结论**（不复述三因子/剧本/纪律）/ 剧本触发条件≤80字 / **纪律与观察合并为一节** / 整份晨报≤35,000字。关键位唯一落地点 = 关键位相对现价表（字段表只写主位+指针）。
 
+**3.8 已机器化（2026-09-17，提交 52b47ef）**：`layout_spec.LENGTH_RULES`（5 条声明式规则）+ `check_layout._length_check`（**第 7 类检查**，仅当日报告）。补这道闸门的原因：3.8 自 09-16 写进规范后**从未有任何机器检查**，导致 9/16 报告（核心速览 195/224/108 字、第一块 8,492 字、一句话预判 293 字、触发条件 130/87/83 字、纪律观察拆两节）全部超限却「通过」——与 DUP_RULES 当初是同一个缺口。**现在 check_layout 有 7 类检查，改报告规则请同步改 layout_spec。**
+
+**链记录 review 有两套 schema（易混淆，建 payload 必看）**：
+- `forecast` 链：`reviewed_at` / `actual{date,open,high,low,close,pct_chg,prev_close,note}` / `{direction,range,support,resistance}_verdict` / `bias_type[]` / `foreseeable` / `foresee_reason` / `note`
+- `consensus` 链：`review_time` / `phase` / `per_topic[{topic,type,verdict,note}]` / `opposite_review{topic,verdict,note}`
+- 两条链都可用 `chain_apply --payload` 一次提交；`review_is_blank` 已按 schema 分派（09-17 修复前共识链 review 会被一律判空壳拒写）
+
+**两个易踩的运行细节（2026-09-17 修复）**：
+- `bias.write` 相对路径按 `.workbuddy/` 解析（payload 里写 `.workbuddy/_bias_x.json` 或 `_bias_x.json` 均可）；附属文件写失败**不再影响退出码**——判链是否落盘只看回读断言
+- `validate_prev` 指向「本次 payload 即将复盘的那一条」时输出 `[待复盘]` 而不再误报「上一档脚本未落盘」
+
+**执行顺序铁律**：`chain_apply` 落链 → 再跑 `gen_forecast_svg.py`（图从「最新 pending 的 `levels`」+「最新 verified 的 `review.actual`」取数，先落链才有数据）。
+
 **安全流程（下次改脚本照做）**：① 先备份两条链到 `archive/backup_YYYYMMDD/`（gitignore，仅本机）② 用 `CHAIN_DIR` 指向沙箱链验证幂等/dry-run/回读断言 ③ 确认真链未被改动 ④ 全脚本语法编译 + 关键链路实测 ⑤ 残余引用检查（旧脚本名是否还有真实代码依赖）。
 
 
