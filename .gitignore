@@ -40,6 +40,7 @@ _*.log
 .workbuddy/_*_digest_*.txt
 .workbuddy/_tech_*.json
 .workbuddy/_bias_*.json
+.workbuddy/_backfill_*.json
 .workbuddy/_tj_raw_*.txt
 .workbuddy/_recon*.log
 .workbuddy/_audit*
