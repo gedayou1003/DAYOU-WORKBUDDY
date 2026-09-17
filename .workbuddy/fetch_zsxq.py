@@ -59,6 +59,8 @@ UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like 
 
 # 本轮已确认 Cookie 鉴权失败的星球 gid（401/403 fail-fast 去重，避免重复提示与重复请求）
 auth_failed = set()
+# 本轮「限流抖动」且退避重试后仍无数据的星球 gid（区别于鉴权失败，2026-09-17 新增）
+flaky_failed = set()
 
 def _cookie():
     return open(COOKIE_FILE, encoding="utf-8").read().strip()
@@ -106,6 +108,12 @@ def fetch_cookie(gid, count=20):
       旧逻辑对 401 也重试 3 次 —— 鉴权失败重试必然同样失败，每期白跑 12 次请求
       （4 星球 × 3 次），连续 4 期共 48 次无效请求。现改为遇 401/403 立即终止该星球，
       且同一轮抓取内只提示一次（auth_failed 去重），仅 5xx / 超时保留重试。
+
+    HTTP 200 + succeeded=false 视为**限流抖动**（2026-09-17 维护改动）：
+      实测该响应在连发请求时随机命中不同星球、退避后即恢复，与 Cookie 有效性无关。
+      旧逻辑此处静默重试、耗尽后直接返回 0 条**且不打印任何日志** —— 报告会静默缺数据。
+      现改为：每次抖动打 [cookie-flaky]、退避 3/6/9s（共 4 次）、
+      耗尽仍无数据则记入 flaky_failed 并在收尾输出 COOKIE_FLAKY_FAILED=n。
     """
     if gid in auth_failed:
         print(f"[cookie-skip {gid}] 本轮已确认 Cookie 失效，跳过该星球（不重复提示）", file=sys.stderr)
@@ -117,7 +125,7 @@ def fetch_cookie(gid, count=20):
         if end_time:
             url += f"&end_time={end_time}"
         topics = None
-        for attempt in range(3):
+        for attempt in range(4):
             req = urllib.request.Request(url, headers={
                 "Cookie": cookie, "User-Agent": UA, "Accept": "application/json, text/plain, */*",
                 "Origin": "https://wx.zsxq.com", "Referer": "https://wx.zsxq.com/",
@@ -127,8 +135,16 @@ def fetch_cookie(gid, count=20):
                     d = json.loads(resp.read().decode("utf-8"))
                 if d.get("succeeded"):
                     topics = d.get("resp_data", {}).get("topics", [])
+                    if attempt:
+                        print(f"[cookie-retry-ok {gid}] 抖动 {attempt} 次后成功（非鉴权问题）",
+                              file=sys.stderr)
                     break
-                time.sleep(3 + attempt * 2)
+                # HTTP 200 + succeeded=false：接口限流抖动（2026-09-17 实测，命中的星球随机、
+                # 退避即恢复）。**旧逻辑此处静默重试，重试耗尽后直接返回 0 条且不打任何日志**
+                # —— 报告会静默缺数据，是本文件最隐蔽的一类漏抓。
+                print(f"[cookie-flaky {gid}] try{attempt}: HTTP 200 但 succeeded=false"
+                      f"（限流抖动，非鉴权失败）→ 退避重试", file=sys.stderr)
+                time.sleep(3 + attempt * 3)
             except urllib.error.HTTPError as e:
                 # 401/403 = 鉴权失败，重试必然同样失败（Cookie 失效）→ 立即终止该星球，不浪费请求
                 if e.code in (401, 403):
@@ -137,10 +153,15 @@ def fetch_cookie(gid, count=20):
                     auth_failed.add(gid)
                     break
                 print(f"[cookie-err {gid}] try{attempt}: {e}", file=sys.stderr)
-                time.sleep(3 + attempt * 2)
+                time.sleep(3 + attempt * 3)
             except Exception as e:
                 print(f"[cookie-err {gid}] try{attempt}: {e}", file=sys.stderr)
-                time.sleep(3 + attempt * 2)
+                time.sleep(3 + attempt * 3)
+        if topics is None and gid not in auth_failed:
+            # 重试耗尽仍无数据：必须显式报出来，否则该星球静默 0 条
+            flaky_failed.add(gid)
+            print(f"[cookie-flaky-fail {gid}] 退避重试 4 次仍无数据（限流抖动或接口异常，"
+                  f"非鉴权失败）—— 本轮该星球将 0 条", file=sys.stderr)
         if not topics:
             break
         new = [t for t in topics if t.get("topic_id") not in seen]
@@ -284,6 +305,9 @@ def main():
     if auth_failed:
         print(f"COOKIE_AUTH_FAILED={len(auth_failed)} (gid: {', '.join(sorted(auth_failed))}) "
               f"→ 需更新 .workbuddy/zsxq_cookie.txt")
+    if flaky_failed:
+        print(f"COOKIE_FLAKY_FAILED={len(flaky_failed)} "
+              f"(gid: {', '.join(sorted(flaky_failed))}) → 限流抖动，非 Cookie 问题，重跑一次即可")
     print(f"SAVED={os.path.normpath(out)}")
 
 if __name__ == "__main__":

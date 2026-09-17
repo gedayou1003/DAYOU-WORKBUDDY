@@ -256,7 +256,21 @@ $PY .workbuddy/chain_apply.py --bias-only                            # 只打偏
 - `bias.write` 相对路径按 `.workbuddy/` 解析（payload 里写 `.workbuddy/_bias_x.json` 或 `_bias_x.json` 均可）；附属文件写失败**不再影响退出码**——判链是否落盘只看回读断言
 - `validate_prev` 指向「本次 payload 即将复盘的那一条」时输出 `[待复盘]` 而不再误报「上一档脚本未落盘」
 
-**Cookie 更新用 `check_cookie.py`（2026-09-17 新增，不要再试错）**：`python .workbuddy/check_cookie.py [--from-clipboard | --set "值" | --fix] [--no-write]`。规范化四种粘贴形态（`Cookie:` 前缀 / 外层引号 / 多行 / BOM）→ 写入 `.workbuddy/zsxq_cookie.txt` → 四球（大鹏鸟·短评&信息·180K·AI产业链）逐条实测。退出码 0 全通过 / 2 有 401 / 1 文件或内容问题。输出脱敏不打印完整 Cookie。**Cookie 失效只需换值、不改代码**；`zsxq_cookie.txt` 不入 git、**严禁跨机拷贝**（两台互相顶掉）。
+**Cookie 更新用 `check_cookie.py`（2026-09-17 新增，不要再试错）**：`python .workbuddy/check_cookie.py [--from-clipboard | --set "值" | --fix] [--no-write]`。规范化四种粘贴形态（`Cookie:` 前缀 / 外层引号 / 多行 / BOM）→ 写入 `.workbuddy/zsxq_cookie.txt` → 四球（大鹏鸟·短评&信息·180K·AI产业链）逐条实测。退出码 0 全通过 / 2 有 401 或持续抖动 / 1 文件或内容问题。输出脱敏不打印完整 Cookie。**Cookie 失效只需换值、不改代码**；`zsxq_cookie.txt` 不入 git、**严禁跨机拷贝**（两台互相顶掉）。**先 `--no-write` 预检、通过再落盘**（旧 cookie 已死也无妨，但这是习惯）。
+
+**⚠️ `succeeded=false` ≠ Cookie 失效（2026-09-17 实测，极易误判）**：zsxq 接口连发请求时会随机返回 **HTTP 200 + `succeeded:false` + `resp_data:{}`** —— 这是**限流抖动**，退避重试即恢复，**每次命中的星球不固定**（实测同一次排查里依次命中 180K → 大鹏鸟 → 短评&信息）。**401/403 才是鉴权失败**。两条日志要分清：
+- `COOKIE_AUTH_FAILED=n → 需更新 zsxq_cookie.txt`（真失效，必须换 Cookie）
+- `COOKIE_FLAKY_FAILED=n → 限流抖动，非 Cookie 问题，重跑一次即可`（假警报）
+
+`fetch_zsxq.py` 已修 K-6：旧逻辑对 `succeeded=false` 静默重试 3 次后**返回 0 条且不打任何日志**，报告缺数据时与「该星球今天没发帖」无法区分；现抖动打 `[cookie-flaky]`、退避 3/6/9s（4 次）、耗尽记入 `flaky_failed` 并显式报出。**通用教训：凡「请求成功但结果为空」的分支，都要能区分「真为空」和「被拒绝」。**
+
+**「⭕ 短评&信息」星球自 2026-09-08 起无新帖**（接口正常，非抓取问题）——该球长期 0 条属正常，不必排查 Cookie。
+
+**断档补录用 `backfill_zsxq_window.py`（2026-09-17 新增）**：通道故障导致某期报告缺数据、且报告已落链不能重跑时，用它对**任意窗口**事后补档，不碰 `zsxq_fetch_raw.json` 等流水线产物。`--since/--until/--out/--json-out/--label/--groups`。首次运行即补回 9/17 晨报窗口缺失的 12 条（180K 8 / 大鹏鸟 2 / AI产业链 2；短评&信息 0 属正常）。**Cookie 一恢复就该跑一次，否则缺口永久丢失。**
+
+**Cookie 断档历史**：08-27 过期 → 09-14~09-17 连续 5 期报告四球全 0 → **09-17 09:22 换新恢复**。这 5 期内**只有 9/17 这一期做了补档**，9/14~9/16 三期的缺口已无从补齐。
+
+**内联脚本踩坑（务必避免）**：用 `python -c '...'` 时，**Python 代码里的单引号会提前终止 Bash 的单引号字符串**，于是后续反引号被 shell 当命令执行（实测报 `forecast_chain: command not found`，脚本静默失败）。**凡含反引号或复杂引号的脚本，一律用 Write 落成 .py 文件再跑。**
 
 **执行顺序铁律**：`chain_apply` 落链 → 再跑 `gen_forecast_svg.py`（图从「最新 pending 的 `levels`」+「最新 verified 的 `review.actual`」取数，先落链才有数据）。
 

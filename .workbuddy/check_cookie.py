@@ -12,7 +12,13 @@
   python .workbuddy/check_cookie.py --set "xxxx"     # 直接传入新 Cookie → 规范化写入 → 校验
   python .workbuddy/check_cookie.py --fix            # 仅规范化现有文件（去前缀/引号/换行）后再校验
 
-退出码：0 = 全部星球鉴权通过；2 = 存在 401/403；1 = 文件缺失/参数问题
+退出码：0 = 全部星球鉴权通过；2 = 存在 401/403 或持续抖动；1 = 文件缺失/参数问题
+
+⚠️ 关于 `succeeded=false`（2026-09-17 实测发现）：zsxq 接口在连发请求时会随机返回
+   HTTP 200 + `succeeded:false` + `resp_data:{}`，**每次命中的星球不固定** —— 这是
+   **限流抖动，不是鉴权失败**（鉴权失败是 401）。本脚本已内置 4 次退避重试 + 星球间
+   1s 间隔，命中抖动时会标注「抖动 N 次后重试成功」，不要据此判断 Cookie 失效。
+
 安全：只读写本地文件，不打印完整 Cookie 值（仅显示脱敏首尾）。
      本脚本经 git 同步；但它操作的 `zsxq_cookie.txt` 已在 .gitignore 内，**严禁跨机拷贝**
      （两台机器互相顶掉）。
@@ -22,6 +28,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -104,26 +111,45 @@ def write_cookie(value):
 
 
 def probe(cookie, gid):
-    """返回 (状态, 说明)。状态: ok / auth / err"""
+    """返回 (状态, 说明)。状态: ok / auth / flaky / err
+
+    ⚠️ 实测发现（2026-09-17）：接口存在**限流抖动** —— 连发请求时会随机返回
+    HTTP 200 + `succeeded:false` + `resp_data:{}`，且**每次命中的星球不同**。
+    这不是鉴权失败（401 才是），退避重试即恢复。故此处内置 4 次退避重试，
+    避免把抖动误报成「Cookie 失效」。
+    """
     url = "https://api.zsxq.com/v2/groups/%s/topics?scope=all&count=3" % gid
-    req = urllib.request.Request(url, headers={
-        "Cookie": cookie, "User-Agent": UA,
-        "Accept": "application/json, text/plain, */*",
-        "Origin": "https://wx.zsxq.com", "Referer": "https://wx.zsxq.com/",
-    })
-    try:
-        with urllib.request.urlopen(req, timeout=25) as resp:
-            d = json.loads(resp.read().decode("utf-8"))
-        if not d.get("succeeded"):
-            return "err", "HTTP 200 但 succeeded=false：%s" % str(d.get("resp_data"))[:60]
-        n = len(d.get("resp_data", {}).get("topics", []))
-        return "ok", "HTTP 200，最新一页 %d 条" % n
-    except urllib.error.HTTPError as e:
-        if e.code in (401, 403):
-            return "auth", "HTTP %d 鉴权失败（Cookie 已失效）" % e.code
-        return "err", "HTTP %d" % e.code
-    except Exception as e:
-        return "err", repr(e)[:90]
+    last = ""
+    for attempt in range(4):
+        req = urllib.request.Request(url, headers={
+            "Cookie": cookie, "User-Agent": UA,
+            "Accept": "application/json, text/plain, */*",
+            "Origin": "https://wx.zsxq.com", "Referer": "https://wx.zsxq.com/",
+        })
+        try:
+            with urllib.request.urlopen(req, timeout=25) as resp:
+                d = json.loads(resp.read().decode("utf-8"))
+            if d.get("succeeded"):
+                n = len(d.get("resp_data", {}).get("topics", []))
+                extra = "" if attempt == 0 else "（抖动 %d 次后重试成功，非鉴权问题）" % attempt
+                return "ok", "HTTP 200，最新一页 %d 条%s" % (n, extra)
+            last = "HTTP 200 但 succeeded=false（接口限流抖动，非鉴权失败）"
+            if attempt < 3:
+                time.sleep(3 * (attempt + 1))
+        except urllib.error.HTTPError as e:
+            if e.code in (401, 403):
+                return "auth", "HTTP %d 鉴权失败（Cookie 已失效）" % e.code
+            last = "HTTP %d" % e.code
+            if attempt < 3:
+                time.sleep(3 * (attempt + 1))
+        except Exception as e:
+            last = repr(e)[:90]
+            if attempt < 3:
+                time.sleep(3 * (attempt + 1))
+    # 四种请求都试过仍不行：区分「一直抖动」与「网络不通」
+    if last.startswith("HTTP 200"):
+        return "flaky", last + "（退避重试 4 次仍不行，稍后重跑）"
+    return "err", last
 
 
 def validate(cookie, verbose=True):
@@ -132,22 +158,31 @@ def validate(cookie, verbose=True):
         return 1
     print("Cookie: %s" % mask(cookie))
     print()
-    n_auth = n_err = 0
+    n_auth = n_flaky = n_err = n_ok = 0
     for gid, name in COOKIE_GROUPS.items():
         st, msg = probe(cookie, gid)
-        flag = {"ok": "[ OK ]", "auth": "[401 ]", "err": "[ERR ]"}[st]
+        flag = {"ok": "[ OK ]", "auth": "[401 ]", "flaky": "[抖动]", "err": "[ERR ]"}[st]
         print("%s %-26s %-10s %s" % (flag, name, gid, msg))
-        if st == "auth":
+        if st == "ok":
+            n_ok += 1
+        elif st == "auth":
             n_auth += 1
-        elif st == "err":
+        elif st == "flaky":
+            n_flaky += 1
+        else:
             n_err += 1
+        time.sleep(1)  # 星球之间留间隔，降低触发限流抖动的概率
     print()
-    if n_auth == 0 and n_err == 0:
+    if n_auth == 0 and n_flaky == 0 and n_err == 0:
         print("=> 全部 %d 个星球鉴权通过，Cookie 可用。" % len(COOKIE_GROUPS))
         return 0
     if n_auth:
         print("=> %d/%d 个星球 401，Cookie 已失效。请重新登录 wx.zsxq.com 后复制新的 Cookie。"
               % (n_auth, len(COOKIE_GROUPS)))
+        return 2
+    if n_flaky:
+        print("=> %d 个星球持续返回 succeeded=false（限流抖动，非 Cookie 问题）——"
+              "不影响鉴权结论，稍后重跑即可。" % n_flaky)
         return 2
     print("=> 存在网络/接口异常（非鉴权问题），稍后重试。")
     return 2
