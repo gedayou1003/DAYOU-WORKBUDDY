@@ -256,6 +256,8 @@ $PY .workbuddy/chain_apply.py --bias-only                            # 只打偏
 - `bias.write` 相对路径按 `.workbuddy/` 解析（payload 里写 `.workbuddy/_bias_x.json` 或 `_bias_x.json` 均可）；附属文件写失败**不再影响退出码**——判链是否落盘只看回读断言
 - `validate_prev` 指向「本次 payload 即将复盘的那一条」时输出 `[待复盘]` 而不再误报「上一档脚本未落盘」
 
+**Cookie 更新用 `check_cookie.py`（2026-09-17 新增，不要再试错）**：`python .workbuddy/check_cookie.py [--from-clipboard | --set "值" | --fix] [--no-write]`。规范化四种粘贴形态（`Cookie:` 前缀 / 外层引号 / 多行 / BOM）→ 写入 `.workbuddy/zsxq_cookie.txt` → 四球（大鹏鸟·短评&信息·180K·AI产业链）逐条实测。退出码 0 全通过 / 2 有 401 / 1 文件或内容问题。输出脱敏不打印完整 Cookie。**Cookie 失效只需换值、不改代码**；`zsxq_cookie.txt` 不入 git、**严禁跨机拷贝**（两台互相顶掉）。
+
 **执行顺序铁律**：`chain_apply` 落链 → 再跑 `gen_forecast_svg.py`（图从「最新 pending 的 `levels`」+「最新 verified 的 `review.actual`」取数，先落链才有数据）。
 
 **安全流程（下次改脚本照做）**：① 先备份两条链到 `archive/backup_YYYYMMDD/`（gitignore，仅本机）② 用 `CHAIN_DIR` 指向沙箱链验证幂等/dry-run/回读断言 ③ 确认真链未被改动 ④ 全脚本语法编译 + 关键链路实测 ⑤ 残余引用检查（旧脚本名是否还有真实代码依赖）。
