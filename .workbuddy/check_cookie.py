@@ -13,7 +13,9 @@
   python .workbuddy/check_cookie.py --fix            # 仅规范化现有文件（去前缀/引号/换行）后再校验
 
 退出码：0 = 全部星球鉴权通过；2 = 存在 401/403；1 = 文件缺失/参数问题
-安全：只读写本地文件，不打印完整 Cookie 值（仅显示脱敏首尾）。本文件已在 .gitignore 内，严禁跨机拷贝。
+安全：只读写本地文件，不打印完整 Cookie 值（仅显示脱敏首尾）。
+     本脚本经 git 同步；但它操作的 `zsxq_cookie.txt` 已在 .gitignore 内，**严禁跨机拷贝**
+     （两台机器互相顶掉）。
 """
 import argparse
 import json
