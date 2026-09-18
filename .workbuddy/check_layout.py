@@ -13,9 +13,20 @@
   7. 篇幅超限（WARN，仅当日报告）：核心速览/第一块/一句话预判/剧本触发条件/纪律节数
      —— 规则见 layout_spec.LENGTH_RULES，对应《规范_v2》3.8
   8. 本期变化·基期对账（ERROR，仅当日报告）：见 `_period_change_check` 说明
+  9. 表格长文本单元格（WARN）：长文本列被挤成竖条 —— 见 layout_spec.TABLE_CELL_RULES
+  10. 术语与口径一致性（WARN）：55 线写法混用 / MA20 与 BOLL 中轨并存未注明等价 /
+      关键位表出现无属性的行 —— 见 layout_spec.TERM_RULES
+  11. 附录 A/B 星球覆盖口径（WARN）：附录 B 列了、附录 A 既不出现也不说「未覆盖」
+      —— 见 layout_spec.APPENDIX_COVERAGE
 
-「仅当日报告」的口径：这三项对历史报告是快照差异（链每天前进、规范逐步收紧），
+9~11 是 2026-09-18 全链路审计「排版读感」章节（5.1/5.3/5.4）的落地。
+它们与本文件既有的检查同属一类：**规则写在文档里、产出与规范之间没有机器拦网** ——
+审计报告点出的三处长文本列、55 线两种写法、附录 A 少 3 个星球，全都能机器查，却没人查。
+
+「仅当日报告」的口径：第 4/6/7/8 项对历史报告是快照差异（链每天前进、规范逐步收紧），
 判定它们"不达标"没有意义，只会让「0 WARN」这道闸门永久失效。历史报告一律降为 INFO。
+第 9~11 项另加**规则生效起点**（`since`）：规则在 t 时刻确立，只约束 t 之后生成的报告，
+早于起点的报告**明示**豁免（打印 INFO），不是静默跳过。
 
 用法：
     $PY check_layout.py [报告.md ...]
@@ -181,6 +192,7 @@ def _dup_check(text, res):
         return
 
     lines = text.split('\n')
+    skipped_since = []      # 因「生效起点未到」而跳过的短语（末尾聚合成一条 INFO，避免刷屏）
 
     # --- 价格关键位 / 结论短语 / 事件说明：全篇计数
     for key in ('price', 'phrase', 'event'):
@@ -188,6 +200,8 @@ def _dup_check(text, res):
         if not rule:
             continue
         max_n = rule.get('max', 8)
+        limits = rule.get('limits') or {}        # 短语专属上限（2026-09-18 审计 5.2 扩容）
+        since_map = rule.get('since_map') or {}  # 新增短语的生效起点
         hits = {}
         if 'pattern' in rule:
             rx = re.compile(rule['pattern'])
@@ -196,18 +210,26 @@ def _dup_check(text, res):
                     hits.setdefault(m, []).append(i)
         else:
             for ph in rule.get('phrases', []):
+                # 新增短语带生效起点：早于起点的报告不参与（打 INFO 明示，不静默跳过）
+                since = since_map.get(ph)
+                if since and not _rule_exists_yet(since, res['path']):
+                    skipped_since.append(ph)
+                    continue
                 ls = [i for i, ln in enumerate(lines, 1) if ph in ln]
                 if ls:
                     hits[ph] = ls
-        over = {k: v for k, v in hits.items() if len(v) > max_n}
+        over = {}
+        for k, v in hits.items():
+            lim = limits.get(k, max_n)
+            if len(v) > lim:
+                over[k] = (v, lim)
         if over:
-            top = sorted(over.items(), key=lambda x: -len(x[1]))[:4]
-            detail = '；'.join('%s×%d（行 %s）' % (
-                k, len(v), ','.join(str(x) for x in v[:10]) + ('…' if len(v) > 10 else ''))
-                for k, v in top)
+            top = sorted(over.items(), key=lambda x: -len(x[1][0]))[:4]
+            detail = '；'.join('%s×%d（上限 %d，行 %s）' % (
+                k, len(v), lim, ','.join(str(x) for x in v[:10]) + ('…' if len(v) > 10 else ''))
+                for k, (v, lim) in top)
             res['warns'].append(
-                '排版重复·%s 超限（阈值 %d）：%s。%s'
-                % (rule['label'], max_n, detail, rule.get('hint', '')))
+                '排版重复·%s 超限：%s。%s' % (rule['label'], detail, rule.get('hint', '')))
 
     # --- 结构性双写：字段表 ↔ 关键位表
     st = rules.get('structural')
@@ -216,6 +238,10 @@ def _dup_check(text, res):
         has_level = bool(re.search(st['level_section'], text))
         if has_field and has_level:
             res['warns'].append('排版重复·%s：%s' % (st['label'], st.get('hint', '')))
+
+    if skipped_since:
+        res['infos'].append('排版重复：新增结论短语 %s 的阈值自 2026-09-19 起生效，'
+                            '本报告早于规则确立，不参与' % '、'.join(skipped_since))
 
 
 def _nz(s):
@@ -436,6 +462,200 @@ def _length_check(text, res):
                                 % (rule['label'], limit, detail, rule.get('hint', '')))
 
 
+# ---------------------------------------------------------------- 第 9~11 类：排版读感（审计 5.1/5.3/5.4）
+
+
+def _rule_exists_yet(since, path):
+    """规则是否已对该报告生效（纯判定，不打 INFO）—— 供需要自己聚合说明的调用方用。"""
+    if not since:
+        return True
+    d = _report_date(path)
+    return not (d and d < since)
+
+
+def _rule_active(since, path, res, label):
+    """新增规则的生效起点。
+
+    规则在 t 时刻确立，就只约束 t 之后**生成**的报告。早于起点的报告**明示**豁免：
+    打印一条 INFO 说明原因，而不是静默跳过 —— 静默跳过等于把闸门调松了却不说。
+    （本项目已有教训：拿新尺子量旧快照，会让「0 WARN」这道闸门当天就永久失效。）
+    """
+    if not since:
+        return True
+    d = _report_date(path)
+    if d and d < since:
+        res['infos'].append('%s：规则自 %s 起生效，本报告（%s）早于规则确立，不参与'
+                            % (label, since, d))
+        return False
+    return True
+
+
+def _parse_tables(text):
+    """解析 markdown 表格 → [(表头行号, [表头列], [(数据行行号, [单元格])])]。
+
+    表头 = 以 `|` 开头、且**下一行**是分隔线（`|---|---|`）的那一行。
+    数据行 = 紧随其后、仍以 `|` 开头的行。
+    """
+    lines = text.split('\n')
+    out = []
+    i = 1
+    while i <= len(lines):
+        s = lines[i - 1].strip()
+        if (s.startswith('|') and i < len(lines)
+                and re.match(r'^\|[\s:|\-]+\|?\s*$', lines[i].strip())):
+            header = [c.strip() for c in s.strip('|').split('|')]
+            rows = []
+            j = i + 2
+            while j <= len(lines) and lines[j - 1].strip().startswith('|'):
+                rows.append((j, [c.strip() for c in lines[j - 1].strip().strip('|').split('|')]))
+                j += 1
+            out.append((i, header, rows))
+            i = j
+        else:
+            i += 1
+    return out
+
+
+def _cell_text(c):
+    """单元格的「读者可见宽度」口径：去掉空白与 markdown 标记（** ` * 等）。"""
+    return _nz(re.sub(r'[*`~]', '', c))
+
+
+def _width_check(text, res):
+    """第 9 类检查：表格长文本单元格上限（审计 5.1）。
+
+    实测 9/18 晨报：第二块「上期共识复盘」的「说明」列最长 **202 字/格**，
+    第五块「做多/规避榜」的「依据」列 125 字/格 —— 880px 宽的 HTML 里就是一列竖条。
+
+    阈值按列数分层（列越多每列越窄）：≤3 列 120 字 / 4 列 90 字 / ≥5 列 80 字。
+    """
+    rules = getattr(spec, 'TABLE_CELL_RULES', None)
+    if not rules or not _rule_active(rules.get('since'), res['path'], res, rules['label']):
+        return
+    tiers = rules['by_cols']
+    over = []
+    for _hline, header, rows in _parse_tables(text):
+        ncols = len(header)
+        limit = next(l for maxc, l in tiers if ncols <= maxc)
+        for rline, cells in rows:
+            for ci, c in enumerate(cells, 1):
+                n = _cell_text(c)
+                if n > limit:
+                    # 元组顺序必须与下面的格式串一致：(行号, 列号, 字数, 该表列数, 上限)
+                    over.append((rline, ci, n, ncols, limit))
+    if over:
+        over.sort(key=lambda x: -x[2])
+        detail = '；'.join('L%d 第%d列 %d字（该表 %d 列，上限 %d）' % o for o in over[:6])
+        if len(over) > 6:
+            detail += '；…共 %d 处' % len(over)
+        res['warns'].append('表格宽度·%s：%s。%s' % (rules['label'], detail, rules['hint']))
+
+
+def _term_check(text, res):
+    """第 10 类检查：术语与口径一致性（审计 5.3）。三条独立判据，见 layout_spec.TERM_RULES。"""
+    rules = getattr(spec, 'TERM_RULES', None)
+    if not rules:
+        return
+
+    # ① 55 线写法混用：同一级别同时出现 `30F55` 与 `30F MA55`
+    r = rules.get('ma55_style')
+    if r and _rule_active(r.get('since'), res['path'], res, r['label']):
+        compact = set(re.findall(r['compact'], text))
+        full = set(re.findall(r['full'], text))
+        both = sorted(compact & full)
+        if both:
+            res['warns'].append('术语·%s：级别 %s 同时出现 xF55 与 xF MA55 两种写法。%s'
+                                % (r['label'], '、'.join(both), r['hint']))
+
+    # ② MA20 与 BOLL 中轨并存且未注明等价
+    r = rules.get('ma20_boll')
+    if r and _rule_active(r.get('since'), res['path'], res, r['label']):
+        if re.search(r['a'], text) and re.search(r['b'], text) and not re.search(r['equiv'], text):
+            res['warns'].append('术语·%s：%s' % (r['label'], r['hint']))
+
+    # ③ 关键位表的「属性」列出现 —/空（那是「现价」行，不是关键位）
+    r = rules.get('level_table_dash')
+    if r and _rule_active(r.get('since'), res['path'], res, r['label']):
+        dash = set(v.lower() for v in r['dash_values'])
+        bad = []
+        for _hline, header, rows in _parse_tables(text):
+            joined = ''.join(header)
+            if not all(k in joined for k in r['header_must_contain']):
+                continue
+            idx = next((i for i, h in enumerate(header) if '属性' in h), None)
+            if idx is None:
+                continue
+            for rline, cells in rows:
+                if idx >= len(cells):
+                    continue
+                if cells[idx].replace('*', '').strip().lower() in dash:
+                    bad.append('L%d（第%d列「%s」值为「%s」）'
+                               % (rline, idx + 1, header[idx], cells[idx] or '空'))
+        if bad:
+            res['warns'].append('术语·%s：%s。%s' % (r['label'], '；'.join(bad[:5]), r['hint']))
+
+
+def _appendix_coverage_check(text, res):
+    """第 11 类检查：附录 A/B 星球覆盖口径（审计 5.4）。
+
+    实测 9/18 晨报：附录 B 列 10 个星球、附录 A 只列 7 —— 信息平权 / 投行圈子 / 口罩哥
+    **完全没出现**，也没有一句「本期未覆盖」。读者会以为漏抓（实际是通道未返回/未配置）。
+
+    判据：附录 B 的每个星球名，要么在附录 A 段落里出现，要么该段落含「未覆盖」类说明。
+    """
+    rules = getattr(spec, 'APPENDIX_COVERAGE', None)
+    if not rules or not _rule_active(rules.get('since'), res['path'], res, rules['label']):
+        return
+    lines = text.split('\n')
+
+    def seg(pat):
+        """取 `## 附录 X …` 到下一个 H2 之间的正文。"""
+        start = None
+        for i, l in enumerate(lines):
+            if re.match(r'^##\s', l) and re.search(pat, l):
+                start = i
+                break
+        if start is None:
+            return None
+        end = len(lines)
+        for j in range(start + 1, len(lines)):
+            if re.match(r'^##\s', lines[j]):
+                end = j
+                break
+        return '\n'.join(lines[start:end])
+
+    a_seg = seg(r'附录\s*A')
+    b_seg = seg(r'附录\s*B')
+    if not a_seg or not b_seg:
+        res['infos'].append('%s：未同时找到附录 A 与附录 B，跳过覆盖核对' % rules['label'])
+        return
+
+    names = []
+    for _hline, header, rows in _parse_tables(b_seg):
+        joined = ''.join(header)
+        if rules['b_header_key'] not in joined or '代号' not in joined:
+            continue
+        idx = next((i for i, h in enumerate(header) if rules['b_header_key'] in h), None)
+        for _rline, cells in rows:
+            if idx is not None and idx < len(cells):
+                v = re.sub(r'[*`]', '', cells[idx]).strip()
+                if v and v not in names:
+                    names.append(v)
+    if not names:
+        res['infos'].append('%s：附录 B 未解析出星球列表，跳过覆盖核对' % rules['label'])
+        return
+
+    blob_a = re.sub(r'\s', '', a_seg)
+    missing = [n for n in names if re.sub(r'\s', '', n) not in blob_a]
+    if missing and not re.search(rules['absence_marker'], a_seg):
+        res['warns'].append('附录口径·%s：附录 B 列了 %d 个星球，但 %s 在附录 A 里既不出现、'
+                            '也没有「未覆盖」说明 —— 读者会以为漏抓。%s'
+                            % (rules['label'], len(names), '、'.join(missing), rules['hint']))
+    elif missing:
+        res['infos'].append('附录口径：%d 个星球已在附录 A 以「未覆盖」显式说明：%s'
+                            % (len(missing), '、'.join(missing)))
+
+
 def check(path):
     tier = detect_tier(os.path.basename(path))
     res = {'path': path, 'tier': tier, 'errors': [], 'warns': [], 'infos': []}
@@ -514,6 +734,15 @@ def check(path):
 
     # 8) 本期变化·基期对账（手写数字 vs 链实测，2026-09-18 审计 P0-1 新增）
     _period_change_check(text, res)
+
+    # 9) 表格长文本单元格宽度（2026-09-18 审计 5.1 新增）
+    _width_check(text, res)
+
+    # 10) 术语与口径一致性（2026-09-18 审计 5.3 新增）
+    _term_check(text, res)
+
+    # 11) 附录 A/B 星球覆盖口径（2026-09-18 审计 5.4 新增）
+    _appendix_coverage_check(text, res)
 
     return res
 

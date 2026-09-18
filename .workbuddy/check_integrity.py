@@ -11,6 +11,7 @@
 4) consensus_chain 时效：最后一条记录日期 vs 最近交易日
 5) forecast_chain 数据完整性：review.actual 缺 date/open/high/low/close/pct_chg
 6) pending 守卫：任一链 pending > 1 → 可能漏复盘上一条（自 chain_apply 下沉）
+7) 链记录 → 报告产物：链上每条记录都应对应一份 outputs/作战报告_<档位>_<日期>.md
 
 2026-09-17 加固（消除永久噪声，恢复闸门可用性）
 -----------------------------------------------
@@ -41,6 +42,16 @@
     等于从不校验（9/11、9/14 两条一直在裸奔），现明确纳入判定
   - 【1】【2】【4】【6】为 ERROR（数据缺口 / 链停更 / 漏复盘）
 
+2026-09-18 补盲区【7】（全链路审计 5.5）
+---------------------------------------
+改前问题：所有校验器都只看「链里有没有记录 / 归档在不在」，**没有一处看报告文件本身在不在**。
+链和报告是两条独立写入路径（链由脚本 append、报告由 LLM 落盘）——链写成功而报告落盘失败时，
+全链路会静默「全绿」：记录说「本期预判已写入」，磁盘上却没有那份报告。
+【7】补上这一环：链上每条 `<日期>-<档位>` 记录都要有对应的
+`outputs/作战报告_<中文档位>_<日期>.md`，缺失即 ERROR。
+只做单向断言（链有记录 → 报告先有）；反方向需要交易日历，刻意不做。
+`ARTIFACT_SINCE` 之前的缺口归历史命名例外（旧报告名不同/已归档），聚合一条 INFO。
+
 用法
 ----
     python check_integrity.py [--from YYYY-MM-DD] [--verbose]
@@ -51,6 +62,7 @@
 import datetime
 import json
 import os
+import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -83,6 +95,31 @@ KNOWN_ACTUAL_EXCEPTIONS = {
 
 # actual 完整性要求的字段
 ACTUAL_KEYS = ['date', 'open', 'high', 'low', 'close', 'pct_chg']
+
+# ---------------------------------------------------------------------------
+# 【7】链记录 → 报告产物：档位后缀 → 报告文件名里的中文档位段
+#
+# 背景（2026-09-18 全链路审计 5.5「校验器盲区」）
+# ----------------------------------------------
+# 原先所有校验器都只看「链里有没有记录」「归档在不在」，**没有一处看报告文件本身在不在**。
+# 而链和报告是两条独立的写入路径（链由脚本 append、报告由 LLM 落盘）：
+# 只要链写成功、报告落盘失败，全链路就会静默地"全绿" —— 记录说「本期预判已写入」，
+# 磁盘上却根本没有那份报告。这正是 check 类工具最该覆盖、却恰好没覆盖的缝隙。
+#
+# 方向只有一个：**链已有记录 → 报告必须先有**。
+# 反方向（"该生成却无记录"）需要交易日历 + 各档位排期，现有数据反查不出来，刻意不做，
+# 免得做出一个靠猜的检查。
+# ---------------------------------------------------------------------------
+TIER_BY_SUFFIX = {
+    'morning': '晨报', 'morning-v2': '晨报',   # -v2 是同日重生成的旧命名
+    'noon': '午间', 'afternoon': '午间',
+    'close': '收盘',
+    'intraday': '盘中', '1100': '盘中', '1340': '盘中',   # 早期按时点命名，同属盘中档
+}
+
+# 报告命名统一为「作战报告_<档位>_<日期>.md」的生效日。此前的报告用了别的文件名
+# （知识星球晨报_… 等）且多已归档，逐条报缺口就是纯噪声 —— 与 KNOWN_TJ_GAPS 同一处理。
+ARTIFACT_SINCE = '2026-08-27'
 
 
 def is_static_precheck(rev):
@@ -244,10 +281,53 @@ def main():
             print(f'  ✅ {name}: pending={len(pends)}'
                   + ('（%s）' % pends[0] if pends else ''))
 
+    # 7) 链记录 → 报告产物存在性（2026-09-18 审计 5.5）
+    print('\n【7】链记录 → 报告产物（链上有记录，但 outputs 里没有对应报告）')
+    needs = {}          # 期望文件名 -> [记录 id]（同日多档位/重生成会指向同一个文件）
+    art_unknown = []
+    for r in fchain:
+        rid = r.get('id', '')
+        m = re.match(r'^(\d{4}-\d{2}-\d{2})-(.+)$', rid)
+        zh = TIER_BY_SUFFIX.get(m.group(2)) if m else None
+        if not zh:
+            art_unknown.append(rid)
+            continue
+        needs.setdefault('作战报告_%s_%s.md' % (zh, m.group(1)), []).append(rid)
+
+    art_gap, art_legacy = [], []
+    for fn in sorted(needs):
+        if os.path.exists(os.path.join(OUT, fn)):
+            continue
+        d = fn[-13:-3]                                  # 文件名尾部 YYYY-MM-DD
+        rec = '%s（记录 %s）' % (fn, '、'.join(needs[fn]))
+        (art_gap if d >= ARTIFACT_SINCE else art_legacy).append((d, fn, rec))
+
+    if art_gap:
+        for _d, _fn, x in art_gap:
+            print(f'  ⚠️ 缺报告：{x}')
+        errors += len(art_gap)
+    else:
+        print(f'  ✅ 无缺口（{ARTIFACT_SINCE} 起逐条对应）')
+    if art_legacy:
+        # 与【3】同口径：历史例外只在 --verbose 下逐条展开，默认一行汇总。
+        # 18 份旧文件名逐条打印，会把上面真正的缺口挤出屏幕 —— 正是本文件反复加固的问题。
+        print(f'  ℹ️ 命名规范生效前（< {ARTIFACT_SINCE}）的历史例外 {len(art_legacy)} 份'
+              f'（{art_legacy[0][0]} ~ {art_legacy[-1][0]}；当时报告用了别的文件名/已归档，'
+              f'不计入问题；--verbose 展开）')
+        if verbose:
+            for _d, fn, _x in art_legacy:
+                print(f'     · {fn}')
+        infos += 1
+    if art_unknown:
+        print(f'  ℹ️ 无法映射档位的记录 id {len(art_unknown)} 个'
+              f'（新后缀？需补 TIER_BY_SUFFIX）：' + '、'.join(art_unknown))
+        infos += 1
+
     # 汇总
     print('\n' + '=' * 70)
     print(f'汇总：DRAGON BALL模型 新增缺口 {len(tj_real)}（另有已知例外 {len(tj_known)}）· '
-          f'档位缺口 {len(fc_missing)} · ERROR {errors} · WARN {warns} · INFO {infos}')
+          f'档位缺口 {len(fc_missing)} · 产物缺口 {len(art_gap)} · '
+          f'ERROR {errors} · WARN {warns} · INFO {infos}')
     if errors:
         print('❌ 存在 ERROR：必须处理（见上方 ⚠️ 行）。')
     elif warns:

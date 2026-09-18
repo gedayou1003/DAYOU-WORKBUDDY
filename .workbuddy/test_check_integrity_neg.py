@@ -21,7 +21,12 @@ TODAY = datetime.date.today().isoformat()
 RID = TODAY + '-morning'
 
 
-def build(tj_archive=True, forecast=None, consensus=None):
+def build(tj_archive=True, forecast=None, consensus=None, report=True, skip_dates=()):
+    """搭沙箱。
+
+    report=False  → 一份报告都不落盘（用于验证【7】的缺产物断言）
+    skip_dates    → 只对这些日期不落报告（用于验证「ARTIFACT_SINCE 之前算历史例外」）
+    """
     sb = tempfile.mkdtemp(prefix='p11_')
     dot = os.path.join(sb, '.workbuddy')
     os.makedirs(dot)
@@ -31,6 +36,15 @@ def build(tj_archive=True, forecast=None, consensus=None):
     if tj_archive:
         open(os.path.join(sb, 'outputs', 'DRAGON_BALL_原始记录_%s.md' % TODAY),
              'w', encoding='utf-8').write('# 归档\n## [1] 内容\n')
+    # 【7】链记录 → 报告产物：档位由 id 后缀决定（TODAY-morning → 作战报告_晨报_TODAY.md）。
+    # 为链上每条 *-morning 记录都落一份，让沙箱自洽 —— 否则【7】会如实报出缺口，
+    # 把"A~G 在测别的检查"变成"A~G 全被【7】带红"。
+    if report:
+        for r in (forecast or []):
+            rid = r.get('id', '')
+            if rid.endswith('-morning') and rid[:10] not in skip_dates:
+                open(os.path.join(sb, 'outputs', '作战报告_晨报_%s.md' % rid[:10]),
+                     'w', encoding='utf-8').write('# 报告\n')
     with open(os.path.join(dot, 'forecast_chain.json'), 'w', encoding='utf-8') as f:
         json.dump(forecast, f, ensure_ascii=False)
     with open(os.path.join(dot, 'consensus_chain.json'), 'w', encoding='utf-8') as f:
@@ -110,6 +124,26 @@ sb = build(forecast=[{'id': RID, 'review': {'actual': '全文一句话，没有 
 rc, out = run(sb)
 ck(rc == 2, '非白名单字符串 actual 退出码 2（改前此情形**完全不校验**）')
 ck('actual 为字符串' in out, '明确报出「无法机器校验」')
+shutil.rmtree(sb, ignore_errors=True)
+
+print('H) 注入 ERROR（链有记录、报告文件没落盘）→ 1')
+sb = build(report=False, forecast=[{'id': RID, 'review': {'actual': FULL}}])
+rc, out = run(sb)
+ck(rc == 1, '缺报告产物时退出码 1（实测 %s）' % rc)
+ck('缺报告' in out, '【7】报出「链记录 → 报告产物」缺口')
+ck('产物缺口 1' in out, '汇总里标出产物缺口 1')
+shutil.rmtree(sb, ignore_errors=True)
+
+print('I) 但命名规范生效日之前的缺口只算历史例外 → 0')
+# 2026-08-21 远早于 ARTIFACT_SINCE（2026-08-27），当时报告名不同 —— 不该判红
+sb = build(forecast=[{'id': '2026-08-21-morning', 'review': {'actual': FULL},
+                      'status': 'verified'},
+                     {'id': RID, 'review': {'actual': FULL}}],
+           skip_dates=('2026-08-21',))
+rc, out = run(sb)
+ck(rc == 0, 'ARTIFACT_SINCE 之前的缺产物不判红（实测 %s）' % rc)
+ck('历史例外' in out and '作战报告_晨报_2026-08-21.md' not in out,
+   '默认只汇总不逐条展开（--verbose 才列文件名）')
 shutil.rmtree(sb, ignore_errors=True)
 
 print()
