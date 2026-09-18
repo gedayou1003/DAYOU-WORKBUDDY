@@ -56,7 +56,7 @@ SKIP_FILES = {
     'forecast_chain.json', 'consensus_chain.json', 'zsxq_fetch_raw.json',
     'check_display_name.py', '_rename_tj_0918.py', '_scan_tj_residual.py',
 }
-SKIP_FILE_PREFIX = ('payload_',)
+SKIP_FILE_PREFIX = ('payload_', 'zsxq_fetch_raw')
 # 路径片段排除
 SKIP_PATH_SEG = (os.sep + 'memory' + os.sep,)
 
