@@ -479,13 +479,16 @@ def _rule_active(since, path, res, label):
     规则在 t 时刻确立，就只约束 t 之后**生成**的报告。早于起点的报告**明示**豁免：
     打印一条 INFO 说明原因，而不是静默跳过 —— 静默跳过等于把闸门调松了却不说。
     （本项目已有教训：拿新尺子量旧快照，会让「0 WARN」这道闸门当天就永久失效。）
+
+    注意：这里只把豁免**登记**到 res['_exempt']，不在每处直接 append ——
+    因为同一份报告会被 5 条新规则各判一次，逐条打印会让每份历史报告刷 5 行 INFO
+    （5 份报告 25 行），由 check() 末尾聚合成 1 条「逐一点名」的 INFO。
     """
     if not since:
         return True
     d = _report_date(path)
     if d and d < since:
-        res['infos'].append('%s：规则自 %s 起生效，本报告（%s）早于规则确立，不参与'
-                            % (label, since, d))
+        res.setdefault('_exempt', []).append((label, since, d))
         return False
     return True
 
@@ -743,6 +746,19 @@ def check(path):
 
     # 11) 附录 A/B 星球覆盖口径（2026-09-18 审计 5.4 新增）
     _appendix_coverage_check(text, res)
+
+    # 聚合同一份报告被多条第 9~11 类规则登记的豁免，压成 1 条「逐一点名」的 INFO。
+    # 不聚合的话，每份早于生效起点的历史报告会刷 5 行（5 份报告 25 行），
+    # 就又复现「告警太多 → 闸门被无视」那类噪声。
+    exempt = res.pop('_exempt', None)
+    if exempt:
+        by_since = {}
+        for label, since, d in exempt:
+            by_since.setdefault((since, d), []).append(label)
+        for (since, d), labels in by_since.items():
+            res['infos'].append(
+                '新增规则 %s（共 %d 条）自 %s 起生效，本报告（%s）早于规则确立，不参与'
+                % ('、'.join(labels), len(labels), since, d))
 
     return res
 

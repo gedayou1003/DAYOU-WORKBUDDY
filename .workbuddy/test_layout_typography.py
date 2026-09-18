@@ -387,10 +387,14 @@ ck(not got, '起点前一天（%s）注入全部三类问题 → 一条都不报
 
 labels = ['表格长文本单元格', '55 线写法混用', 'MA20 与 BOLL 中轨并存且未注明等价',
           '关键位表出现无属性的行', '附录 A/B 星球覆盖口径']
-missing_lbl = [l for l in labels if not I(res_before, l)]
-ck(not missing_lbl, '5 条新规则各打一条豁免 INFO，逐条点名（缺 %s）' % (missing_lbl or '无'))
-ck(bool(I(res_before, '规则自 %s 起生效' % SINCE)), '豁免 INFO 里写明了生效日期 %s' % SINCE)
-ck(bool(I(res_before, '不参与')), '措辞是「不参与」——读者能看出是豁免，不是没查')
+exempt_infos = I(res_before, '新增规则')
+ck(len(exempt_infos) == 1, '豁免聚合成 1 条 INFO（实测 %d 条）' % len(exempt_infos))
+if exempt_infos:
+    line = exempt_infos[0]
+    missing_lbl = [l for l in labels if l not in line]
+    ck(not missing_lbl, '聚合条仍逐一点名 5 条规则（缺 %s）' % (missing_lbl or '无'))
+    ck(SINCE in line, '写明生效日期 %s' % SINCE)
+    ck('不参与' in line, '措辞是「不参与」——读者能看出是豁免，不是没查')
 
 res_at = run(report(D_AT, **bad), D_AT)
 got = [p for p in ('表格宽度·', '术语·55 线', '术语·MA20', '术语·关键位表', '附录口径·')
