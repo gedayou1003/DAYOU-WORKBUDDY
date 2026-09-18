@@ -496,3 +496,42 @@ forecast `880147a04114` / consensus `bb0c331a50a6` / chan_signal `535ce4885416`�
 同档期内混入静态初验样本时，**方向 ⚠️ / 区间 ✅ 会被计入常规统计**（先例即如此），
 但它们是**盘前静态判定、非全天实测**。→ **必须在报告的偏差统计表下显式说明，并提示按半权重理解**，
 否则读者会把「依据未被否定」误读为「方向部分兑现」。支撑/压力因计入未判定，其分母天然小于方向/区间。
+
+## 26. 对外显示名「DRAGON BALL模型」（2026-09-18，隐藏星球③原名）
+
+### 铁律：一切**对外可见**的产物，一律称星球③为「DRAGON BALL模型」
+
+用户要求隐藏该知识星球的真实名称。**改名分两层，切勿混淆**：
+
+| 层 | 处理 | 涉及 |
+|---|---|---|
+| 生成链路 | **已改**「DRAGON BALL模型」 | 报告 md、`.workbuddy/*.md` 文档、脚本显示文本、automation prompt、`morning_prompt_std.txt`、归档文件名 |
+| 数据层 | **刻意保留原名** | `forecast_chain.json`(460)/`consensus_chain.json`(209)/`payload_*.json`/`zsxq_fetch_raw.json`；`fetch_zsxq*.py`/`backfill_zsxq_window.py` 的 gid→名映射 |
+| 功能必需匹配串 | **刻意保留原名** | `anonymize_report.py`（用于匿名化**8 月老报告**，老报告里写的是原名） |
+| 历史快照 | 不改 | `.workbuddy/archive/**`、`_` 前缀按天中间产物、`outputs/` 历史报告、`_sync_家里/`、`.workbuddy/memory/**`（本文件自身仍含原名） |
+
+> **口径须知**：回看历史时，「DRAGON BALL模型」与旧称指**同一个星球（gid `88512145458842`）**。
+> 星球稳定标识用 **gid**，不要用显示名 —— 显示名已可变更。
+
+### ⚠️ 结构性泄漏路径（改名时踩到，已修）
+
+数据层保留原名 + 生成器直接渲染数据 → **原文会漏进对外产物**：
+```
+forecast_chain.json 的 levels.*.label / signals（原文含旧称）
+   → gen_forecast_svg.py 渲染 → SVG → 内嵌进报告 HTML
+```
+9/18 实测 SVG 与 HTML 各有 7 处泄漏。**修法：在渲染边界脱敏，不动数据层**：
+- `.workbuddy/display_names.py` —— 脱敏规则**唯一真源**（`scrub()` / `scrub_all()`，长模式优先，`TJ` 走词边界保护以免误伤 `tj_bypass`）
+- `gen_forecast_svg.py`：`L_*` 标签与 `signals` 全部过 `scrub`
+- `md_to_html_report.py`：读入的 md 与**内嵌 SVG** 均过 `scrub`
+- **新增任何读取链数据并输出到报告/SVG 的生成器，必须同样过 `scrub`**
+
+### 守卫命令（改名相关改动后照跑）
+
+```
+$PY .workbuddy/check_display_name.py     # 对外产物+生成链路零泄漏（exit 0 才正常）
+$PY .workbuddy/check_integrity.py        # 归档缺口前缀已同步 DRAGON_BALL_，应 0 新增
+$PY .workbuddy/check_layout.py "outputs/作战报告_晨报_<日期>.md"
+```
+白名单（永久、故意命中）在 `check_display_name.py` 顶部注释里逐条列明。
+

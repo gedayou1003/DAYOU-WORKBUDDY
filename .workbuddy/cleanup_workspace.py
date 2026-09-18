@@ -36,7 +36,7 @@ ACTIONS = [
      'I-6 前旧命名，与 _zsxq_digest_2026-09-16.txt 内容完全相同', 'md5',
      '.workbuddy/_zsxq_digest_2026-09-16.txt'),
     ('.workbuddy/_tj_raw_0916.txt', 'legacy_naming',
-     'I-6 前旧命名（T&J 原始抓取中转件）', None),
+     'I-6 前旧命名（DRAGON BALL模型 原始抓取中转件）', None),
     ('.workbuddy/_zsxq_digest.txt', 'legacy_naming',
      'I-6 前固定文件名产物（无日期），已被 _zsxq_digest_YYYY-MM-DD.txt 取代', None),
     ('.workbuddy/_tech_extra_2026-09-17.json', 'legacy_naming',

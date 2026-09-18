@@ -12,7 +12,7 @@
    $PY .workbuddy/fetch_zsxq.py
    ```
    产物：`.workbuddy/zsxq_fetch_raw.json` + `.workbuddy/zsxq_images/`（原图）。
-   - 若脚本不可用，手工走双通道：通道A（Skill/zsxq-cli，`~/AppData/Roaming/npm/zsxq-cli.cmd`，星球：卫斯李48888151228258、基业长青+28855811424141、Truth and Justice88512145458842）；通道B（Cookie 直连 `https://api.zsxq.com/v2/groups/<group_id>/topics?scope=all&count=20`，星球：大鹏鸟48841181481248、短评&信息48418411254128、180K Research28888222154481、AI产业链51115885414844）。
+   - 若脚本不可用，手工走双通道：通道A（Skill/zsxq-cli，`~/AppData/Roaming/npm/zsxq-cli.cmd`，星球：卫斯李48888151228258、基业长青+28855811424141、DRAGON BALL模型88512145458842）；通道B（Cookie 直连 `https://api.zsxq.com/v2/groups/<group_id>/topics?scope=all&count=20`，星球：大鹏鸟48841181481248、短评&信息48418411254128、180K Research28888222154481、AI产业链51115885414844）。
    - Cookie 失效（HTTP 401）说明原因并提示更新 `.workbuddy/zsxq_cookie.txt`，不中断。
 
 2. **图片正文读取（重点）**：`images` 非空的帖子，用 Read 工具读 `.workbuddy/zsxq_images/` 下本地图片提取正文，不能只写标题占位。`files` 非空标注附件文件名与大小。
@@ -50,7 +50,7 @@ $PY run_000001_chansignal.py
 输出：`000001_YYYYMMDD_买卖点对比表.md`（日线/周线/60/15/5分钟）
 ### 产物整合
 1. 两张对比表内容**原样抄入晨报**，作为独立章节（引擎 HTML 不复制到 outputs/、不 present）
-2. 区间套思路做级别联动解读，与星球大盘技术判断（Truth and Justice 缠论复盘、大鹏鸟盘前观点）呼应对比
+2. 区间套思路做级别联动解读，与星球大盘技术判断（DRAGON BALL模型 缠论复盘、大鹏鸟盘前观点）呼应对比
 ### 失败处理
 任一引擎接口不可用或报错，说明原因并保留另一引擎结果和晨报，不中断。
 
@@ -93,7 +93,7 @@ $PY run_000001_chansignal.py
 - 命中「规律已现」标签的行业（如方向相反、支撑跌破）单独标注提示
 
 ## 特别要求
-- 若内容出现"TRUTH AND JUSTICE"话题，原文一字不差归档 outputs/TRUTH_AND_JUSTICE_原始记录_YYYY-MM-DD.md，并在晨报标注。
+- 若内容出现"DRAGON BALL"话题，原文一字不差归档 outputs/DRAGON_BALL_原始记录_YYYY-MM-DD.md，并在晨报标注。
 - 输出：outputs/作战报告_晨报_YYYY-MM-DD.md（一份，改进版格式已具备匿名化效果，不再单独产匿名版）。
 
 ## 最终输出

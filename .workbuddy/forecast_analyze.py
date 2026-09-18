@@ -146,7 +146,7 @@ def fetch_history(tencent_code, count=60):
 
 
 def compute_tj_bypass(tencent_code):
-    """TJ 旁路状态检测（backtest_tj_v2.py 回测已验证的两个短线辅助信号）。
+    """DRAGON BALL模型 旁路状态检测（backtest_tj_v2.py 回测已验证的两个短线辅助信号）。
 
     只标注、绝不进 v5 方向打分。依据回测结论：
     - 持续极强：日线 55 线上方连续加速 2 日 → 短线不追高（次日跌 46.6% vs 涨 32.8%）
@@ -358,7 +358,7 @@ def main():
     if prev and 'error' not in result['ohlc']:
         result['review'] = mechanical_review(prev, result['ohlc'])
 
-    # 5. TJ 旁路状态（只标注，不进 v5 方向打分）
+    # 5. DRAGON BALL模型 旁路状态（只标注，不进 v5 方向打分）
     result['tj_bypass'] = compute_tj_bypass(resolved['tencent'])
 
     # 6. 高低开上下文（双锚点：相对昨收 / 相对今开）

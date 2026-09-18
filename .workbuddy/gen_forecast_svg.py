@@ -26,6 +26,13 @@ import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
+# 2026-09-18：显示层脱敏。链数据（forecast_chain.json）里的 levels.*.label / signals
+# 属**刻意保留的历史原文**，但本脚本会把它们渲染进对外可见的 SVG —— 这是一条泄漏路径。
+# 故在此统一过一道 scrub，只改渲染输出、不动数据。
+from display_names import scrub, scrub_all
+
 CHAIN = os.path.join(HERE, 'forecast_chain.json')
 
 
@@ -81,12 +88,13 @@ def load_data(pred_id=None):
 
 def build_svg(lv, act, out_path):
     P_NOW = float(lv['now'])
-    P_DEC = float(lv['decision']['price']); L_DEC = lv['decision']['label']
-    P_UP = float(lv['up_target']['price']); L_UP = lv['up_target']['label']
-    P_DN = float(lv['down_support']['price']); L_DN = lv['down_support']['label']
-    P_LOW = float(lv['down_lower']['price']); L_LOW = lv['down_lower']['label']
+    # 所有写入 SVG 的文本都过 scrub（标签与信号来自链数据原文）
+    P_DEC = float(lv['decision']['price']); L_DEC = scrub(lv['decision']['label'])
+    P_UP = float(lv['up_target']['price']); L_UP = scrub(lv['up_target']['label'])
+    P_DN = float(lv['down_support']['price']); L_DN = scrub(lv['down_support']['label'])
+    P_LOW = float(lv['down_lower']['price']); L_LOW = scrub(lv['down_lower']['label'])
     D = lv.get('date', '')
-    signals = lv.get('signals', [])
+    signals = scrub_all(lv.get('signals', []))
     O, H, L, C = float(act['open']), float(act['high']), float(act['low']), float(act['close'])
 
     # 三态概率（兼容旧 {"A":..,"B":..} 格式）

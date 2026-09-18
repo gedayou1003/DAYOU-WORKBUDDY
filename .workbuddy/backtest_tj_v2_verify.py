@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""TJ v2 补充验证：极强/极弱状态机信号稳健性 + 能否作为方向因子"""
+"""DRAGON BALL模型 v2 补充验证：极强/极弱状态机信号稳健性 + 能否作为方向因子"""
 import os, json
 import pandas as pd
 

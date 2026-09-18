@@ -38,7 +38,14 @@ if not MD.endswith('.md'):
 
 OUT = MD[:-3] + '.html'
 
-md = io.open(MD, encoding='utf-8').read()
+# 2026-09-18：显示层脱敏。报告 md 与本脚本内嵌的走势图 SVG 都可能残留旧称呼
+# （SVG 的标签源自链数据原文），对外 HTML 一律统一改写。见 display_names.py。
+_HERE = os.path.dirname(os.path.abspath(__file__))
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+from display_names import scrub
+
+md = scrub(io.open(MD, encoding='utf-8').read())
 
 title = '作战报告'
 m = re.search(r'^#\s+(.+)$', md, re.M)
@@ -52,6 +59,8 @@ if svg_ref:
     svg_path = os.path.normpath(os.path.join(os.path.dirname(MD), svg_ref.group(1)))
     if os.path.exists(svg_path):
         svg_raw = io.open(svg_path, encoding='utf-8').read()
+        # 内嵌的 SVG 也过一道脱敏（其标签/信号来自链数据原文，见 gen_forecast_svg.py 同名处理）
+        svg_raw = scrub(svg_raw)
         # viewBox 由 gen_forecast_svg.py 统一维护（900 宽，右侧标注不裁剪），此处不再硬改
         svg_raw = re.sub(r'<\?xml[^>]*\?>', '', svg_raw)
         svg_inline = svg_raw.replace(

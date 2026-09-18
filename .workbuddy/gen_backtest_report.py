@@ -62,7 +62,7 @@ th{{color:var(--muted);font-weight:500;position:sticky;top:0;background:var(--bg
 <div class="cards">
 {card('方向准确率', f'{st["dir_accuracy"]}%', 'bad')}
 {card('方向相反率', f'{st["dir_opposite"]}%', 'bad')}
-{card('T&J 方向准确率', f'{st["tj_accuracy"]}%', 'good')}
+{card('DRAGON BALL模型 方向准确率', f'{st["tj_accuracy"]}%', 'good')}
 {card('区间覆盖率', f'{st["range_accuracy"]}%', 'bad')}
 {card('支撑平均误差', f'{st["sup_mean_err"]} 点', 'bad')}
 {card('压力平均误差', f'{st["res_mean_err"]} 点', 'bad')}
@@ -73,9 +73,9 @@ th{{color:var(--muted);font-weight:500;position:sticky;top:0;background:var(--bg
 <h2>二、关键发现</h2>
 <div class="findings">
 <ol>
-<li><b>方向判断：引擎严重失效，星球观点明显更准</b>。纯缠论引擎方向准确率仅 <b>{st["dir_accuracy"]}%</b>（相反 {st["dir_opposite"]}%，比抛硬币还差）；而 T&J 技术分析方向准确率 <b>{st["tj_accuracy"]}%</b>（相反 {st["tj_opposite"]}%），高出约 16 个百分点。核心原因是买卖点信号<b>滞后</b>：7 月底暴跌中引擎还残留买点偏多、8 月初反弹中又残留卖点偏空，信号成了"反向指标"。</li>
+<li><b>方向判断：引擎严重失效，星球观点明显更准</b>。纯缠论引擎方向准确率仅 <b>{st["dir_accuracy"]}%</b>（相反 {st["dir_opposite"]}%，比抛硬币还差）；而 DRAGON BALL模型 技术分析方向准确率 <b>{st["tj_accuracy"]}%</b>（相反 {st["tj_opposite"]}%），高出约 16 个百分点。核心原因是买卖点信号<b>滞后</b>：7 月底暴跌中引擎还残留买点偏多、8 月初反弹中又残留卖点偏空，信号成了"反向指标"。</li>
 <li><b>区间系统性偏窄</b>。支撑~压力区间覆盖实际走势仅 <b>{st["range_accuracy"]}%</b>；支撑位平均被跌破 <b>{st["sup_mean_err"]} 点</b>、压力位平均被突破 <b>{st["res_mean_err"]} 点</b>，说明模型给的区间比真实波动窄约 ±0.8%。</li>
-<li><b>关键拐点 T&J 更有价值</b>：8-18（-2.40%）、8-21（-0.97%）两次下跌，T&J 均提前偏空命中，而引擎在 8-21→8-24 仍给"震荡偏多"看错。</li>
+<li><b>关键拐点 DRAGON BALL模型 更有价值</b>：8-18（-2.40%）、8-21（-0.97%）两次下跌，DRAGON BALL模型 均提前偏空命中，而引擎在 8-21→8-24 仍给"震荡偏多"看错。</li>
 </ol>
 </div>
 
@@ -91,7 +91,7 @@ th{{color:var(--muted);font-weight:500;position:sticky;top:0;background:var(--bg
 <h2>四、改进可能（待样本累积后评估）</h2>
 <div class="findings">
 <ol>
-<li><b>方向校准引入星球观点</b>：T&J 方向 47.4% 明显优于引擎 31.6%，且关键拐点更准——建议在方向判断中提高 T&J/大鹏鸟等技术观点权重，或在引擎"方向不明"时以星球观点为准。</li>
+<li><b>方向校准引入星球观点</b>：DRAGON BALL模型 方向 47.4% 明显优于引擎 31.6%，且关键拐点更准——建议在方向判断中提高 DRAGON BALL模型/大鹏鸟等技术观点权重，或在引擎"方向不明"时以星球观点为准。</li>
 <li><b>区间放宽</b>：当前支撑~压力区间系统性偏窄 ±30 点（约 ±0.8%），可考虑区间上/下沿各外扩 0.5~1 个档位，或用 BOLL 上下轨替代单一买卖点作为区间边界。</li>
 <li><b>支撑/压力取宽带</b>：买卖点价位作为支撑/压力被穿透是常态（支撑跌破 36.8%、压力突破 57.9%），可结合 BOLL 中轨/上下轨取"支撑带/压力带"而非单点。</li>
 <li><b>买卖点滞后问题</b>：趋势反转初期信号反向，是缠论结构类信号固有局限，需用"变盘信号"（15F 带宽收口、日线零轴金叉/死叉）前置预警。</li>
@@ -100,7 +100,7 @@ th{{color:var(--muted);font-weight:500;position:sticky;top:0;background:var(--bg
 
 <h2>五、逐日明细（{st['n']} 个预判）</h2>
 <table>
-<thead><tr><th>预判日</th><th>验证日</th><th>预判方向</th><th>支撑~压力</th><th>T&J</th><th>实际涨跌</th><th>实际低/高</th><th>方向</th><th>区间</th><th>支撑</th><th>压力</th></tr></thead>
+<thead><tr><th>预判日</th><th>验证日</th><th>预判方向</th><th>支撑~压力</th><th>DRAGON BALL模型</th><th>实际涨跌</th><th>实际低/高</th><th>方向</th><th>区间</th><th>支撑</th><th>压力</th></tr></thead>
 <tbody>{tr}</tbody>
 </table>
 
@@ -120,7 +120,7 @@ md = f'''# 上证综指 000001 预判回测报告（2026-07-28 ~ 08-24，{st["n"
 | 指标 | 数值 |
 |---|---|
 | 引擎方向准确率 | {st["dir_accuracy"]}%（相反 {st["dir_opposite"]}%） |
-| T&J 方向准确率 | {st["tj_accuracy"]}%（相反 {st["tj_opposite"]}%） |
+| DRAGON BALL模型 方向准确率 | {st["tj_accuracy"]}%（相反 {st["tj_opposite"]}%） |
 | 区间覆盖率 | {st["range_accuracy"]}% |
 | 支撑平均误差 | {st["sup_mean_err"]} 点 |
 | 压力平均误差 | {st["res_mean_err"]} 点 |
@@ -128,12 +128,12 @@ md = f'''# 上证综指 000001 预判回测报告（2026-07-28 ~ 08-24，{st["n"
 | 压力守住率 | {st["res_hold_rate"]}%（突破 {st["res_break_rate"]}%） |
 
 ## 关键结论
-1. 方向：引擎 {st["dir_accuracy"]}% 严重失效（信号滞后），T&J {st["tj_accuracy"]}% 明显更准
+1. 方向：引擎 {st["dir_accuracy"]}% 严重失效（信号滞后），DRAGON BALL模型 {st["tj_accuracy"]}% 明显更准
 2. 区间系统性偏窄（覆盖仅 {st["range_accuracy"]}%）
-3. 关键拐点（8-18/8-21 下跌）T&J 提前命中，引擎看错
+3. 关键拐点（8-18/8-21 下跌）DRAGON BALL模型 提前命中，引擎看错
 
 ## 改进可能
-1. 方向校准引入星球观点（T&J 47.4% > 引擎 31.6%）
+1. 方向校准引入星球观点（DRAGON BALL模型 47.4% > 引擎 31.6%）
 2. 区间放宽 ±0.8%
 3. 支撑/压力取"带"而非单点
 '''

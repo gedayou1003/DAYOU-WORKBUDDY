@@ -23,9 +23,13 @@ def _protect_paths(m):
 text = _re.sub(r"`[^`]*\.(md|html|json|PDF|pdf|docx|txt)`", _protect_paths, text)
 
 # 替换映射：先长名后短名，避免交叉污染
+# 2026-09-18：报告一律以「DRAGON BALL模型」称呼该星球（原名隐藏）。
+# 下面前两条原名映射**刻意保留** —— 它们用于匿名化**历史报告**（8 月的老快报里写的是
+# 原名），删掉会导致老报告匿名化后仍暴露星球名。属「功能必需的匹配串」。
 replacements = [
     ("卫斯李的投研笔记", "星球②"),
     ("AI 产业链地图·Serenity 速报", "星球⑦"),
+    ("DRAGON BALL模型", "星球③"),
     ("Truth and Justice", "星球③"),
     ("180K Research", "星球⑥"),
     ("大鹏鸟笔记", "星球④"),
@@ -67,7 +71,7 @@ decode_table = """---
 |------|----------------|
 | 星球① | ⭕ 基业长青+ |
 | 星球② | 卫斯李的投研笔记 |
-| 星球③ | Truth and Justice |
+| 星球③ | DRAGON BALL模型 |
 | 星球④ | 大鹏鸟笔记 |
 | 星球⑤ | 短评&信息 |
 | 星球⑥ | 180K Research |

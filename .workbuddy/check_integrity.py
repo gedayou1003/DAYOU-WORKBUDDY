@@ -5,7 +5,7 @@
 
 检查项
 ------
-1) T&J 原文归档：每个交易日应有 outputs/TRUTH_AND_JUSTICE_原始记录_YYYY-MM-DD.md
+1) DRAGON BALL模型 原文归档：每个交易日应有 outputs/DRAGON_BALL_原始记录_YYYY-MM-DD.md
 2) forecast_chain 档位：每个交易日应至少有一条预判记录（晨报）
 3) 档位覆盖偏薄：当日仅 1 条晨报（**既定节奏，INFO 级**，见下）
 4) consensus_chain 时效：最后一条记录日期 vs 最近交易日
@@ -14,7 +14,7 @@
 
 2026-09-17 加固（消除永久噪声，恢复闸门可用性）
 -----------------------------------------------
-改前问题：本工具每期都会刷出 4 条历史 T&J 缺口 + 7 条「档位覆盖偏薄」，共 11 行固定噪声，
+改前问题：本工具每期都会刷出 4 条历史 DRAGON BALL模型 缺口 + 7 条「档位覆盖偏薄」，共 11 行固定噪声，
 而**真正的缺口淹没在里面**；且无论如何都返回 0，无法当 gate 用。这与 `DUP_RULES` /
 `LENGTH_RULES`（规范写了但无机器检查）是同一类失效：**告警太多的闸门等于没有闸门**。
 
@@ -48,12 +48,12 @@ HOLIDAYS = set()  # 例：{'2026-10-01', '2026-10-02', ...}
 
 DEFAULT_FROM = '2026-08-21'
 
-# 已知例外：T&J 归档缺口（早于归档机制建立，不硬补，见脚本地图 §五）
+# 已知例外：DRAGON BALL模型 归档缺口（早于归档机制建立，不硬补，见脚本地图 §五）
 KNOWN_TJ_GAPS = {
-    '2026-08-24': '早于 T&J 归档机制建立（历史已知）',
-    '2026-08-28': '早于 T&J 归档机制建立（历史已知）',
-    '2026-08-31': '早于 T&J 归档机制建立（历史已知）',
-    '2026-09-01': '早于 T&J 归档机制建立（历史已知）',
+    '2026-08-24': '早于 DRAGON BALL模型 归档机制建立（历史已知）',
+    '2026-08-28': '早于 DRAGON BALL模型 归档机制建立（历史已知）',
+    '2026-08-31': '早于 DRAGON BALL模型 归档机制建立（历史已知）',
+    '2026-09-01': '早于 DRAGON BALL模型 归档机制建立（历史已知）',
 }
 
 
@@ -77,12 +77,12 @@ def main():
     verbose = '--verbose' in argv or '-v' in argv
     today = datetime.date.today().isoformat()
 
-    # 已有 T&J 归档的日期
+    # 已有 DRAGON BALL模型 归档的日期
     tj_dates = set()
     if os.path.isdir(OUT):
         for fn in os.listdir(OUT):
-            if fn.startswith('TRUTH_AND_JUSTICE_原始记录_') and fn.endswith('.md'):
-                tj_dates.add(fn.replace('TRUTH_AND_JUSTICE_原始记录_', '').replace('.md', ''))
+            if fn.startswith('DRAGON_BALL_原始记录_') and fn.endswith('.md'):
+                tj_dates.add(fn.replace('DRAGON_BALL_原始记录_', '').replace('.md', ''))
 
     # forecast_chain 的日期分布
     with open(FORECAST, encoding='utf-8') as f:
@@ -106,14 +106,14 @@ def main():
     days = trading_days(start, today)
     problems = 0   # 需处理的实质问题数（决定退出码）
 
-    # 1) T&J 归档缺口
-    print('\n【1】T&J 原文归档缺口（有交易日但无归档文件）')
+    # 1) DRAGON BALL模型 归档缺口
+    print('\n【1】DRAGON BALL模型 原文归档缺口（有交易日但无归档文件）')
     tj_missing = [d for d in days if d not in tj_dates]
     tj_real = [d for d in tj_missing if d not in KNOWN_TJ_GAPS]
     tj_known = [d for d in tj_missing if d in KNOWN_TJ_GAPS]
     if tj_real:
         for d in tj_real:
-            print(f'  ⚠️ {d} 缺 T&J 归档（需确认当天是否真的无 T&J 新帖）')
+            print(f'  ⚠️ {d} 缺 DRAGON BALL模型 归档（需确认当天是否真的无 DRAGON BALL模型 新帖）')
         problems += len(tj_real)
     else:
         print('  ✅ 无新增缺口')
@@ -182,7 +182,7 @@ def main():
 
     # 汇总
     print('\n' + '=' * 70)
-    print(f'汇总：T&J 新增缺口 {len(tj_real)}（另有已知例外 {len(tj_known)}）· '
+    print(f'汇总：DRAGON BALL模型 新增缺口 {len(tj_real)}（另有已知例外 {len(tj_known)}）· '
           f'档位缺口 {len(fc_missing)} · 数据异常 {bad} · 实质问题合计 {problems}')
     if problems == 0:
         print('✅ 无实质问题。')
