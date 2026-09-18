@@ -21,6 +21,8 @@ import statistics as st
 import sys
 import urllib.request
 
+import qt_api      # 腾讯接口多域名 failover（2026-09-18：web.ifzq.gtimg.cn 被代理拦）
+
 BASE = os.path.dirname(os.path.abspath(__file__))
 
 _ap = argparse.ArgumentParser(
@@ -48,10 +50,8 @@ def flush_log():
 
 # ---------- 1. 取实际日线 ----------
 def dkline(count):
-    url = ('https://web.ifzq.gtimg.cn/appstock/app/fqkline/get'
-           f'?param=sh000001,day,,,{count},qfq')
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    js = json.loads(urllib.request.urlopen(req, timeout=20).read().decode('utf-8'))
+    js, _src = qt_api.get_json(
+        f'/appstock/app/fqkline/get?param=sh000001,day,,,{count},qfq')
     node = js['data']['sh000001']
     rows = node.get('qfqday') or node.get('day')
     return [{'date': r[0], 'open': float(r[1]), 'close': float(r[2]),

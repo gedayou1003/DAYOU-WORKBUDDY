@@ -17,6 +17,7 @@ import json, urllib.request, os, sys, argparse, datetime
 BASE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE)
 from market_codes import resolve
+from qt_api import get_json as _qt_json   # 域名 failover 统一入口（2026-09-18）
 
 
 def _get(url):
@@ -25,14 +26,14 @@ def _get(url):
 
 
 def dkline(tcode, count):
-    js = _get(f'https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={tcode},day,,,{count},qfq')
+    js, _src = _qt_json(f'/appstock/app/fqkline/get?param={tcode},day,,,{count},qfq')
     node = js['data'][tcode]
     rows = node.get('qfqday') or node.get('day')
     return [{'t': r[0], 'o': float(r[1]), 'c': float(r[2]), 'h': float(r[3]), 'l': float(r[4])} for r in rows]
 
 
 def mkline(tcode, period, count):
-    js = _get(f'https://ifzq.gtimg.cn/appstock/app/kline/mkline?param={tcode},{period},,{count}')
+    js, _src = _qt_json(f'/appstock/app/kline/mkline?param={tcode},{period},,{count}')
     node = js['data'][tcode]
     rows = node.get(period) or []
     return [{'t': r[0], 'o': float(r[1]), 'c': float(r[2]), 'h': float(r[3]), 'l': float(r[4])} for r in rows]

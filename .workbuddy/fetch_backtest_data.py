@@ -4,6 +4,8 @@
 import json, os, urllib.request
 from datetime import datetime
 
+import qt_api      # 腾讯接口多域名 failover（2026-09-18：web.ifzq.gtimg.cn 被代理拦）
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "backtest_data")
 os.makedirs(OUT, exist_ok=True)
@@ -14,8 +16,8 @@ def get(url):
     return json.loads(urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=25).read().decode('utf-8'))
 
 def fetch_fqkline(period, start, end, count):
-    url = f'https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={TC},{period},{start},{end},{count},qfq'
-    d = get(url)
+    d, _src = qt_api.get_json(
+        f'/appstock/app/fqkline/get?param={TC},{period},{start},{end},{count},qfq', timeout=25)
     data = d.get('data', {}).get(TC, {})
     rows = data.get('qfq' + period) or data.get(period) or []
     rows.sort(key=lambda r: r[0])

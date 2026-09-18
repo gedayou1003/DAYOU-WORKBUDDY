@@ -11,6 +11,7 @@ SKILL = os.path.expanduser("~/.workbuddy/skills/chan-signal__skillhub")
 sys.path.insert(0, os.path.join(SKILL, 'scripts'))
 sys.path.insert(0, HERE)
 from chan_signal import run_engine, build_analysis, calc_macd
+import qt_api      # 腾讯接口多域名 failover（2026-09-18：web.ifzq.gtimg.cn 被代理拦）
 
 # 申万一级 31 大类的干净名称
 SW_NAMES = {
@@ -99,8 +100,11 @@ def tencent_get(url):
     return json.loads(urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=20).read().decode('utf-8'))
 
 def fetch_tencent(code, period='day', count=250):
-    u = f'https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={code},{period},,,{count},qfq'
-    d = tencent_get(u)
+    u = f'/appstock/app/fqkline/get?param={code},{period},,,{count},qfq'
+    try:
+        d, _src = qt_api.get_json(u)
+    except Exception:
+        return None
     data = d.get('data', {}).get(code, {})
     rows = data.get('qfqday') or data.get('qfqweek') or data.get('day') or data.get('week') or []
     if not rows:

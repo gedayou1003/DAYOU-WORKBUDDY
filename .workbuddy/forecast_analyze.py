@@ -30,6 +30,7 @@ CHAIN = os.path.join(HERE, 'forecast_chain.json')
 
 sys.path.insert(0, HERE)
 from market_codes import resolve
+import qt_api      # 腾讯接口多域名 failover（2026-09-18：web.ifzq.gtimg.cn 被代理拦）
 
 
 def run_py(script, *args):
@@ -134,11 +135,8 @@ def mechanical_review(prev, ohlc):
 
 def fetch_history(tencent_code, count=60):
     """拉最近 count 根日线（腾讯 fqkline），返回 [{'date','close'},...] 升序"""
-    url = (f"https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?"
-           f"param={tencent_code},day,,,{count},qfq")
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    with urllib.request.urlopen(req, timeout=15) as resp:
-        data = json.loads(resp.read().decode("utf-8"))
+    data, _src = qt_api.get_json(
+        f"/appstock/app/fqkline/get?param={tencent_code},day,,,{count},qfq", timeout=15)
     node = data["data"][tencent_code]
     kline = node.get("qfqday") or node.get("day") or []
     rows = []

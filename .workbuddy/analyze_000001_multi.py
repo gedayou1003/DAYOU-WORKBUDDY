@@ -13,7 +13,9 @@ sys.path.insert(0, os.path.expanduser("~/.workbuddy"))
 from paths import SKILLS
 SKILL = os.path.join(SKILLS, "chan-signal__skillhub")
 sys.path.insert(0, os.path.join(SKILL, 'scripts'))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from chan_signal import run_engine, build_analysis
+import qt_api      # 腾讯接口多域名 failover（2026-09-18：web.ifzq.gtimg.cn 被代理拦）
 
 UA = {'User-Agent': 'Mozilla/5.0'}
 CODE = '000001'
@@ -30,8 +32,8 @@ def fetch_mk(mperiod, count=500):
 
 def fetch_day(count=500):
     end = datetime.now().strftime('%Y-%m-%d')
-    url = f'https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=sh000001,day,2024-01-01,{end},{count},qfq'
-    d = json.loads(urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=30).read().decode('utf-8'))
+    d, _src = qt_api.get_json(
+        f'/appstock/app/fqkline/get?param=sh000001,day,2024-01-01,{end},{count},qfq', timeout=30)
     data = d.get('data', {}).get('sh000001', {})
     rows = data.get('qfqday') or data.get('day') or []
     rows.sort(key=lambda r: r[0])

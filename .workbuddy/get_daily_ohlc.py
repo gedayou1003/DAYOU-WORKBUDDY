@@ -32,6 +32,7 @@ import sys, json, datetime, urllib.request, os
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from market_codes import resolve
+import qt_api      # 腾讯接口多域名 failover（2026-09-18：web.ifzq.gtimg.cn 被代理拦）
 
 UA = {'User-Agent': 'Mozilla/5.0'}
 
@@ -79,11 +80,8 @@ def _write_cache(code, slot, day, data):
 
 def fetch_daily_ohlc(tencent_code, days=1):
     """腾讯 fqkline 日线，取最近 N 个交易日（最后一个为最近交易日）"""
-    url = (f"https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?"
-           f"param={tencent_code},day,,,60,qfq")
-    req = urllib.request.Request(url, headers=UA)
-    with urllib.request.urlopen(req, timeout=15) as resp:
-        data = json.loads(resp.read().decode("utf-8"))
+    data, src = qt_api.get_json(
+        f"/appstock/app/fqkline/get?param={tencent_code},day,,,60,qfq", timeout=15)
     node = data["data"][tencent_code]
     kline = node.get("qfqday") or node.get("day") or []
     if not kline:
@@ -190,6 +188,8 @@ if __name__ == "__main__":
         r["code"] = std_code
         r["name"] = resolved["name"]
         r["source"] = "tencent_fqkline"
+        # 实际命中的域名（备用镜像与主域名数据同源，仅便于排查网络层问题）
+        r["source_host"] = qt_api.LAST_SOURCE
         r["fetch_time"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         r["cache"] = "miss"
         if not no_cache:
