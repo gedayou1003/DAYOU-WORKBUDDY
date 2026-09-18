@@ -2,6 +2,15 @@
 # -*- coding: utf-8 -*-
 """晚间快报兜底抓取：Skill 通道 token 失效时，全部星球走 Cookie 直连官方 API。
 窗口 = 当天 12:00 ~ 19:00（evening）。
+
+2026-09-18 审计 P1-4 加固
+-----------------------
+改前：某星球退避重试后仍 0 条 → 静默继续；末尾**无条件覆盖主快照**并打印 `SAVED=`、
+退出 0 —— 整星球漏抓被伪装成成功，且主快照不可恢复（既不在 git 又被备份排除）。
+改后：失败星球计数 → 降级时不覆盖主快照、改写时间戳旁路文件；复用 `fetch_zsxq.save_snapshot()`
+（原子写 + 回读断言 + meta），并把窗口标签改成 evening，避免 meta 记成晨报窗口。
+
+退出码：0 正常 · 1 Cookie 文件缺失 · 2 降级（有星球 0 条 / 窗口内 0 条）
 """
 import json, os, sys, time, urllib.request
 from datetime import datetime, timezone, timedelta
@@ -152,7 +161,11 @@ def fetch_cookie(gid, name):
     return all_topics
 
 def main():
-    results = []
+    if not os.path.exists(COOKIE_FILE):
+        print(f"[FAIL] 找不到 Cookie 文件：{COOKIE_FILE}", file=sys.stderr)
+        return 1
+
+    results, failed = [], []
     for gid, name in ALL_GROUPS.items():
         topics = fetch_cookie(gid, name)
         cnt = 0
@@ -162,6 +175,8 @@ def main():
                 results.append(n)
                 cnt += 1
         print(f"[cookie-all] {name}: {len(topics)}条, 窗口内 {cnt}条", file=sys.stderr)
+        if not topics:                      # 退避 3 次仍 0 条 → 记入降级（旧实现静默继续）
+            failed.append(gid)
         time.sleep(2)
     results.sort(key=lambda x: x["create_time"])
     seen, uniq = set(), []
@@ -169,11 +184,37 @@ def main():
         if x["topic_id"] not in seen:
             seen.add(x["topic_id"])
             uniq.append(x)
-    out = os.path.join(_HERE, "zsxq_fetch_raw.json")
-    with open(out, "w", encoding="utf-8") as f:
-        json.dump(uniq, f, ensure_ascii=False, indent=1)
-    print(f"TOTAL_WINDOW={len(uniq)}  IMAGES={sum(len(x['images']) for x in uniq)}  FILES={sum(len(x['files']) for x in uniq)}")
-    print(f"SAVED={out}")
+
+    # 降级判定（2026-09-18 审计 P1-4）
+    # 改前：无论成功失败都无条件覆盖主快照、打印 SAVED= 并退出 0 —— 整星球漏抓被伪装成成功。
+    degraded = []
+    if failed:
+        degraded.append('退避重试后仍 0 条 %d 个星球（gid: %s）'
+                        % (len(failed), ', '.join(sorted(failed))))
+    if not uniq:
+        degraded.append('时间窗口内 0 条')
+
+    # 复用 fetch_zsxq 的快照守卫（降级不覆盖主快照 / 原子写 + 回读断言 / 写 meta），
+    # 避免同一个「不可恢复覆盖」隐患在两个脚本里各留一份。
+    # 窗口与档位标签必须改成**本脚本自己的**，否则 meta 会把晚间兜底记成晨报窗口。
+    import fetch_zsxq as fz
+    fz.WIN_START, fz.WIN_END = WIN_START, WIN_END
+    fz._win_arg = 'evening'
+    saved, is_main = fz.save_snapshot(uniq, degraded)
+
+    print(f"TOTAL_WINDOW={len(uniq)}  IMAGES={sum(len(x['images']) for x in uniq)}  "
+          f"FILES={sum(len(x['files']) for x in uniq)}")
+    if is_main:
+        print(f"SAVED={saved}")
+    else:
+        print(f"SAVED_BYPASS={saved}")
+        print("MAIN_SNAPSHOT_UNCHANGED=%s  ← 本轮降级（%s），未用残缺数据覆盖主快照"
+              % (fz.MAIN_SNAPSHOT, '；'.join(degraded)))
+        print("[WARN] 主快照仍是上一次的完整内容，**不代表本轮结果**。", file=sys.stderr)
+
+    # 退出码：与其他脚本统一（0 通过 · 1 ERROR · 2 WARN）
+    return 2 if degraded else 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -1,6 +1,17 @@
 # -*- coding: utf-8 -*-
 """多标的扫描 v2：同花顺行业(实时OHLC,8-24) + 宽基指数/恒生(腾讯,8-25)
-按「方向明确度 × 波动幅度」选出高确定性+高波动标的"""
+按「方向明确度 × 波动幅度」选出高确定性+高波动标的
+
+退出码（2026-09-18 起，全项目统一口径）：
+  0 = 正常完成并落盘（含「今日缓存命中、跳过重算」这条正常路径）
+  1 = ERROR（同花顺行业列表获取失败 —— 整块行业扫描会退化为空）—— 必须处理
+  2 = WARN（本轮 0 条成功 / 成功条数较上次缩水 >20% / 宽基 4 个全失败）
+      —— 结果写旁路文件，**不覆盖** scan_result_ths.json，需人工看一眼
+
+设计约束（与 fetch_zsxq / gen_tj_archive 同口径）：
+  · 失败绝不写成成功：结果条数不足时宁可留旧结果，也不拿残缺数据覆盖
+  · 主结果文件走「临时文件 → 回读断言 → 原子替换」
+"""
 import sys, os, json, warnings, time
 warnings.filterwarnings('ignore')
 import pandas as pd
@@ -190,28 +201,74 @@ def aggregate_sw(results_ths):
     return sw_agg
 
 
+BT_DIR = os.path.join(HERE, 'backtest_data')
+CACHE = os.path.join(BT_DIR, 'scan_result_ths.json')
+SHRINK_RATIO = 0.80        # 行业成功条数低于上次的 80% 即视为缩水
+PARTIAL_FAIL_RATIO = 0.10  # 行业失败率超过 10% 才升级为 WARN（防个位数抖动造成永久噪声）
+
+
+def _atomic_write_json(path, obj):
+    """临时文件 → 回读断言 → 原子替换（与 fetch_zsxq._atomic_write_json 同口径）。"""
+    tmp = path + '.tmp'
+    try:
+        with open(tmp, 'w', encoding='utf-8') as f:
+            json.dump(obj, f, ensure_ascii=False, indent=2, default=str)
+        with open(tmp, encoding='utf-8') as f:
+            back = json.load(f)
+    except Exception:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        raise
+    if not isinstance(back, dict) or set(back) != set(obj):
+        os.remove(tmp)
+        raise RuntimeError('结果回读断言失败：顶层键不一致')
+    for k in ('ths', 'index', 'sw_agg'):
+        if len(back.get(k) or []) != len(obj.get(k) or []):
+            os.remove(tmp)
+            raise RuntimeError('结果回读断言失败：%s 写入 %d 条、读回 %d 条'
+                               % (k, len(obj.get(k) or []), len(back.get(k) or [])))
+    os.replace(tmp, path)
+
+
+def _old_ths_count():
+    """上次主结果里的行业条数（读不到返回 None，不阻断）。"""
+    if not os.path.exists(CACHE):
+        return None
+    try:
+        with open(CACHE, encoding='utf-8') as f:
+            return len((json.load(f) or {}).get('ths') or [])
+    except Exception:
+        return None
+
+
 def main():
     # 缓存：缠论方向分是 T+1 慢变量，当天已跑过则复用，不重算（省 90 次 akshare + 90 次引擎）
-    cache_path = os.path.join(HERE, 'backtest_data', 'scan_result_ths.json')
-    if os.path.exists(cache_path):
-        mt = os.path.getmtime(cache_path)
+    if os.path.exists(CACHE):
+        mt = os.path.getmtime(CACHE)
         if time.strftime('%Y-%m-%d', time.localtime(mt)) == time.strftime('%Y-%m-%d'):
             print(f'[缓存] scan_result_ths.json 今天已生成（{time.strftime("%H:%M", time.localtime(mt))}），跳过重算')
-            return
+            return 0
 
     import akshare as ak
     results_ths = []
     results_idx = []
 
-    # 同花顺行业列表
+    # 同花顺行业列表 —— 拿不到就让整块行业扫描退化为空，属 ERROR（旧实现会照写空结果）
+    listing_err = None
     try:
         ind = ak.stock_board_industry_summary_ths()
         ths_names = ind['板块'].tolist()
     except Exception as e:
-        print(f'同花顺行业列表失败: {e}')
+        listing_err = str(e)[:120]
         ths_names = []
 
+    if not ths_names:
+        print('[FAIL] 同花顺行业列表获取失败：%s' % (listing_err or '接口返回空列表'), file=sys.stderr)
+        print('       行业扫描无法进行；未改动 %s（保留上次结果）。' % CACHE, file=sys.stderr)
+        return 1
+
     print(f'=== 同花顺行业扫描（{len(ths_names)} 个，akshare ths，最新 8-24）===')
+    failed_ths = []
     for i, name in enumerate(ths_names):
         try:
             df = fetch_ths(name)
@@ -219,7 +276,10 @@ def main():
             if r and 'error' not in r:
                 results_ths.append(r)
                 print(f"  [{i+1}/{len(ths_names)}] {name}: 方向{r['direction']:+.1f} 振幅{r['volatility']}% 趋势{r['trend']}")
+            else:
+                failed_ths.append((name, str((r or {}).get('error') or '数据不足/未取到')[:40]))
         except Exception as e:
+            failed_ths.append((name, str(e)[:40]))
             print(f"  [{i+1}/{len(ths_names)}] {name}: 失败 {str(e)[:30]}")
 
     print('\n=== 宽基指数 + 恒生（腾讯，实时 8-25）===')
@@ -227,6 +287,7 @@ def main():
         ('sh000300', '沪深300'), ('sh000016', '上证50'),
         ('sh000852', '中证1000'), ('hkHSI', '恒生指数'),
     ]
+    failed_idx = []
     for tc, name in idx_list:
         try:
             df = fetch_tencent(tc, 'day')
@@ -234,7 +295,10 @@ def main():
             if r and 'error' not in r:
                 results_idx.append(r)
                 print(f"  {name}: 方向{r['direction']:+.1f} 振幅{r['volatility']}% 趋势{r['trend']} 信号[{r['sig']}]")
+            else:
+                failed_idx.append((name, str((r or {}).get('error') or '数据不足/未取到')[:40]))
         except Exception as e:
+            failed_idx.append((name, str(e)[:40]))
             print(f"  {name}: 失败 {str(e)[:40]}")
 
     for lst in (results_ths, results_idx):
@@ -255,11 +319,58 @@ def main():
     for r in results_idx:
         print(f"  {r['name']:8s} 方向{r['direction']:+.1f} 振幅{r['volatility']}% 综合{r['score']} 信号[{r['sig']}]")
 
+    # ---- 降级判定：任一条成立就不覆盖主结果 ----
+    degraded = []
+    if not results_ths:
+        degraded.append('同花顺行业本轮 0 条成功（失败 %d/%d）' % (len(failed_ths), len(ths_names)))
+    if not results_idx:
+        degraded.append('宽基/恒生本轮 0 条成功（失败 %d/%d）' % (len(failed_idx), len(idx_list)))
+    old_n = _old_ths_count()
+    if old_n and results_ths and len(results_ths) < old_n * SHRINK_RATIO:
+        degraded.append('行业成功条数 %d 较上次 %d 缩水超 %d%%'
+                        % (len(results_ths), old_n, int((1 - SHRINK_RATIO) * 100)))
+
     out = {'ths': results_ths, 'index': results_idx, 'sw_agg': sw_agg}
-    os.makedirs(os.path.join(HERE, 'backtest_data'), exist_ok=True)
-    with open(os.path.join(HERE, 'backtest_data', 'scan_result_ths.json'), 'w', encoding='utf-8') as f:
-        json.dump(out, f, ensure_ascii=False, indent=2, default=str)
-    print(f"\n结果已保存 backtest_data/scan_result_ths.json")
+    os.makedirs(BT_DIR, exist_ok=True)
+
+    if degraded:
+        bypass = os.path.join(BT_DIR, 'scan_result_ths_degraded_%s.json'
+                              % time.strftime('%Y%m%d_%H%M%S'))
+        try:
+            _atomic_write_json(bypass, out)
+        except Exception as e:
+            print('[FAIL] 旁路文件写入失败：%s' % e, file=sys.stderr)
+            return 1
+        print('\n[WARN] 本轮降级（%s）' % '；'.join(degraded))
+        print('       已跳过覆盖 %s（保留上次完整结果）' % CACHE)
+        print('       本轮结果落在旁路文件：%s' % bypass)
+        return 2
+
+    try:
+        _atomic_write_json(CACHE, out)
+    except Exception as e:
+        print('[FAIL] 结果写盘失败：%s' % e, file=sys.stderr)
+        return 1
+    print('\n结果已保存 backtest_data/scan_result_ths.json')
+
+    # ---- 部分失败：主体完整已落盘，仅失败率显著时才升级为 WARN ----
+    partial = []
+    if len(failed_ths) > max(2, PARTIAL_FAIL_RATIO * len(ths_names)):
+        partial.append('行业失败 %d/%d（>%d%%）' % (len(failed_ths), len(ths_names),
+                                                   int(PARTIAL_FAIL_RATIO * 100)))
+    if failed_idx:
+        partial.append('宽基/恒生失败 %d/%d' % (len(failed_idx), len(idx_list)))
+    if partial:
+        print('[WARN] 部分标的失败：%s（结果已落盘，失败明细如下）' % '；'.join(partial))
+        for name, why in failed_ths + failed_idx:
+            print('       · %s: %s' % (name, why))
+        return 2
+
+    if failed_ths or failed_idx:
+        print('[注] 少量标的失败（行业 %d、宽基 %d），主体完整，不阻断。'
+              % (len(failed_ths), len(failed_idx)))
+    return 0
+
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

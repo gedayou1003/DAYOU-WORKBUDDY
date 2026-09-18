@@ -20,14 +20,25 @@ v2 改为：
 
 用法：python .workbuddy/test_chain_apply.py
 改动 chainlib / chain_apply 后必须跑一遍，确认「拒得住 + 不误伤 + 门是关的」。
+
+v3（2026-09-18）—— 消除一个偶发假失败 + 一个卫生漏洞：
+  · 沙箱原为**固定路径** `.workbuddy/_test_sandbox`，`fresh()` 先 `rmtree` 再 `makedirs`。
+    Windows 上 rmtree 偶发因句柄未释放而残留目录 → `makedirs` 抛 `FileExistsError` 直接崩
+    （实测 2026-09-18 出现一次 EXIT=1，随后连跑 5 次均 EXIT=0）。
+    现改用 `tempfile.mkdtemp()`：唯一、在系统临时目录、**不占仓库**、并发跑也不相撞。
+  · 该固定目录名在 .gitignore 里**本就有覆盖**（`.workbuddy/_test_sandbox/`），
+    但只匹配精确名称 —— 若日后改成带后缀的固定名就会漏。顺手把该规则改为
+    `.workbuddy/_test_sandbox*/` 作兜底。
 """
 import os
 import shutil
 import subprocess
 import sys
+import tempfile
 
 WB = os.path.dirname(os.path.abspath(__file__))
-SB = os.path.join(WB, '_test_sandbox')
+# 唯一沙箱：不放仓库内（旧实现是 .workbuddy/_test_sandbox，固定名 → 残留 + 未忽略）
+SB = tempfile.mkdtemp(prefix='wb_chain_apply_')
 CA = os.path.join(WB, 'chain_apply.py')
 PY = sys.executable
 S = '<<< 必填'
@@ -73,7 +84,7 @@ def synth_consensus():
 
 def fresh():
     shutil.rmtree(SB, ignore_errors=True)
-    os.makedirs(SB)
+    os.makedirs(SB, exist_ok=True)   # 防残留目录把 makedirs 顶崩（旧实现偶发假失败根因）
     for name, recs in (('forecast_chain.json', synth_forecast()),
                        ('consensus_chain.json', synth_consensus())):
         write(os.path.join(SB, name), recs)
@@ -283,10 +294,8 @@ for n, fn in (('forecast', 'forecast_chain.json'), ('consensus', 'consensus_chai
         print('   %-9s 读取失败：%r' % (n, e))
 
 try:
-    shutil.rmtree(SB)
-    print('\n(沙箱已清理)')
-except FileNotFoundError:
-    print('\n(沙箱已清理)')
+    shutil.rmtree(SB, ignore_errors=True)
+    print('\n(沙箱已清理：%s)' % SB)
 except Exception as e:
     print('\n(沙箱清理失败：%s —— 可手动删除 %s)' % (e, SB))
 

@@ -7,6 +7,16 @@
 用法：
     python report_builder.py [YYYY-MM-DD]
 不传日期默认今天。原始晨报须已存在：outputs/知识星球晨报_YYYY-MM-DD_改进版.md
+
+2026-09-18 审计 P1-4 加固
+-----------------------
+改前两条失败路径都不干净：① 原始晨报不存在 → 打印 ❌ 却 `return`（**退出码 0**，
+与「打印失败字样就必须非零退出」正好相反）；② 章节缺失 → `md.index()` 抛 ValueError
+**裸崩溃**（rc≠0，但不是有意报错，诊断只有 stdlib traceback）。
+改后：文件缺失 / 章节缺失都是 `[FAIL]` + 退出码 1；章节改为**先探测全部、缺哪个报哪个**；
+写盘走「临时文件 → 回读断言（长度 + 锚点）→ 原子替换」。
+
+退出码：0 成功 · 1 输入缺失或章节不全（**不再有「打印 ❌ 却退出 0」**）
 """
 import io, os, re, sys, json, datetime
 
@@ -184,13 +194,48 @@ def build_block5():
 
 
 # ---------- 主流程 ----------
+
+# 后处理必须依赖的章节（缺任一即无法拼接）。
+# 2026-09-18 审计 P1-4：原实现直接 `md.index('## 第二块')` —— 章节缺失就抛
+# ValueError **裸崩溃**（rc≠0 但不是有意报错，诊断信息只有一句 stdlib traceback）。
+# 改为**先探测全部章节、缺哪个报哪个**，且用 [FAIL] 前缀（符合失败路径四连断言）。
+REQUIRED_SECTIONS = [
+    '## 第一块', '## 第二块', '## 第三块', '## 第四块', '## 第五块',
+    '## 附录 A', '## 附录 B',
+    '### 三、偏差观察统计表', '### 四、走势图',
+]
+
+
+def _atomic_write(path, text, expect_sub):
+    """临时文件 → 回读断言（内容长度 + 关键锚点）→ 原子替换。"""
+    tmp = path + '.tmp'
+    io.open(tmp, 'w', encoding='utf-8').write(text)
+    back = io.open(tmp, encoding='utf-8').read()
+    if len(back) != len(text) or expect_sub not in back:
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+        raise RuntimeError('回读断言失败：写入 %d 字、读回 %d 字，锚点 %r 缺失'
+                           % (len(text), len(back), expect_sub))
+    os.replace(tmp, path)
+
+
 def main():
     if not os.path.exists(SRC_MD):
-        print(f'❌ 原始晨报不存在：{SRC_MD}')
-        print('   请先跑晨报 prompt 生成原始报告，再运行本脚本后处理。')
-        return
+        print(f'[FAIL] 原始晨报不存在：{SRC_MD}')
+        print('       请先跑晨报 prompt 生成原始报告，再运行本脚本后处理。')
+        return 1
 
     md = io.open(SRC_MD, encoding='utf-8').read()
+
+    # 0) 章节探测（缺哪个报哪个，替代裸 md.index() 崩溃）
+    missing = [s for s in REQUIRED_SECTIONS if s not in md]
+    if missing:
+        print('[FAIL] 原始晨报缺必需章节：' + '、'.join(missing))
+        print('       章节命名以《报告逻辑排版完整性规范_v2》为准；'
+              '本脚本只做后处理，不补写缺失内容。')
+        return 1
 
     # 1) 标题
     md = re.sub(r'^#\s+知识星球晨报[^\n]*', f'# 作战报告 · 晨报 · {DATE}', md, count=1)
@@ -215,10 +260,11 @@ def main():
     # 产物清单：主报告名替换
     md = re.sub(r'`outputs/知识星球晨报_[^`]*`\s*\|\s*主报告', f'`outputs/作战报告_晨报_{DATE}.md` | 主报告', md)
 
-    io.open(DST_MD, 'w', encoding='utf-8').write(md)
-    print(f'✅ 已生成 {DST_MD}（{len(md)} 字）')
-    print(f'   HTML 请用：$PY .workbuddy/md_to_html_report.py {DST_MD}')
+    _atomic_write(DST_MD, md, '## 第五块')
+    print(f'[OK] 已生成 {DST_MD}（{len(md)} 字）')
+    print(f'     HTML 请用：$PY .workbuddy/md_to_html_report.py {DST_MD}')
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

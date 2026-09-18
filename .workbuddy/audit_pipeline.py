@@ -11,7 +11,8 @@
   是本项目历史上最贵的一类 BUG（见 memory 2026-09-18 审计）。
 
 检查七项：
-  1. 退出码语义：有入口但无 sys.exit(非零) 的脚本，并标记其中「会打印失败字样」的高危子集
+  1. 退出码语义：有入口但无 sys.exit(非零) 的脚本，并标记其中「代码区里输出/抛出失败字样」
+     的高危子集（注释、docstring、表格渲染符号 ❌ 一律不计 —— 假阳性会淹没真高危）
   2. 静默失败反模式：危险默认值/静默回退、吞异常 pass、裸 except
   3. 硬编码：绝对路径（含用户名）、写死的具体日期
   4. 文档对账：文档引用的 *.py 是否存在（区分「已归档」与「真不存在」）、脚本是否被文档遗漏
@@ -40,6 +41,13 @@ ARCHIVE = os.path.join(HERE, 'archive')
 
 SKIP = {'audit_pipeline.py'}
 FAIL_WORDS = re.compile(r'\[FAIL\]|❌|错误|失败|不存在|无法')
+# 「输出」上下文：失败词必须出现在**输出语句**里才算「打印了失败却继续跑」。
+# 必要性有两层：
+#   ① 表格渲染符号（dir_v = '❌相反'）、编码注释、docstring 里的「失败」二字
+#      都曾让 4 个自检型脚本被误判为高危 —— 假阳性会让真高危被噪声淹没（见 MEMORY 闸门体检）。
+#   ② 故意不收录 `raise`：抛异常本身就会带非零退出，不属于「失败被当成成功」。
+OUT_CTX = re.compile(r'\bprint\s*\(|sys\.stderr|\.write\s*\('
+                     r'|\.(?:error|critical|warning)\s*\(')
 
 
 def scripts():
@@ -57,15 +65,21 @@ def scan_exit_codes(src):
     for f, s in src.items():
         if 'if __name__' not in s and 'def main' not in s:
             continue
-        has_nz = bool(re.search(r'sys\.exit\(\s*[^0\s)]', s)
-                      or re.search(r'return\s+[1-9]\b', s)
-                      or re.search(r'raise\s+SystemExit', s))
+        # 只看代码区（剔除注释与 docstring）—— 本项目习惯把「已修复」说明写在 docstring 里，
+        # 裸扫会把修好之后的说明当成命中，属自造噪声。
+        lines = code_only_lines(s)
+        code = '\n'.join(ln for _, ln in lines)
+        has_nz = bool(re.search(r'sys\.exit\(\s*[^0\s)]', code)
+                      or re.search(r'return\s+[1-9]\b', code)
+                      or re.search(r'raise\s+SystemExit', code))
         if has_nz:
             continue
         no_code.append(f)
-        # 高危：会打印失败字样却不给失败退出码
-        if FAIL_WORDS.search(s):
-            risky.append(f)
+        # 高危：代码区里「输出/抛出」了失败字样，却仍无条件退出 0
+        for _, ln in lines:
+            if FAIL_WORDS.search(ln) and OUT_CTX.search(ln):
+                risky.append(f)
+                break
     return no_code, risky
 
 
@@ -141,7 +155,11 @@ def scan_docs(src):
                 mentions.setdefault(f, []).append(d)
         for m in re.finditer(r'\b([A-Za-z_][A-Za-z0-9_]*\.py)\b', t):
             fn = m.group(1)
-            if fn in src or PLACEHOLDER_OK.match(fn):
+            # 存在性以**磁盘为准**：`src` 里排除了 SKIP（本文件自身），
+            # 若只判 `fn in src`，文档里每提一次 `audit_pipeline.py` 都会被算成「真不存在」——
+            # 纯噪声，会把真正的文档腐烂淹掉。
+            if (fn in src or os.path.exists(os.path.join(HERE, fn))
+                    or PLACEHOLDER_OK.match(fn)):
                 continue
             key = (fn, d)
             if key in missing:

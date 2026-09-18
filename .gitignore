@@ -52,8 +52,8 @@ _*.log
 .workbuddy/_*.py
 # 临时文本中转（提交信息、命令回显落盘等）
 .workbuddy/_*.txt
-# 回归测试沙箱（临时链副本，不入库）
-.workbuddy/_test_sandbox/
+# 回归测试沙箱（临时链副本，不入库；2026-09-18 改通配，覆盖带后缀的变体）
+.workbuddy/_test_sandbox*/
 # OHLC 取数缓存（当日有效，各自演化）
 .workbuddy/_ohlc_cache/
 # 链操作 payload（每期临时生成，含当日数据）

@@ -1,7 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""拉取 TRUTH AND JUSTICE 星球（88512145458842）历史帖子，保存原始内容，供回测对齐技术分析观点"""
-import json, os, time, urllib.request, urllib.parse
+"""拉取目标星球（88512145458842）历史帖子，保存原始内容，供回测对齐技术分析观点。
+
+2026-09-18 审计 P1-4 加固
+-----------------------
+改前：请求异常 / 接口返回失败 → `break` 后**照旧写文件并打印「已保存 N 条」、退出 0** ——
+半截数据被当成完整历史落盘，且目标文件在 gitignore 里、覆盖后不可恢复。
+改后：出错或 0 条 → **不覆盖既有回测数据**，改写带时间戳的旁路文件；退出码 2。
+
+退出码：0 正常 · 1 Cookie 文件缺失 · 2 降级（请求异常 / 接口失败 / 0 条）
+"""
+import json, os, sys, time, urllib.request, urllib.parse
+from datetime import datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 COOKIE_FILE = os.path.join(HERE, "zsxq_cookie.txt")
@@ -24,17 +34,24 @@ def fetch_page(end_time=None):
         return json.loads(resp.read().decode("utf-8"))
 
 def main():
+    if not os.path.exists(COOKIE_FILE):
+        print(f"[FAIL] 找不到 Cookie 文件：{COOKIE_FILE}")
+        return 1
+
     all_topics, seen, end_time = [], set(), None
+    errors = []
     for _ in range(15):  # 最多 15 页 = 300 条
         try:
             d = fetch_page(end_time)
         except Exception as e:
+            errors.append(f'请求异常：{e}')
             print(f"[err] {e}")
             break
         if not d.get("succeeded"):
             err = d.get('error')
             if isinstance(err, dict):
                 err = err.get('message', 'unknown')
+            errors.append(f'接口返回失败：{err}')
             print(f"[fail] {err}")
             break
         topics = d.get("resp_data", {}).get("topics", [])
@@ -62,11 +79,35 @@ def main():
             "text": text,
         })
     items.sort(key=lambda x: x["create_time"])
-    with open(OUT, "w", encoding="utf-8") as f:
+
+    degraded = []
+    if errors:
+        degraded += errors
+    if not items:
+        degraded.append('拉取到 0 条')
+
+    if degraded:
+        os.makedirs(os.path.dirname(OUT), exist_ok=True)
+        stamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        bypass = os.path.join(os.path.dirname(OUT), f'tj_topics_degraded_{stamp}.json')
+        with open(bypass, 'w', encoding='utf-8') as f:
+            json.dump(items, f, ensure_ascii=False, indent=1)
+        print(f'[WARN] 本轮降级（{ "；".join(degraded) }）：已跳过覆盖 {OUT}')
+        print(f'       本轮 {len(items)} 条落在旁路文件：{bypass}')
+        return 2
+
+    os.makedirs(os.path.dirname(OUT), exist_ok=True)
+    tmp = OUT + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
         json.dump(items, f, ensure_ascii=False, indent=1)
+    with open(tmp, encoding='utf-8') as f:
+        if len(json.load(f)) != len(items):
+            os.remove(tmp)
+            raise RuntimeError('回读断言失败：写入 %d 条与读回不一致' % len(items))
+    os.replace(tmp, OUT)
     print(f"已保存 {len(items)} 条 -> {OUT}")
-    if items:
-        print(f"时间范围: {items[0]['create_time']} ~ {items[-1]['create_time']}")
+    print(f"时间范围: {items[0]['create_time']} ~ {items[-1]['create_time']}")
+    return 0
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
