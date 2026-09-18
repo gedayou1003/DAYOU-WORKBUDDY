@@ -1,0 +1,650 @@
+========================================================================
+链路审计：反模式扫描 + 文档对账
+========================================================================
+
+脚本总数（不含 _ 前缀一次性）：59
+文档数：5
+
+########################################################################
+# 一、反模式命中
+########################################################################
+
+--- A1 静默回退默认值：2 处 ---
+  gen_forecast_svg.py                    :318  # ⚠️ 2026-09-17 加固：原为 `d = lv.get('date','') or '2026-08-31'`，
+  test_gen_forecast_svg_neg.py           :65   "        d = lv.get('date', '') or '2026-08-31'\n"
+
+--- A1b DEFAULT_ 常量兜底：10 处 ---
+  check_integrity.py                     :49   DEFAULT_FROM = '2026-08-21'
+  check_integrity.py                     :74   start = DEFAULT_FROM
+  cleanup_engine_output.py               :29   DEFAULT_DIR = os.path.expanduser('~/.workbuddy/skills/chan-signal__skillhub/output')
+  cleanup_engine_output.py               :40   ap.add_argument('--dir', default=DEFAULT_DIR, help='引擎 output 目录')
+  gen_forecast_svg.py                    :43   （DEFAULT_LEVELS / DEFAULT_ACTUAL）。后果比崩溃严重得多 —— 链上没有可用 pending 时，
+  get_daily_ohlc.py                      :42   DEFAULT_TTL_MIN = 30
+  get_daily_ohlc.py                      :118  slot, force, no_cache, ttl = None, False, False, DEFAULT_TTL_MIN
+  industry_rank.py                       :20   DEFAULT_STAR_VIEWS = {
+  industry_rank.py                       :44   star = {**DEFAULT_STAR_VIEWS, **(star_views or {})}
+  industry_rank.py                       :88   sv = star_views or DEFAULT_STAR_VIEWS
+
+--- A3 吞异常 pass：10 处 ---
+  backtest_v5.py                         :55   except → pass
+  backtest_v5.py                         :65   except → pass
+  chainlib.py                            :29   except → pass
+  check_display_name.py                  :43   except → pass
+  fetch_zsxq.py                          :20   except → pass
+  forecast_analyze.py                    :255  except → pass
+  get_daily_ohlc.py                      :77   except → pass
+  get_daily_ohlc.py                      :138  except → pass
+  get_daily_ohlc.py                      :143  except → pass
+  get_daily_ohlc.py                      :153  except → pass
+
+--- A4 硬编码绝对路径：8 处 ---
+  backtest_forecast_multiperiod.py       :11   SKILL = r"C:\Users\gedayou\.workbuddy\skills\chan-signal__skillhub"
+  backtest_tj_v2.py                      :13   C:/Users/gedayou/.workbuddy/binaries/python/envs/default/Scripts/python.exe backtest_tj_v2.py
+  backtest_v5.py                         :8    SKILL = r"C:\Users\gedayou\.workbuddy\skills\chan-signal__skillhub"
+  calc_tech_multi.py                     :8    - **删掉写死的绝对路径** `BASE = r'C:\\Users\\gedayou\\...\\'`
+  export_backup.py                       :4    打包内容（解压到新电脑的 C:\\Users\\<用户名>\\ 即可还原）：
+  export_backup.py                       :139  print("还原方法：新电脑装好 WorkBuddy 并登录同一账号后，把 zip 解压到 C:\\Users\\<用户名>\\ 覆盖即可。")
+  export_backup.py                       :140  print("注意：新电脑用户名尽量与原电脑一致（gedayou），路径不一致时脚本会自动探测工作区，无需改代码。")
+  test_chain_apply.py                    :12   另：ROOT 硬编码绝对路径 `C:\\Users\\gedayou\\...`，家里机器直接跑不起来。
+
+--- A5 硬编码具体日期：45 处 ---
+  _build_payload_0917_close.py           :15   'date': '2026-09-17',
+  _build_payload_0917_close.py           :68   'date': '2026-09-18',
+  backfill_actual_data.py                :16   '2026-08-17': (3930.10, 3982.65, 3983.51, 3924.47),
+  backfill_actual_data.py                :17   '2026-08-18': (3979.49, 3990.30, 3994.18, 3955.60),
+  backfill_actual_data.py                :18   '2026-08-19': (3952.12, 3894.42, 3961.14, 3879.58),
+  backfill_actual_data.py                :19   '2026-08-20': (3907.21, 3903.72, 3925.06, 3888.10),
+  backfill_actual_data.py                :20   '2026-08-21': (3891.18, 3905.20, 3912.13, 3883.79),
+  backfill_actual_data.py                :21   '2026-08-24': (3902.70, 3882.01, 3910.24, 3855.35),
+  backfill_actual_data.py                :22   '2026-08-25': (3863.37, 3889.44, 3896.21, 3850.86),
+  backfill_actual_data.py                :23   '2026-08-26': (3881.74, 3912.52, 3926.44, 3881.74),
+  backfill_actual_data.py                :24   '2026-08-27': (3911.89, 3956.57, 3958.03, 3909.31),
+  backfill_actual_data.py                :25   '2026-08-28': (3950.24, 3952.18, 3970.31, 3947.80),
+  backfill_actual_data.py                :26   '2026-08-31': (3926.53, 3986.30, 3986.30, 3926.50),
+  backfill_actual_data.py                :27   '2026-09-01': (3979.88, 3979.89, 3995.18, 3976.47),
+  backfill_actual_data.py                :28   '2026-09-02': (3963.07, 3941.39, 3965.81, 3932.25),
+  backfill_actual_data.py                :29   '2026-09-03': (3952.79, 3942.09, 3968.11, 3930.45),
+  backfill_actual_data.py                :30   '2026-09-04': (3955.55, 3930.12, 3980.20, 3915.22),
+  backfill_actual_data.py                :57   '2026-08-24-morning-v2': '2026-08-25',
+  backfill_actual_data.py                :58   '2026-08-24-close': '2026-08-25',
+  backfill_actual_data.py                :59   '2026-08-25-morning': '2026-08-25',
+  backfill_actual_data.py                :60   '2026-08-25-intraday': '2026-08-25',
+  backfill_actual_data.py                :61   '2026-09-01-close': '2026-09-01',
+  backfill_actual_data.py                :62   '2026-09-01-morning': '2026-09-01',
+  backtest_forecast_multiperiod.py       :113  trade_days = [d for d in DAY['date'].dt.strftime('%Y-%m-%d').tolist() if start <= d <= '2026-08-21']
+  backtest_forecast_multiperiod.py       :116  next_day = '2026-08-24' if i + 1 >= len(trade_days) else trade_days[i + 1]
+  backtest_support_compare.py            :24   next_day = '2026-08-24' if i + 1 >= len(trade_days) else trade_days[i + 1]
+  backtest_support_compare.py            :81   r = evaluate_support('2025-11-14', '2026-08-21', scheme, use_15f=False)
+  backtest_v5.py                         :152  report(evaluate('2025-11-14', '2026-08-21', use_15f=False), '60F 版区间（日线55+60F55，188样本）')
+  backtest_v5.py                         :154  report(evaluate('2026-07-28', '2026-08-21', use_15f=True), '15F 版区间（含15F55，19样本）')
+  backtest_v6_compare.py                 :89   w = evaluate_mode('2025-11-14', '2026-08-21', use_15f=False, mode='window')
+  backtest_v6_compare.py                 :90   o = evaluate_mode('2025-11-14', '2026-08-21', use_15f=False, mode='override')
+  backtest_v6_compare.py                 :96   w15 = evaluate_mode('2026-07-28', '2026-08-21', use_15f=True, mode='window')
+  backtest_v6_compare.py                 :97   o15 = evaluate_mode('2026-07-28', '2026-08-21', use_15f=True, mode='override')
+  build_range_band.py                    :6    ⚠️ 2026-09-17 加固：原版把统计窗口写死为 `'2026-08-21' <= date <= '2026-09-15'`，
+  check_integrity.py                     :49   DEFAULT_FROM = '2026-08-21'
+  check_integrity.py                     :53   '2026-08-24': '早于 DRAGON BALL模型 归档机制建立（历史已知）',
+  check_integrity.py                     :54   '2026-08-28': '早于 DRAGON BALL模型 归档机制建立（历史已知）',
+  check_integrity.py                     :55   '2026-08-31': '早于 DRAGON BALL模型 归档机制建立（历史已知）',
+  check_integrity.py                     :56   '2026-09-01': '早于 DRAGON BALL模型 归档机制建立（历史已知）',
+  gen_forecast_svg.py                    :318  # ⚠️ 2026-09-17 加固：原为 `d = lv.get('date','') or '2026-08-31'`，
+  test_chain_apply.py                    :52   'actual': {'date': '2026-01-01', 'close': 3050, 'pct_chg': 0.5},
+  test_chain_apply.py                    :156  'actual': {'date': '2026-01-02', 'open': 3000, 'high': 3050, 'low': 2980,
+  test_gen_forecast_svg.py               :167  check('F1 缺 date 无 --out：未退化成 2026-08-31 文件名', '2026-08-31' not in blob, blob[:200])
+  test_gen_forecast_svg_neg.py           :32   "            p = {'id': 'MUTANT', 'levels': {'date': '2026-08-31', 'now': 3900,\n"
+  test_gen_forecast_svg_neg.py           :65   "        d = lv.get('date', '') or '2026-08-31'\n"
+
+--- A6 subprocess 抓输出：7 处 ---
+  check_cookie.py                        :96   r = subprocess.run(
+  fetch_zsxq.py                          :77   r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=90)
+  forecast_analyze.py                    :38   r = subprocess.run([PY, script] + list(args), capture_output=True, text=True, encoding='utf-8')
+  forecast_analyze.py                    :280  r = subprocess.run([PY, os.path.join(CHAN_DIR, 'run_000001_chansignal.py'),
+  test_chain_apply.py                    :98   return subprocess.run([PY, CA, '--payload', p], capture_output=True, text=True,
+  test_gen_forecast_svg.py               :105  r = subprocess.run([PY, os.path.join(wb, 'gen_forecast_svg.py')] + a,
+  test_gen_forecast_svg_neg.py           :89   r = subprocess.run([PY, TEST], capture_output=True, text=True,
+
+--- A7 静默写固定文件：27 处 ---
+  backfill_zsxq_window.py                :30   import argparse
+  backfill_zsxq_window.py                :225  ap = argparse.ArgumentParser()
+  build_range_band.py                    :16   import argparse
+  build_range_band.py                    :28   _ap = argparse.ArgumentParser(
+  build_range_band.py                    :30   formatter_class=argparse.RawDescriptionHelpFormatter)
+  calc_tech.py                           :15   import json, urllib.request, os, sys, argparse, datetime
+  calc_tech.py                           :91   ap = argparse.ArgumentParser()
+  calc_tech_multi.py                     :11   - 加 argparse，可换标的、可指定输出
+  calc_tech_multi.py                     :19   import argparse
+  calc_tech_multi.py                     :67   ap = argparse.ArgumentParser(description='多周期技术位快照（MA55/MA20/MACD）')
+  chain_apply.py                         :41   import os, sys, json, argparse
+  chain_apply.py                         :114  ap = argparse.ArgumentParser(add_help=True)
+  check_cookie.py                        :26   import argparse
+  check_cookie.py                        :192  ap = argparse.ArgumentParser(add_help=True)
+  check_display_name.py                  :35   import argparse
+  check_display_name.py                  :109  ap = argparse.ArgumentParser(description='对外显示名守卫：检查是否泄漏星球③原名')
+  cleanup_engine_output.py               :22   import argparse
+  cleanup_engine_output.py               :39   ap = argparse.ArgumentParser(description='缠论引擎产物轮转（归档更早的交易日产物）')
+  cleanup_workspace.py                   :15   import argparse
+  cleanup_workspace.py                   :131  ap = argparse.ArgumentParser(description='工作区卫生清理（归档不删除，默认 dry-run）')
+  digest_zsxq.py                         :12   import json, os, re, sys, argparse, datetime
+  digest_zsxq.py                         :69   ap = argparse.ArgumentParser()
+  gen_forecast_svg.py                    :23   import argparse
+  gen_forecast_svg.py                    :303  ap = argparse.ArgumentParser(
+  gen_forecast_svg.py                    :305  formatter_class=argparse.RawDescriptionHelpFormatter,
+  run_sw_chansignal.py                   :14   import sys, os, json, argparse
+  run_sw_chansignal.py                   :29   _parser = argparse.ArgumentParser(description='申万行业 chan-signal 日线/周线缠论分析')
+
+--- A8 打印但无退出码：422 处 ---
+  _build_payload_0917_close.py           :220  print('written:', out, os.path.getsize(out), 'B')
+  _build_payload_0917_close.py           :221  print('forecast.review.direction_verdict 前缀 =', P['forecast']['review']['review']['direction_verdict'][:12])
+  _build_payload_0917_close.py           :222  print('forecast.review.range_verdict   前缀 =', P['forecast']['review']['review']['range_verdict'][:12])
+  _build_payload_0917_close.py           :223  print('forecast.review.support_verdict 前缀 =', P['forecast']['review']['review']['support_verdict'][:12])
+  _build_payload_0917_close.py           :224  print('forecast.review.resistance_verdict   =', P['forecast']['review']['review']['resistance_verdict'][:12])
+  _build_payload_0917_close.py           :225  print('consensus per_topic 条数 =', len(P['consensus']['review']['review']['per_topic']))
+  _build_payload_0917_close.py           :226  print('record id =', P['forecast']['record']['id'])
+  _build_payload_0917_close.py           :227  print('scenario sum =', sum(int(v.split("%")[0].split("**")[-1]) for v in P['forecast']['record']['scenario'].
+  analyze_000001_multi.py                :148  print(f"[{tag}] 价{r['price']} 趋势{r['trend']} {r['pzs']} | MA55={r['ma55']}({r['ma_pos']},{r['ma_slope']},{r['m
+  analyze_000001_multi.py                :150  print('\n== 区间套判定（相邻周期）==')
+  analyze_000001_multi.py                :158  print(f"[{p['pair']}] 大周期价格在中枢{pos}位置 → {p['conclusion']}{'('+p['strength']+')' if p['strength'] else ''}")
+  analyze_000001_multi.py                :165  print(f'\nJSON 已保存: {out}')
+  anonymize_report.py                    :97   print("匿名版已生成:", DST)
+  anonymize_report.py                    :98   print("残留名字检查:", remaining if remaining else "无残留 ✅")
+  anonymize_report.py                    :99   print("字节数:", len(text.encode("utf-8")))
+  backfill_actual_data.py                :84   print(f"[+actual] {r['id']} -> {date} {ohlc_of(date)}")
+  backfill_actual_data.py                :86   print(f"[跳过] {r['id']} 无 actual 且不在映射表")
+  backfill_actual_data.py                :96   print(f"[+pct] {r['id']} ({date}) -> pct_chg={a['pct_chg']}")
+  backfill_actual_data.py                :101  print(f'\n完成：回填 actual {fixed_actual} 条，补 pct_chg {fixed_pct} 条')
+  backfill_zsxq_window.py                :241  print("[FAIL] 窗口起点晚于或等于终点"); return 1
+  backfill_zsxq_window.py                :250  print("窗口: %s ~ %s" % (since.strftime("%Y-%m-%d %H:%M"), until.strftime("%Y-%m-%d %H:%M")))
+  backfill_zsxq_window.py                :251  print("目标: %d 个星球\n" % len(targets))
+  backfill_zsxq_window.py                :257  print("[skip] %-26s skill 通道请用 fetch_zsxq.py（本脚本专做 cookie 补档）" % name)
+  backfill_zsxq_window.py                :262  print("[FAIL] %-26s %s" % (name, err))
+  backfill_zsxq_window.py                :265  print("[ OK ] %-26s 窗口内 %d 条" % (name, len(ts)))
+  backfill_zsxq_window.py                :274  print("        └ 该球窗口内 0 条%s" % ("；最新帖 %s（早于窗口，非故障）" % newest if newest else ""))
+  backfill_zsxq_window.py                :280  print("\n=> 全部星球取数失败，未生成档案。")
+  backfill_zsxq_window.py                :291  print("\n共 %d 条 → %s" % (len(items), out))
+  backfill_zsxq_window.py                :297  print("JSON → %s" % a.json_out)
+  backfill_zsxq_window.py                :300  print("\n失败星球:")
+  backfill_zsxq_window.py                :302  print("  - %s: %s" % (n, e))
+  backtest_divergence.py                 :53   print(f'样本 {len(df)} 个交易日\n')
+  backtest_divergence.py                 :54   print('=== 日线空头区（回调压力）下，60F 强弱 对 3 日后涨跌 ===')
+  backtest_divergence.py                 :59   print(f'  {label}: 无样本'); continue
+  backtest_divergence.py                 :61   print(f'  {label}: {len(sub):3d} 次 | 3日后平均 {sub["ret"].mean():+.2f}% | 上涨 {up}/{len(sub)} ({up/len(sub)*100:.0
+  backtest_divergence.py                 :63   print('\n=== 关键对比：空头区里 逆势强势 vs 顺势弱势 ===')
+  backtest_divergence.py                 :67   print(f'  逆势强势: 平均 {a["ret"].mean():+.2f}% / 上涨率 {(a["ret"]>0).mean()*100:.0f}%')
+  backtest_divergence.py                 :68   print(f'  顺势弱势: 平均 {b["ret"].mean():+.2f}% / 上涨率 {(b["ret"]>0).mean()*100:.0f}%')
+  backtest_forecast_multiperiod.py       :148  print(f'===== {label}（{mode}）=====')
+  backtest_forecast_multiperiod.py       :149  print(f'样本: {st["n"]} 个交易日（{rows[0]["T"] if rows else "-"} ~ {rows[-1]["T"] if rows else "-"}）')
+  backtest_forecast_multiperiod.py       :150  print(f'方向命中率: {st["dir_accuracy"]}%  相反率: {st["dir_opposite"]}%  规避率: {st["dir_avoid"]}%')
+  backtest_forecast_multiperiod.py       :151  print(f'区间覆盖率: {st["range_accuracy"]}%  支撑守住: {st["sup_hold"]}%  压力守住: {st["res_hold"]}%')
+  backtest_forecast_multiperiod.py       :153  print()
+  backtest_macd.py                       :36   print(f'样本区间 {start} ~ 2026-08-21，共 {len(d)} 交易日\n')
+  backtest_macd.py                       :39   print('=== 1. MACD 日线 死叉/金叉 后次日涨跌 ===')
+  backtest_macd.py                       :43   print(f'  {label}: 无样本'); continue
+  backtest_macd.py                       :46   print(f'  {label}: {len(sub)} 次 | 涨 {up} / 跌 {dn} | 涨率 {up/len(sub)*100:.0f}%')
+  backtest_macd.py                       :49   print('\n=== 2. DIF 在 DEA 下方（空头区）vs 上方（多头区）次日涨跌 ===')
+  backtest_macd.py                       :54   print(f'  {label}: {len(sub)} 日 | 次日涨 {up} / 跌 {dn} | 涨率 {up/len(sub)*100:.0f}%')
+  backtest_macd.py                       :57   print('\n=== 3. 底背离（价创新低但 DIF 不新低）后 3 日反弹 ===')
+  backtest_macd.py                       :62   print(f'  底背离信号: {len(sub)} 次')
+  backtest_macd.py                       :69   print(f'  信号后 {horizon} 日: 平均涨跌 {sig_ret.mean():+.2f}% | 上涨占比 {(sig_ret>0).sum()}/{len(sig_ret)}')
+  backtest_macd.py                       :72   print('\n=== 4. 对照：无底背离的破位新低（价新低且 DIF 也新低）后 3 日 ===')
+  backtest_macd.py                       :75   print(f'  破位新低(无背离): {len(sub)} 次')
+  backtest_macd.py                       :80   print(f'  信号后 3 日: 平均涨跌 {sig_ret.mean():+.2f}% | 上涨占比 {(sig_ret>0).sum()}/{len(sig_ret)}')
+  backtest_support_compare.py            :79   print('===== 支撑位方案对照（60F版 188样本）=====\n')
+  backtest_support_compare.py            :82   print(f"[{scheme}] {name}: 支撑守住 {r['sup_hold']}% / 压力守住 {r['res_hold']}% / 区间覆盖 {r['coverage']}% / 支撑离现价均 {r['
+  backtest_tj_v2.py                      :45   print(f'  [{label}] 样本 0（不足）')
+  backtest_tj_v2.py                      :53   print(f'  [{label}] n={n:4d}  涨>{thr:.1f}%: {up/n*100:5.1f}%  跌<-{thr:.1f}%: {dn/n*100:5.1f}%  平: {flat/n*100:
+  backtest_tj_v2.py                      :81   print('=' * 70)
+  backtest_tj_v2.py                      :82   print('DRAGON BALL模型 方法论 v2 量化回测（上证综指 000001，日线 + 60F）')
+  backtest_tj_v2.py                      :83   print(f'日线样本 {len(DAY)} 根  {DAY["date"].iloc[0].date()} ~ {DAY["date"].iloc[-1].date()}')
+  backtest_tj_v2.py                      :84   print('=' * 70)
+  backtest_tj_v2.py                      :87   print('\n【信号1】中轨层次（MA20 预警线 vs MA55 分水岭）→ 次日方向')
+  backtest_tj_v2.py                      :111  print('\n【信号2】极强/极弱状态机（偏离度加速=极强/极弱，减速=解除）→ 次日方向')
+  backtest_tj_v2.py                      :155  print('\n【信号3】右侧标准（收盘 vs 60F MA55）→ 次日方向')
+  backtest_tj_v2.py                      :173  print('\n【信号4】55线共振（日线55 与 60F55 距离<1%=重叠区）→ 次日方向')
+  backtest_tj_v2.py                      :196  print('\n【信号5】刺破中轨 vs 有效跌破中轨（当日盘中 vs 收盘）→ 次日方向')
+  backtest_tj_v2.py                      :217  print('\n' + '=' * 70)
+  backtest_tj_v2.py                      :218  print('结论提示：对比 v5 基线 —— 方向相反率约 28~30%（即方向命中率 ~70%）；')
+  backtest_tj_v2.py                      :219  print('          若某 DRAGON BALL模型 信号分档的「涨/跌」概率显著偏离 50% 且样本≥30，即具预测力。')
+  backtest_tj_v2.py                      :220  print('=' * 70)
+  backtest_tj_v2_verify.py               :48   print(f'  {label:24s} n={len(p1):3d}  次日涨{up1:5.1f}%/跌{dn1:5.1f}%  3日均值{avg3:+.3f}%  3日涨{up3:5.1f}%')
+  backtest_tj_v2_verify.py               :50   print('='*70)
+  backtest_tj_v2_verify.py               :51   print('极强/极弱状态机 —— 1日 vs 3日 稳健性交叉验证')
+  backtest_tj_v2_verify.py               :52   print('='*70)
+  backtest_tj_v2_verify.py               :57   print()
+  backtest_tj_v2_verify.py               :60   print('='*70)
+  backtest_tj_v2_verify.py               :61   print('方向因子命中率对比（次日 |pct|>0.1% 计有效，符号一致=命中）')
+  backtest_tj_v2_verify.py               :62   print('='*70)
+  backtest_tj_v2_verify.py               :68   print(f'  信号「{dir_sig}」n={len(idx):3d}  命中{hit/len(idx)*100:5.1f}%  相反{opp/len(idx)*100:5.1f}%')
+  backtest_tj_v2_verify.py               :81   print('  --- 组合因子（持续极强→空 / 解除极弱→多）---')
+  backtest_tj_v2_verify.py               :85   print(f'  组合 n={len(idx):3d}  命中{hit/len(idx)*100:5.1f}%  相反{opp/len(idx)*100:5.1f}%  规避(平){ (len(idx)-hit-opp
+  backtest_tj_v2_verify.py               :87   print()
+  backtest_tj_v2_verify.py               :88   print('v5 基线参考：方向相反率约 28~30%（方向命中率 ~70%，含「方向不明」规避）')
+  backtest_v5.py                         :145  print(f'[{label}] 样本 {n}')
+  backtest_v5.py                         :146  print(f'  方向: 命中 {round(hit/n*100,1)}% / 相反 {round(opp/n*100,1)}% / 规避 {round(avoid/n*100,1)}%')
+  backtest_v5.py                         :147  if nn: print(f'  区间覆盖: {c}/{nn} = {round(c/nn*100,1)}%')
+  backtest_v5.py                         :148  print(f'  支撑守住: {round(sup_hold/n*100,1)}%  压力守住: {round(res_hold/n*100,1)}%')
+  backtest_v5.py                         :151  print('===== v5（55线优先支撑/压力）回测 =====\n')
+  backtest_v5.py                         :153  print()
+  backtest_v6_compare.py                 :87   print('===== ⑥ 信号失效机制对照回测 =====\n')
+  backtest_v6_compare.py                 :92   print()
+  backtest_v6_compare.py                 :94   print()
+  backtest_v6_compare.py                 :99   print()
+  build_dims_data.py                     :84   print('OK rows=', len(rows))
+  calc_tech.py                           :99   print(json.dumps({'error': f'无法解析或不支持腾讯接口: {args.code}'}, ensure_ascii=False))
+  calc_tech.py                           :123  print(json.dumps(out, ensure_ascii=False, indent=2))
+  calc_tech.py                           :124  print('SAVED=%s' % p, file=sys.stderr)
+  calc_tech_multi.py                     :86   print('现价 =', out.get('现价'), '  code =', a.code)
+  calc_tech_multi.py                     :87   print('')
+  calc_tech_multi.py                     :91   print('%-10s ERROR %s' % (k, v['error']))
+  calc_tech_multi.py                     :93   print('%-10s bars=%-4s t=%-14s MA55=%-9s (%+.2f%%) | MA20=%-9s (%+.2f%%) '
+  calc_tech_multi.py                     :100  print('SAVED=', p)
+  chain_apply.py                         :168  print('模板已生成:', p)
+  chain_apply.py                         :169  print(f'  已预填 validate_prev / review.id = {prev_ids["forecast"]}（forecast 链最后一条）')
+  chain_apply.py                         :170  print(f'  所有「{S}」标记处必须替换为实填内容。')
+  chain_apply.py                         :171  print(f'  残留占位符或四维判定全空 → 会被空壳校验拒绝并以退出码 2 结束（不会污染链）。')
+  chain_apply.py                         :172  print('填好后执行: python .workbuddy/chain_apply.py --payload', p)
+  chain_apply.py                         :178  print(CL.render_bias_table(st))
+  chain_apply.py                         :180  print()
+  chain_apply.py                         :181  print(CL.chain_status(n))
+  chain_apply.py                         :188  print(f'{CL.sym("bad")} payload 不存在: {args.payload}')
+  chain_apply.py                         :200  print(f'--- {chain_name} ---')
+  chain_apply.py                         :203  print(' ', m)
+  chain_apply.py                         :207  print()
+  chain_apply.py                         :210  print('[dry-run] 未落盘。以上为预演结果。')
+  chain_apply.py                         :213  print('===== 回读断言 =====')
+  chain_apply.py                         :216  print('  （dry-run 跳过）')
+  chain_apply.py                         :224  print(' ', m)
+  chain_apply.py                         :227  print()
+  chain_apply.py                         :234  print(line)
+  chain_apply.py                         :239  print()
+  chain_apply.py                         :240  print(CL.chain_status(n))
+  chain_apply.py                         :244  print()
+  chain_apply.py                         :245  print('--- 偏差统计（forecast）---')
+  chain_apply.py                         :247  print(CL.render_bias_table(st))
+  chain_apply.py                         :265  print('\n已写出:', wp2)
+  chain_apply.py                         :268  print('\n%s 偏差统计文件写出失败（不影响链落盘）：%r' % (CL.sym('warn'), e))
+  chain_apply.py                         :271  print()
+  chain_apply.py                         :273  print('%s 有 %d 条 review 被拒（空壳/校验未过），本次未完整落盘，请填完再跑。'
+  chain_apply.py                         :276  print('%s 回读断言失败：有记录未按预期落盘，请检查！' % CL.sym('bad'))
+  chainlib.py                            :349  print(chain_status(n))
+  chainlib.py                            :350  print()
+  chainlib.py                            :351  print('--- 偏差统计（forecast）---')
+  chainlib.py                            :352  print(render_bias_table(bias_stats('forecast')))
+  check_cookie.py                        :102  print("[warn] 读取剪贴板失败：%r" % (e,))
+  check_cookie.py                        :110  print("已写入: %s" % COOKIE_FILE)
+  check_cookie.py                        :157  print("[FAIL] Cookie 为空 —— 文件 %s 不存在或内容为空" % COOKIE_FILE)
+  check_cookie.py                        :159  print("Cookie: %s" % mask(cookie))
+  check_cookie.py                        :160  print()
+  check_cookie.py                        :165  print("%s %-26s %-10s %s" % (flag, name, gid, msg))
+  check_cookie.py                        :175  print()
+  check_cookie.py                        :177  print("=> 全部 %d 个星球鉴权通过，Cookie 可用。" % len(COOKIE_GROUPS))
+  check_cookie.py                        :180  print("=> %d/%d 个星球 401，Cookie 已失效。请重新登录 wx.zsxq.com 后复制新的 Cookie。"
+  check_cookie.py                        :184  print("=> %d 个星球持续返回 succeeded=false（限流抖动，非 Cookie 问题）——"
+  check_cookie.py                        :187  print("=> 存在网络/接口异常（非鉴权问题），稍后重试。")
+  check_cookie.py                        :204  print("[warn] 文件不存在，将创建：%s" % COOKIE_FILE)
+  check_cookie.py                        :209  print("[FAIL] 未取到内容（剪贴板为空？）")
+  check_cookie.py                        :212  print("输入原文: %s" % mask(raw.strip()))
+  check_cookie.py                        :213  print("规范化后: %s" % mask(newv))
+  check_cookie.py                        :215  print("[FAIL] 内容里没有 zsxq_access_token —— 复制的可能不是完整 Cookie，"
+  check_cookie.py                        :225  print()
+  check_display_name.py                  :120  print('=' * 66)
+  check_display_name.py                  :121  print('对外显示名守卫 · 检查日期 %s' % today)
+  check_display_name.py                  :122  print('=' * 66)
+  check_display_name.py                  :124  print('OK  对外产物与生成链路零泄漏（白名单跳过 %d 个文件）' % skipped)
+  check_display_name.py                  :128  print('  %-58s %3d 处  %s' % (rel, n, '/'.join(kinds)))
+  check_display_name.py                  :129  print('-' * 66)
+  check_display_name.py                  :130  print('泄漏 %d 个文件 —— 请改生成器或补白名单' % len(hits))
+  check_integrity.py                     :101  print('=' * 70)
+  check_integrity.py                     :102  print('数据完整性校验报告')
+  check_integrity.py                     :103  print(f'检查区间：{start} ~ {today}')
+  check_integrity.py                     :104  print('=' * 70)
+  check_integrity.py                     :110  print('\n【1】DRAGON BALL模型 原文归档缺口（有交易日但无归档文件）')
+  check_integrity.py                     :116  print(f'  ⚠️ {d} 缺 DRAGON BALL模型 归档（需确认当天是否真的无 DRAGON BALL模型 新帖）')
+  check_integrity.py                     :119  print('  ✅ 无新增缺口')
+  check_integrity.py                     :121  print(f'  ℹ️ 已知例外 {len(tj_known)} 条（不计入问题）：'
+  check_integrity.py                     :125  print('\n【2】forecast_chain 档位缺口（有交易日但无任何预判记录）')
+  check_integrity.py                     :129  print(f'  ⚠️ {d} 无预判记录')
+  check_integrity.py                     :132  print('  ✅ 无缺口')
+  check_integrity.py                     :136  print('\n【3】档位覆盖偏薄（当日仅 1 条晨报）')
+  check_integrity.py                     :137  print(f'  ℹ️ {len(thin)} 天（近期既定节奏为「只跑晨报档」，非缺口；--verbose 展开）')
+  check_integrity.py                     :140  print(f'     · {d} 仅 {fc_dates[d][0]}')
+  check_integrity.py                     :143  print('\n【4】consensus_chain 时效')
+  check_integrity.py                     :144  print(f'  最后一条：{cc_last}（共 {len(cchain)} 条）')
+  check_integrity.py                     :146  print(f'  ⚠️ 停更中（最近交易日 {max(days)} 未写入）')
+  check_integrity.py                     :150  print('\n【5】forecast_chain 数据完整性（review.actual 字段）')
+  check_integrity.py                     :158  print(f'  ⚠️ {r["id"]}: 无 actual')
+  check_integrity.py                     :164  print(f'  ⚠️ {r["id"]}: 缺 {miss}')
+  check_integrity.py                     :167  print('  ✅ 全部完整')
+  check_integrity.py                     :169  print(f'  共 {bad} 条异常')
+  check_integrity.py                     :173  print('\n【6】pending 守卫（> 1 条即可能漏复盘上一条）')
+  check_integrity.py                     :177  print(f'  ⚠️ {name}: pending={len(pends)} → {", ".join(pends)}')
+  check_integrity.py                     :180  print(f'  ✅ {name}: pending={len(pends)}'
+  check_integrity.py                     :184  print('\n' + '=' * 70)
+  check_integrity.py                     :185  print(f'汇总：DRAGON BALL模型 新增缺口 {len(tj_real)}（另有已知例外 {len(tj_known)}）· '
+  check_integrity.py                     :188  print('✅ 无实质问题。')
+  check_integrity.py                     :190  print('⚠️ 存在需处理的问题（见上方 ⚠️ 行）。')
+  check_integrity.py                     :191  print('=' * 70)
+  check_layout.py                        :440  print('跳过（不存在）：%s' % f)
+  check_layout.py                        :443  print(render(res))
+  check_layout.py                        :444  print()
+  check_layout.py                        :448  print('汇总：%d 份，ERROR %d，WARN %d，INFO %d' % (len(files), n_err, n_warn, n_info))
+  cleanup_engine_output.py               :69   print('目录：%s' % a.dir)
+  cleanup_engine_output.py               :70   print('模式：%s' % ('APPLY' if a.apply else 'DRY-RUN'))
+  cleanup_engine_output.py               :71   print('共 %d 个文件，其中带日期的 %d 个、不带日期的 %d 个'
+  cleanup_engine_output.py               :73   print('覆盖交易日 %d 个：%s ~ %s' % (len(days), days[-1], days[0]) if days else '无')
+  cleanup_engine_output.py               :74   print('保留最近 %d 个交易日：%s' % (len(keep), ', '.join(sorted(keep, reverse=True)) if keep else '-'))
+  cleanup_engine_output.py               :75   print('拟归档 %d 个交易日：%s'
+  cleanup_engine_output.py               :78   print('⚠️ 无日期文件（一律保留，请人工核对命名）：%s' % ', '.join(sorted(undated)))
+  cleanup_engine_output.py               :79   print('')
+  cleanup_engine_output.py               :97   print('— 因最近有写入（mtime ≥ %s）而改为保留 —' % cutoff.isoformat())
+  cleanup_engine_output.py               :99   print('  %-56s mtime=%s' % (f, mt))
+  cleanup_engine_output.py               :100  print('')
+  cleanup_engine_output.py               :103  print('无需归档：所有文件都在保留窗口内。')
+  cleanup_engine_output.py               :111  print('— %s —' % ('已归档' if a.apply else '拟归档'))
+  cleanup_engine_output.py               :114  print('  %-44s %3d 个 %8.1f KB' % (os.path.relpath(ym, a.dir), n, sz / 1024))
+  cleanup_engine_output.py               :115  print('  合计 %d 个，%.1f KB' % (len(moved), sum(x[2] for x in moved) / 1024))
+  cleanup_engine_output.py               :117  print('')
+  cleanup_engine_output.py               :118  print('（dry-run 结束；加 --apply 才会真正移动）')
+  cleanup_engine_output.py               :120  print('')
+  cleanup_engine_output.py               :121  print('归档完成。回滚：把 archive/<YYYY-MM>/ 下的文件移回上一级即可。')
+  cleanup_images.py                      :47   print(f"清理 {days} 天前的图片（截止 {cutoff.strftime('%Y-%m-%d %H:%M')} 之前）")
+  cleanup_images.py                      :48   print(f"命中 {len(targets)} 个文件，约 {mb:.1f} MB")
+  cleanup_images.py                      :49   print()
+  cleanup_images.py                      :52   print("【预览模式】以下文件将被删除（未实际删除）：")
+  cleanup_images.py                      :54   print(f"  {fname}  ({size // 1024} KB)")
+  cleanup_images.py                      :56   print(f"  ... 其余 {len(targets) - 40} 个")
+  cleanup_images.py                      :57   print()
+  cleanup_images.py                      :58   print("确认无误后，加 --apply 参数实际删除。")
+  cleanup_images.py                      :62   print(f"已实际删除 {len(targets)} 个文件，释放 {mb:.1f} MB")
+  cleanup_workspace.py                   :138  print('模式：%s' % ('APPLY（将移动文件）' if a.apply else 'DRY-RUN（不动文件）'))
+  cleanup_workspace.py                   :139  print('归档根：%s' % dest_root)
+  cleanup_workspace.py                   :140  print('')
+  cleanup_workspace.py                   :192  print('— 计划归档 —')
+  cleanup_workspace.py                   :194  print('  [%s] %d 个，%.1f KB' % (cat, len(bycat[cat]), sum(bycat[cat]) / 1024))
+  cleanup_workspace.py                   :195  print('  合计 %d 个，%.1f KB' % (len(manifest), sum(x[4] for x in manifest) / 1024))
+  cleanup_workspace.py                   :196  print('')
+  cleanup_workspace.py                   :197  print('— 计划重命名 —')
+  cleanup_workspace.py                   :199  print('  %-42s → %-38s %s' % (src_rel, os.path.basename(dst_rel), st))
+  cleanup_workspace.py                   :201  print('')
+  cleanup_workspace.py                   :202  print('— 跳过（需人工确认）—')
+  cleanup_workspace.py                   :204  print('  %s：%s' % (rel, why))
+  cleanup_workspace.py                   :206  print('')
+  cleanup_workspace.py                   :207  print('— 已不存在（%d 个，正常）—' % len(missing))
+  cleanup_workspace.py                   :219  print('')
+  cleanup_workspace.py                   :220  print('已写出清单：%s' % mp)
+  cleanup_workspace.py                   :221  print('已归档 %d 个文件到 %s' % (len(manifest), dest_root))
+  cleanup_workspace.py                   :223  print('')
+  cleanup_workspace.py                   :224  print('（dry-run 结束；加 --apply 才会真正移动）')
+  digest_zsxq.py                         :76   print(f'❌ 原始数据不存在: {args.src}（先跑 fetch_zsxq.py）')
+  digest_zsxq.py                         :105  print('OK %d 条 -> %s' % (len(topics), p))
+  engine_effectiveness.py                :21   print('=' * 70)
+  engine_effectiveness.py                :22   print('【指标1】引擎B 买卖点作为支撑/压力的有效性')
+  engine_effectiveness.py                :23   print('=' * 70)
+  engine_effectiveness.py                :43   print(f'总买卖点样本: {len(B_pts)}')
+  engine_effectiveness.py                :46   print(f'触及率（点位落在当日[low,high]内）: {touched}/{len(B_pts)} = {touched/len(B_pts)*100:.1f}%')
+  engine_effectiveness.py                :49   print(f'精准度（距实际极值±0.5%内）: {precise}/{len(B_pts)} = {precise/len(B_pts)*100:.1f}%')
+  engine_effectiveness.py                :50   print()
+  engine_effectiveness.py                :51   print('明细（按偏差排序）:')
+  engine_effectiveness.py                :53   print(f"  {p[0]}  {p[1]:4s}@{p[2]:8.2f}  触及={p[3]}  距极值{p[4]:+6.2f}%")
+  engine_effectiveness.py                :56   print()
+  engine_effectiveness.py                :57   print('=' * 70)
+  engine_effectiveness.py                :58   print('【指标2】引擎A 缠论结构 vs 实际方向（日线级别）')
+  engine_effectiveness.py                :59   print('=' * 70)
+  engine_effectiveness.py                :93   print(f'日线明确方向(down/up)样本: 命中 {hit}, 反向 {miss}, 震荡/平 {side}')
+  engine_effectiveness.py                :94   print(f'方向命中率（排除震荡）: {hit}/{n} = {hit/n*100:.1f}%' if n else '无样本')
+  engine_effectiveness.py                :95   print('明细:')
+  engine_effectiveness.py                :97   print(f"  {d[0]}  {d[1]:8s}  实际{d[2]:+6.2f}%  {d[3]}")
+  engine_effectiveness.py                :100  print()
+  engine_effectiveness.py                :102  print(f'engineA 无法提取日线方向的记录: {obs}（多为"观望"表述或无 engineA 字段）')
+  export_backup.py                       :111  print("⚠️ 未探测到工作区，请用环境变量 WORKBUDDY_WORKSPACE 指定")
+  export_backup.py                       :136  print(f"备份完成：{out}")
+  export_backup.py                       :137  print(f"大小：{size:.1f} MB · 已打包 {n} 类数据")
+  export_backup.py                       :138  print()
+  export_backup.py                       :139  print("还原方法：新电脑装好 WorkBuddy 并登录同一账号后，把 zip 解压到 C:\\Users\\<用户名>\\ 覆盖即可。")
+  export_backup.py                       :140  print("注意：新电脑用户名尽量与原电脑一致（gedayou），路径不一致时脚本会自动探测工作区，无需改代码。")
+  fetch_backtest_data.py                 :40   print(f'{name}: {len(clean)} 根  {clean[0][0]} ~ {clean[-1][0]}  -> {p}')
+  fetch_backtest_data.py                 :48   print('DONE')
+  fetch_tj_topics.py                     :32   print(f"[err] {e}")
+  fetch_tj_topics.py                     :38   print(f"[fail] {err}")
+  fetch_tj_topics.py                     :52   print(f"拉取 {len(all_topics)} 条")
+  fetch_tj_topics.py                     :67   print(f"已保存 {len(items)} 条 -> {OUT}")
+  fetch_tj_topics.py                     :69   print(f"时间范围: {items[0]['create_time']} ~ {items[-1]['create_time']}")
+  fetch_zsxq.py                          :79   print(f"[skill-err {gid}] zsxq-cli 超时(>90s)，本星球本次跳过", file=sys.stderr)
+  fetch_zsxq.py                          :82   print(f"[skill-err {gid}] {e}", file=sys.stderr)
+  fetch_zsxq.py                          :87   print(f"[skill-err {gid}] {e} :: {r.stderr[:200]}", file=sys.stderr)
+  fetch_zsxq.py                          :119  print(f"[cookie-skip {gid}] 本轮已确认 Cookie 失效，跳过该星球（不重复提示）", file=sys.stderr)
+  fetch_zsxq.py                          :139  print(f"[cookie-retry-ok {gid}] 抖动 {attempt} 次后成功（非鉴权问题）",
+  fetch_zsxq.py                          :145  print(f"[cookie-flaky {gid}] try{attempt}: HTTP 200 但 succeeded=false"
+  fetch_zsxq.py                          :151  print(f"[cookie-auth {gid}] HTTP {e.code} 鉴权失败：Cookie 已失效，"
+  fetch_zsxq.py                          :155  print(f"[cookie-err {gid}] try{attempt}: {e}", file=sys.stderr)
+  fetch_zsxq.py                          :158  print(f"[cookie-err {gid}] try{attempt}: {e}", file=sys.stderr)
+  fetch_zsxq.py                          :163  print(f"[cookie-flaky-fail {gid}] 退避重试 4 次仍无数据（限流抖动或接口异常，"
+  fetch_zsxq.py                          :191  print(f"[img-err] {url[:80]} :: {e}", file=sys.stderr)
+  fetch_zsxq.py                          :280  print(f"[skill] {name}: {len(topics)}条, 窗口内 {sum(1 for t in topics if in_window(t.get('create_time','')))}条", 
+  fetch_zsxq.py                          :288  print(f"[cookie] {name}: {len(topics)}条, 窗口内 {sum(1 for t in topics if in_window(t.get('create_time','')))}条",
+  fetch_zsxq.py                          :304  print(f"TOTAL_WINDOW={len(results)}  IMAGES={n_img}  FILES={n_file}")
+  fetch_zsxq.py                          :306  print(f"COOKIE_AUTH_FAILED={len(auth_failed)} (gid: {', '.join(sorted(auth_failed))}) "
+  fetch_zsxq.py                          :309  print(f"COOKIE_FLAKY_FAILED={len(flaky_failed)} "
+  fetch_zsxq.py                          :311  print(f"SAVED={os.path.normpath(out)}")
+  fetch_zsxq_fallback.py                 :64   print(f"[img-err] {url[:80]} :: {e}", file=sys.stderr)
+  fetch_zsxq_fallback.py                 :138  print(f"[cookie-err {gid}] try{attempt}: {e}", file=sys.stderr)
+  fetch_zsxq_fallback.py                 :164  print(f"[cookie-all] {name}: {len(topics)}条, 窗口内 {cnt}条", file=sys.stderr)
+  fetch_zsxq_fallback.py                 :175  print(f"TOTAL_WINDOW={len(uniq)}  IMAGES={sum(len(x['images']) for x in uniq)}  FILES={sum(len(x['files']) for
+  fetch_zsxq_fallback.py                 :176  print(f"SAVED={out}")
+  forecast_analyze.py                    :328  print(json.dumps({"error": f"无法识别的标的: {code}"}, ensure_ascii=False, indent=2))
+  forecast_analyze.py                    :347  print('⚠️ 引擎未取到数据：%s' % eng_err, file=sys.stderr)
+  forecast_analyze.py                    :367  print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
+  gen_backtest_report.py                 :114  print('HTML 报告已保存:', out)
+  gen_backtest_report.py                 :144  print('MD 摘要已保存:', mdout)
+  gen_dims_html.py                       :174  print('OK', len(HTML))
+  gen_forecast_svg.py                    :338  print('SVG written: %s' % out)
+  gen_forecast_svg.py                    :339  print('  chars=%d bytes=%d pred=%s' % (n, size, rid))
+  gen_forecast_svg.py                    :340  print('  now=%s band=(%s~%s) up=%s lower=%s'
+  gen_forecast_svg.py                    :343  print('  signals=%s prob=%s' % (lv.get('signals', []), lv.get('prob', {})))
+  gen_range_band_html.py                 :201  print('OK', len(HTML))
+  gen_tj_archive.py                      :80   print(f"DRAGON BALL模型 归档完成，{len(tj)} 条 -> {out}")
+  get_daily_ohlc.py                      :163  print(json.dumps({"error": f"无法识别的标的: {code_arg}", "source": "market_codes"},
+  get_daily_ohlc.py                      :167  print(json.dumps({"error": f"{resolved['name']} 腾讯接口暂不支持（数据源: {resolved['data_source']}）",
+  get_daily_ohlc.py                      :182  print(json.dumps(cached, ensure_ascii=False, indent=2))
+  get_daily_ohlc.py                      :197  print(json.dumps(r, ensure_ascii=False, indent=2))
+  get_daily_ohlc.py                      :199  print(json.dumps({"error": str(e), "code": std_code,
+  industry_rank.py                       :169  print(md)
+  industry_rank.py                       :170  print('\n\n[结果已保存 backtest_data/industry_rank_result.json]')
+  market_codes.py                        :133  print(f'{t!r:12} -> {r}')
+  md_to_html_report.py                   :128  print('written:', OUT, 'len:', len(html))
+  normalize_chain.py                     :39   print(f'[rename] {old} -> {r["id"]}')
+  normalize_chain.py                     :49   print(f'[pct] {r["id"]} pct -> pct_chg = {a["pct_chg"]}')
+  normalize_chain.py                     :56   print(f'[date] {r["id"]} date = {a["date"]}')
+  normalize_chain.py                     :61   print(f'\n完成：改名 {n_rename} 条，字段名统一 {n_pct} 条，补 date {n_date} 条')
+  normalize_verdicts.py                  :65   print(f'已补 *_verdict 字段：{patched} 条')
+  normalize_verdicts.py                  :97   print(f'\n=== 偏差统计（{len(verified)} 期 verified，统一口径） ===')
+  normalize_verdicts.py                  :103  print(f'{zh}: ✅{ok} ⚠️{part} ❌{fail} 纯命中率 {rate}')
+  normalize_verdicts.py                  :105  print('\n=== bias_type 分布（top 12） ===')
+  normalize_verdicts.py                  :107  print(f'  {k}: {v}')
+  qt_api.py                              :85   print('OK via %s' % s)
+  qt_api.py                              :86   print(json.dumps(d, ensure_ascii=False)[:400])
+  report_builder.py                      :189  print(f'❌ 原始晨报不存在：{SRC_MD}')
+  report_builder.py                      :190  print('   请先跑晨报 prompt 生成原始报告，再运行本脚本后处理。')
+  report_builder.py                      :219  print(f'✅ 已生成 {DST_MD}（{len(md)} 字）')
+  report_builder.py                      :220  print(f'   HTML 请用：$PY .workbuddy/md_to_html_report.py {DST_MD}')
+  run.py                                 :24   print(__doc__)
+  run.py                                 :30   print(f'❌ 脚本不存在：{script_path}')
+  run.py                                 :36   print(f'⚠️ venv python 不存在（{VENV_PY}），回退当前解释器 {py}')
+  run_sw_chansignal.py                   :35   print(f"错误：{_args.code} 不是有效的申万一级行业代码")
+  run_sw_chansignal.py                   :86   print(f"=== {CODE} {NAME} chan-signal 缠论买卖点（日线+周线，数据源 akshare）===")
+  run_sw_chansignal.py                   :97   print(f"\n[{tag}]")
+  run_sw_chansignal.py                   :99   print(f"  {r['error']}")
+  run_sw_chansignal.py                   :101  print(f"  最新价 {r['latest_close']} ({r['change_pct']}%) | 趋势 {r['trend']} | {r['price_vs_zs']}")
+  run_sw_chansignal.py                   :102  print(f"  笔 {r['bi_count']} 中枢 {r['zhongshu_count']}")
+  run_sw_chansignal.py                   :104  print(f"    买点 {b['name']} @{b.get('price')} 置信度{b.get('confidence')}")
+  run_sw_chansignal.py                   :106  print(f"    卖点 {s['name']} @{s.get('price')} 置信度{s.get('confidence')}")
+  run_sw_chansignal.py                   :109  print(f"    最新信号: {ls.get('name')}@{ls.get('price')}")
+  run_sw_chansignal.py                   :118  print(f"\n买卖点对比表已保存: {md_path}")
+  run_sw_chansignal.py                   :124  print(f"JSON 已保存: {json_path}")
+  scan_sw_realtime.py                    :79   print(f"\n===== 申万一级行业实时强弱榜（{ts}，source={source}）=====")
+  scan_sw_realtime.py                    :80   print(f"  领涨 TOP5：")
+  scan_sw_realtime.py                    :82   print(f"    {x['name']:6s} {x['pct']:+.2f}%")
+  scan_sw_realtime.py                    :83   print(f"  领跌 TOP5：")
+  scan_sw_realtime.py                    :85   print(f"    {x['name']:6s} {x['pct']:+.2f}%")
+  scan_sw_realtime.py                    :86   print(f"  缺失: {out['missing']}")
+  scan_sw_realtime.py                    :87   print(f"结果已保存 backtest_data/scan_result_sw_realtime.json（{len(items)} 个行业）")
+  scan_ths.py                            :199  print(f'[缓存] scan_result_ths.json 今天已生成（{time.strftime("%H:%M", time.localtime(mt))}），跳过重算')
+  scan_ths.py                            :211  print(f'同花顺行业列表失败: {e}')
+  scan_ths.py                            :214  print(f'=== 同花顺行业扫描（{len(ths_names)} 个，akshare ths，最新 8-24）===')
+  scan_ths.py                            :221  print(f"  [{i+1}/{len(ths_names)}] {name}: 方向{r['direction']:+.1f} 振幅{r['volatility']}% 趋势{r['trend']}")
+  scan_ths.py                            :223  print(f"  [{i+1}/{len(ths_names)}] {name}: 失败 {str(e)[:30]}")
+  scan_ths.py                            :225  print('\n=== 宽基指数 + 恒生（腾讯，实时 8-25）===')
+  scan_ths.py                            :236  print(f"  {name}: 方向{r['direction']:+.1f} 振幅{r['volatility']}% 趋势{r['trend']} 信号[{r['sig']}]")
+  scan_ths.py                            :238  print(f"  {name}: 失败 {str(e)[:40]}")
+  scan_ths.py                            :247  print('\n===== 申万一级大类 TOP 15（|方向|×振幅 降序，方向=成员均值）=====')
+  scan_ths.py                            :249  print(f"  {r['name']:8s} 方向{r['direction']:+.1f} 振幅{r['volatility']}% 综合{r['score']} 成员{r['members']} 趋势{r['tr
+  scan_ths.py                            :251  print('\n\n===== 同花顺行业 TOP 15（|方向|×振幅 降序）=====')
+  scan_ths.py                            :253  print(f"  {r['name']:10s} 方向{r['direction']:+.1f} 振幅{r['volatility']}% 综合{r['score']} 信号[{r['sig']}]")
+  scan_ths.py                            :254  print('\n===== 宽基/恒生 TOP =====')
+  scan_ths.py                            :256  print(f"  {r['name']:8s} 方向{r['direction']:+.1f} 振幅{r['volatility']}% 综合{r['score']} 信号[{r['sig']}]")
+  scan_ths.py                            :262  print(f"\n结果已保存 backtest_data/scan_result_ths.json")
+  simplify_prompts.py                    :55   print(f"未找到 db：{DB}")
+  simplify_prompts.py                    :64   print(f"[跳过] {name}：任务不存在")
+  simplify_prompts.py                    :69   print(f"[跳过] {name}：已精简（含兜底句）")
+  simplify_prompts.py                    :72   print(f"[精简] {name}：{len(p)} -> {len(new_p)} 字符（减 {len(p) - len(new_p)}）")
+  simplify_prompts.py                    :76   print(f"\n完成：精简 {changed} 档，跳过 {len(IDS) - changed} 档。")
+  sync_morning_prompt.py                 :16   print(f"[sync] ❌ 模板不存在: {TEMPLATE}")
+  sync_morning_prompt.py                 :20   print("[sync] ❌ 模板为空")
+  sync_morning_prompt.py                 :25   print(f"[sync] ❌ workbuddy.db 不存在: {db}")
+  sync_morning_prompt.py                 :38   print("[sync] ❌ 未找到晨报 automation（按 name 含「晨报」或「Dawn」定位）")
+  sync_morning_prompt.py                 :45   print(f"[sync] ✅ 晨报 prompt 已是最新标准版，无需更新（{name}）")
+  sync_morning_prompt.py                 :49   print(f"[sync] ✅ 晨报 prompt 已更新到标准版（{name}，长度 {len(cur_prompt or '')} → {len(std)}）")
+  test_chain_apply.py                    :119  print('   %s %s' % ('PASS' if cond else 'FAIL', desc))
+  test_chain_apply.py                    :123  print('\n===== %s =====' % title)
+  test_chain_apply.py                    :146  print(brief(r))
+  test_chain_apply.py                    :161  print(brief(r))
+  test_chain_apply.py                    :174  print(brief(r))
+  test_chain_apply.py                    :190  print(brief(r2, keys=('幂等', '回读', '复盘')))
+  test_chain_apply.py                    :203  print(brief(r))
+  test_chain_apply.py                    :215  print(brief(r, keys=('拒绝', '被拒', '回读', '幂等', '复盘', '共识')))
+  test_chain_apply.py                    :250  print(brief(r))
+  test_chain_apply.py                    :273  print('\n===== 真链状态（只读，仅供对照）=====')
+  test_chain_apply.py                    :281  print('   %-9s 总 %d | verified %d | pending %d' % (n, len(recs), v, p))
+  test_chain_apply.py                    :283  print('   %-9s 读取失败：%r' % (n, e))
+  test_chain_apply.py                    :287  print('\n(沙箱已清理)')
+  test_chain_apply.py                    :289  print('\n(沙箱已清理)')
+  test_chain_apply.py                    :291  print('\n(沙箱清理失败：%s —— 可手动删除 %s)' % (e, SB))
+  test_chain_apply.py                    :295  print('\n' + '=' * 60)
+  test_chain_apply.py                    :296  print('用例合计 %d，通过 %d，失败 %d' % (len(RESULTS), len(RESULTS) - len(bad), len(bad)))
+  test_chain_apply.py                    :298  print('失败项：')
+  test_chain_apply.py                    :300  print('  - %s' % d)
+  test_chain_apply.py                    :301  print('=' * 60)
+  test_chain_apply.py                    :303  print('全部通过 ✅')
+  test_chain_apply.py                    :304  print('=' * 60)
+  test_gen_forecast_svg.py               :38   print('   %s %s' % ('PASS' if cond else 'FAIL', desc))
+  test_gen_forecast_svg.py               :40   print('        %s' % extra)
+  test_gen_forecast_svg.py               :138  print('=== gen_forecast_svg 回归 ===')
+  test_gen_forecast_svg.py               :139  print('')
+  test_gen_forecast_svg.py               :190  print('被测脚本：%s' % SCRIPT)
+  test_gen_forecast_svg.py               :191  print('')
+  test_gen_forecast_svg.py               :195  print('')
+  test_gen_forecast_svg.py               :196  print('用例合计 %d，通过 %d，失败 %d'
+  test_gen_forecast_svg.py               :199  print('')
+  test_gen_forecast_svg.py               :201  print('  FAILED: %s' % x)
+  test_gen_forecast_svg.py               :203  print('全部通过。')
+  test_gen_forecast_svg_neg.py           :99   print('=== 负例验证：test_gen_forecast_svg.py 是否真的在拦回归 ===')
+  test_gen_forecast_svg_neg.py           :100  print('')
+  test_gen_forecast_svg_neg.py           :108  print('SKIP  %s —— 变异点未匹配（脚本已改动，请同步本文件）' % name)
+  test_gen_forecast_svg_neg.py           :113  print('%s  %s → rc=%d, FAIL=%d' % ('CAUGHT' if caught else 'MISSED', name, rc, n_fail))
+  test_gen_forecast_svg_neg.py           :117  print('          %s' % ln.strip())
+  test_gen_forecast_svg_neg.py           :121  print('')
+  test_gen_forecast_svg_neg.py           :123  print('有 %d 处变异溜过，测试存在空洞：' % len(missed))
+  test_gen_forecast_svg_neg.py           :125  print('  - %s' % m)
+  test_gen_forecast_svg_neg.py           :127  print('全部 %d 处变异均被拦下 —— 回归测试有效。' % len(MUTS))
+
+--- A3 吞异常 pass：10 处 ---
+  backtest_v5.py                         :55   except → pass
+  backtest_v5.py                         :65   except → pass
+  chainlib.py                            :29   except → pass
+  check_display_name.py                  :43   except → pass
+  fetch_zsxq.py                          :20   except → pass
+  forecast_analyze.py                    :255  except → pass
+  get_daily_ohlc.py                      :77   except → pass
+  get_daily_ohlc.py                      :138  except → pass
+  get_daily_ohlc.py                      :143  except → pass
+  get_daily_ohlc.py                      :153  except → pass
+
+########################################################################
+# 二、文档对账
+########################################################################
+
+--- 未被任何文档提及的脚本（12）---
+  _build_payload_0917_close.py
+  backtest_tj_v2.py
+  backtest_tj_v2_verify.py
+  build_dims_data.py
+  build_range_band.py
+  check_display_name.py
+  display_names.py
+  fetch_backtest_data.py
+  gen_dims_html.py
+  gen_range_band_html.py
+  normalize_verdicts.py
+  qt_api.py
+
+--- 文档提到但文件不存在（41）---
+  calc_tech_MMDD.py                    ← 脚本地图.md
+  digest_0916.py                       ← 脚本地图.md
+  update_chains.py                     ← 脚本地图.md
+  append_consensus.py                  ← 脚本地图.md
+  chan_signal.py                       ← 脚本地图.md
+  _audit_static.py                     ← 脚本地图.md
+  _audit_layout.py                     ← 脚本地图.md
+  _audit_layout2.py                    ← 脚本地图.md
+  _archive_daily.py                    ← 脚本地图.md
+  _calc_boll.py                        ← 脚本地图.md
+  _tech_extra.py                       ← 脚本地图.md
+  _fix_0907_actual.py                  ← 脚本地图.md
+  _tech_extra.py                       ← 脚本地图.md
+  gen_evening_report.py                ← 脚本地图.md
+  gen_intraday_svg.py                  ← 脚本地图.md
+  _tech_extra.py                       ← 脚本地图.md
+  update_chains.py                     ← 脚本地图.md
+  append_consensus.py                  ← 脚本地图.md
+  zsxq_api.py                          ← 脚本地图.md
+  gen_evening_report.py                ← 脚本地图.md
+  append_consensus.py                  ← 脚本地图.md
+  xxx.py                               ← 报告生成流程.md
+  calc_tech_MMDD.py                    ← 报告生成流程.md
+  _tech_extra.py                       ← 报告生成流程.md
+  digest_MMDD.py                       ← 报告生成流程.md
+  run_000001_chansignal.py             ← 报告生成流程.md
+  run_000001_chansignal.py             ← 报告生成流程.md
+  run_000001_boll_chan.py              ← 报告生成流程.md
+  run_000001_chansignal.py             ← 报告生成流程.md
+  run_000001_boll_chan.py              ← 报告生成流程.md
+  run_000001_multi.py                  ← 报告生成流程.md
+  run_000001_chansignal.py             ← README_预判系统.md
+  run_000001_boll_chan.py              ← README_预判系统.md
+  run_000001_multi.py                  ← README_预判系统.md
+  run_000001_chansignal.py             ← README_预判系统.md
+  run_000001_boll_chan.py              ← README_预判系统.md
+  run_000001_multi.py                  ← README_预判系统.md
+  run_000001_chansignal.py             ← README_预判系统.md
+  run_000001.py                        ← README_预判系统.md
+  gen_evening_report.py                ← README_预判系统.md
+  gen_intraday_svg.py                  ← README_预判系统.md
+
+--- 被多份文档重复描述的脚本（Top 20）---
+  analyze_000001_multi.py                3 份  脚本地图.md / 报告生成流程.md / README_预判系统.md
+  check_layout.py                        3 份  脚本地图.md / 报告生成流程.md / 报告逻辑排版完整性规范_v2.md
+  fetch_zsxq.py                          3 份  脚本地图.md / 报告生成流程.md / README_预判系统.md
+  get_daily_ohlc.py                      3 份  脚本地图.md / 报告生成流程.md / README_预判系统.md
+  anonymize_report.py                    2 份  脚本地图.md / README_预判系统.md
+  calc_tech.py                           2 份  脚本地图.md / 报告生成流程.md
+  calc_tech_multi.py                     2 份  脚本地图.md / 报告生成流程.md
+  chain_apply.py                         2 份  脚本地图.md / 报告生成流程.md
+  chainlib.py                            2 份  脚本地图.md / 报告生成流程.md
+  check_integrity.py                     2 份  脚本地图.md / 报告生成流程.md
+  digest_zsxq.py                         2 份  脚本地图.md / 报告生成流程.md
+  forecast_analyze.py                    2 份  脚本地图.md / README_预判系统.md
+  layout_spec.py                         2 份  脚本地图.md / 报告逻辑排版完整性规范_v2.md
+  market_codes.py                        2 份  脚本地图.md / README_预判系统.md
+  run_sw_chansignal.py                   2 份  脚本地图.md / README_预判系统.md
+  scan_sw_realtime.py                    2 份  脚本地图.md / 报告生成流程.md
+  scan_ths.py                            2 份  脚本地图.md / 报告生成流程.md
+  test_chain_apply.py                    2 份  脚本地图.md / 报告生成流程.md

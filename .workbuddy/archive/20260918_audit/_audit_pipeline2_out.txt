@@ -1,0 +1,136 @@
+========================================================================
+链路审计 第二轮
+========================================================================
+
+########################################################################
+# 1. 退出码语义（失败路径是否真的非零）
+########################################################################
+
+判定：有 __main__ 入口，但全文找不到 sys.exit(非零) / return 非零 / raise SystemExit 的脚本
+
+  【无失败退出码】24 个：
+    analyze_000001_multi.py                    6263 B  desc=-
+    backfill_actual_data.py                    3295 B  desc=-
+    backtest_divergence.py                     2778 B  desc=-
+    backtest_forecast_multiperiod.py           7302 B  desc=-
+    backtest_macd.py                           3276 B  desc=-
+    backtest_support_compare.py                3760 B  desc=-
+    backtest_tj_v2.py                          7791 B  desc=-
+    backtest_v5.py                             7900 B  desc=-
+    backtest_v6_compare.py                     4573 B  desc=-
+    chainlib.py                               11923 B  desc=-
+    cleanup_images.py                          1967 B  desc=-
+    export_backup.py                           5170 B  desc=-
+    fetch_all.py                                333 B  desc=-
+    fetch_backtest_data.py                     1815 B  desc=-
+    fetch_tj_topics.py                         2645 B  desc=-
+    fetch_zsxq.py                             12346 B  desc=-
+    fetch_zsxq_fallback.py                     6365 B  desc=-
+    industry_rank.py                           7661 B  desc=-
+    market_codes.py                            6356 B  desc=-
+    normalize_chain.py                         1947 B  desc=-
+    qt_api.py                                  2945 B  desc=-
+    report_builder.py                          7773 B  desc=-
+    scan_sw_realtime.py                        2799 B  desc=-
+    scan_ths.py                               10428 B  desc=-
+
+########################################################################
+# 2. 校验器/测试 退出码明细
+########################################################################
+
+  backtest_tj_v2_verify.py         sys.exit=[]  return=[]
+  check_cookie.py                  sys.exit=[main(]  return=[0, 1, 2]
+  check_display_name.py            sys.exit=[main(]  return=[0, 1]
+  check_integrity.py               sys.exit=[main(]  return=[2]
+  check_layout.py                  sys.exit=[1 if n_err else (2 if n_]  return=[]
+  test_chain_apply.py              sys.exit=[0, 1]  return=[]
+  test_gen_forecast_svg.py         sys.exit=[0, 1]  return=[]
+  test_gen_forecast_svg_neg.py     sys.exit=[0, 1]  return=[]
+
+########################################################################
+# 3. 跨脚本近似重复（difflib，>0.55 才列）
+########################################################################
+
+  近似重复对：1
+
+    0.51  backtest_v5.py                       ~ backtest_v6_compare.py
+
+########################################################################
+# 4. 跨脚本同名函数（>=2 个脚本各自定义）
+########################################################################
+
+  main                           32 个脚本: analyze_000001_multi.py, backfill_actual_data.py, backfill_zsxq_window.py, backtest_divergence.py, backtest_macd.py, backtest_tj_v2.py, calc_tech.py, calc_tech_multi.py, chain_apply.py, check_cookie.py, check_display_name.py, check_integrity.py, check_layout.py, cleanup_engine_output.py, cleanup_images.py, cleanup_workspace.py, digest_zsxq.py, export_backup.py, fetch_tj_topics.py, fetch_zsxq.py, fetch_zsxq_fallback.py, forecast_analyze.py, gen_forecast_svg.py, industry_rank.py, normalize_chain.py, report_builder.py, run.py, run_sw_chansignal.py, scan_sw_realtime.py, scan_ths.py, simplify_prompts.py, sync_morning_prompt.py
+  load_df                        4 个脚本: backtest_forecast_multiperiod.py, backtest_tj_v2.py, backtest_tj_v2_verify.py, backtest_v5.py
+  get                            3 个脚本: backfill_zsxq_window.py, fetch_backtest_data.py, qt_api.py
+  extract_images                 3 个脚本: backfill_zsxq_window.py, fetch_zsxq.py, fetch_zsxq_fallback.py
+  macd                           3 个脚本: backtest_divergence.py, backtest_macd.py, calc_tech.py
+  run                            3 个脚本: backtest_forecast_multiperiod.py, test_chain_apply.py, test_gen_forecast_svg.py
+  check                          3 个脚本: check_layout.py, test_chain_apply.py, test_gen_forecast_svg.py
+  card                           3 个脚本: gen_backtest_report.py, gen_dims_html.py, gen_range_band_html.py
+  norm                           2 个脚本: backfill_zsxq_window.py, digest_zsxq.py
+  boll                           2 个脚本: backtest_forecast_multiperiod.py, backtest_v5.py
+  ma                             2 个脚本: backtest_tj_v2.py, calc_tech.py
+  report                         2 个脚本: backtest_v5.py, calc_tech.py
+  log                            2 个脚本: build_dims_data.py, build_range_band.py
+  dkline                         2 个脚本: build_range_band.py, calc_tech.py
+  save                           2 个脚本: chainlib.py, fetch_backtest_data.py
+  render                         2 个脚本: check_layout.py, industry_rank.py
+  fetch_cookie                   2 个脚本: fetch_zsxq.py, fetch_zsxq_fallback.py
+  extract_files                  2 个脚本: fetch_zsxq.py, fetch_zsxq_fallback.py
+  norm_topic                     2 个脚本: fetch_zsxq.py, fetch_zsxq_fallback.py
+  in_window                      2 个脚本: fetch_zsxq.py, fetch_zsxq_fallback.py
+  X                              2 个脚本: gen_dims_html.py, gen_range_band_html.py
+  Y                              2 个脚本: gen_dims_html.py, gen_range_band_html.py
+  load_data                      2 个脚本: gen_forecast_svg.py, industry_rank.py
+
+########################################################################
+# 5. 脚本内自述「已废弃/停用/不再使用」
+########################################################################
+
+  cleanup_workspace.py               ech_0915）或 _MMDD（_zsxq_digest_0916）两种写法，已废弃
+
+########################################################################
+# 6. 运行件是否被 gitignore 覆盖
+########################################################################
+
+  .workbuddy 下非 .py/.md 文件 38 个，用 git check-ignore 实测：
+
+  ⚠️ 未被 gitignore（会被提交/同步）：38
+    .workbuddy/_audit_pipeline2_out.txt
+    .workbuddy/_audit_pipeline_out.txt
+    .workbuddy/_bias_2026-09-17.json
+    .workbuddy/_bias_2026-09-17_close.json
+    .workbuddy/_bias_2026-09-18.json
+    .workbuddy/_commitmsg.txt
+    .workbuddy/_commitmsg2.txt
+    .workbuddy/_dg_fa.txt
+    .workbuddy/_dg_fb.txt
+    .workbuddy/_dg_filtered.txt
+    .workbuddy/_dg_p01.txt
+    .workbuddy/_dg_p02.txt
+    .workbuddy/_dg_p03.txt
+    .workbuddy/_dg_p04.txt
+    .workbuddy/_engB_0918.log
+    .workbuddy/_fetch_0918.log
+    .workbuddy/_sw_0918.log
+    .workbuddy/_tech_2026-09-16.json
+    .workbuddy/_tech_2026-09-17.json
+    .workbuddy/_tech_2026-09-18.json
+    .workbuddy/_tech_multi_2026-09-17.json
+    .workbuddy/_tech_multi_2026-09-18.json
+    .workbuddy/_ths_0918.log
+    .workbuddy/_zsxq_digest_2026-09-16.txt
+    .workbuddy/_zsxq_digest_2026-09-17.txt
+    .workbuddy/_zsxq_digest_2026-09-18.txt
+    .workbuddy/consensus_chain.json
+    .workbuddy/datayes_token.txt
+    .workbuddy/dims_hitrate_data.json
+    .workbuddy/forecast_chain.json
+    .workbuddy/morning_prompt_std.txt
+    .workbuddy/payload_2026-09-17_close.json
+    .workbuddy/payload_2026-09-17_morning.json
+    .workbuddy/payload_2026-09-18_morning.json
+    .workbuddy/range_band_data.json
+    .workbuddy/zsxq_cookie.txt
+    .workbuddy/zsxq_fetch_raw.json
+    .workbuddy/模型体检报告_2026-09-16.html
