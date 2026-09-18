@@ -86,6 +86,30 @@ def load_data(pred_id=None):
     return lv, act, rid
 
 
+def _text_w(s, fs=9.0):
+    """估算文本像素宽：CJK/全角按 1.0em，其余按 0.55em（够用于「是否溢出」判断）。"""
+    return sum((1.0 if ord(c) > 0x2E80 else 0.55) * fs for c in str(s))
+
+
+def _fit(s, max_px, fs=9.0):
+    """按估算宽度截断并补省略号。
+
+    2026-09-18：`signals` 是链数据原文，长度不受控；而 SVG 视口右边界在 x=900，
+    超长文本会被**静默裁掉半截字**（看不出报错）。这里做宽度收口，
+    保证「要么完整显示、要么以 … 明确收尾」。
+    """
+    s = str(s)
+    if _text_w(s, fs) <= max_px:
+        return s
+    ell = _text_w('…', fs)
+    out = ''
+    for ch in s:
+        if _text_w(out + ch, fs) + ell > max_px:
+            break
+        out += ch
+    return out + '…'
+
+
 def build_svg(lv, act, out_path):
     P_NOW = float(lv['now'])
     # 所有写入 SVG 的文本都过 scrub（标签与信号来自链数据原文）
@@ -238,9 +262,18 @@ def build_svg(lv, act, out_path):
     svg.append(f'<text x="627" y="423" class="ts" fill="#6a6a5f">震荡：{P_DN:.0f}–{P_DEC:.0f} 内不追涨杀跌，等变盘</text>')
     svg.append(f'<text x="627" y="441" class="ts" fill="#b33a1f">突破：放量站稳 {P_DEC:.0f} → 追多，看 {P_UP:.0f}</text>')
     svg.append(f'<text x="627" y="459" class="ts" fill="#1a7a3a">跌破：跌破 {P_DN:.0f} → 减仓，看 {P_LOW:.0f}</text>')
-    svg.append(f'<text x="627" y="477" class="ts" fill="#5a5a4f">信号：{signals[0] if signals else '待定'}</text>')
-    svg.append(f'<text x="627" y="491" class="ts" fill="#5a5a4f">信号：{signals[1] if len(signals) > 1 else '—'}</text>')
-    svg.append(f'<text x="627" y="505" class="ts" fill="#5a5a4f">信号：{signals[2] if len(signals) > 2 else '—'}</text>')
+    # 信号行按框宽收口（框 x 615~885，文字起于 627 → 预算 250px），防止视口裁切
+    _sig_lines = []
+    for _i in range(3):
+        if _i == 0 and not signals:
+            _sig_lines.append('信号：待定')
+        elif len(signals) > _i:
+            _sig_lines.append(_fit('信号：' + signals[_i], 250.0))
+        else:
+            _sig_lines.append('信号：—')
+    svg.append(f'<text x="627" y="477" class="ts" fill="#5a5a4f">{_sig_lines[0]}</text>')
+    svg.append(f'<text x="627" y="491" class="ts" fill="#5a5a4f">{_sig_lines[1]}</text>')
+    svg.append(f'<text x="627" y="505" class="ts" fill="#5a5a4f">{_sig_lines[2]}</text>')
     svg.append(f'<text x="627" y="523" class="ts" fill="#5a5a4f">概率：突破{p_up*100:.0f}% / 震荡{p_range*100:.0f}% / 跌破{p_down*100:.0f}%</text>')
     svg.append('</g>')
 
