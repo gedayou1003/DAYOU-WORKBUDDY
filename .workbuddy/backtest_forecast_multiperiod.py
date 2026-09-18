@@ -8,7 +8,9 @@ import sys, os, json
 import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SKILL = r"C:\Users\gedayou\.workbuddy\skills\chan-signal__skillhub"
+# 2026-09-18 审计 P2-4：原为写死 C:\Users\gedayou\...\skills\chan-signal__skillhub，
+# 家↔公司走 GitHub 同步，写死用户名到公司机器直接崩（与 L-6 同口径）。
+SKILL = os.path.join(os.path.expanduser("~"), ".workbuddy", "skills", "chan-signal__skillhub")
 sys.path.insert(0, os.path.join(SKILL, 'scripts'))
 from chan_signal import run_engine, build_analysis
 

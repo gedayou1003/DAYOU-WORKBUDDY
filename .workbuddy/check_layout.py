@@ -12,6 +12,7 @@
      —— 规则见 layout_spec.DUP_RULES，对应《规范_v2》「信息原子唯一落地」
   7. 篇幅超限（WARN，仅当日报告）：核心速览/第一块/一句话预判/剧本触发条件/纪律节数
      —— 规则见 layout_spec.LENGTH_RULES，对应《规范_v2》3.8
+  8. 本期变化·基期对账（ERROR，仅当日报告）：见 `_period_change_check` 说明
 
 「仅当日报告」的口径：这三项对历史报告是快照差异（链每天前进、规范逐步收紧），
 判定它们"不达标"没有意义，只会让「0 WARN」这道闸门永久失效。历史报告一律降为 INFO。
@@ -222,6 +223,130 @@ def _nz(s):
     return len(re.sub(r'\s', '', s))
 
 
+# ---------------------------------------------------------------- 第 8 类：基期对账
+
+DIM_LABEL = {'方向': 'direction', '区间': 'range', '支撑': 'support', '压力': 'resistance'}
+
+
+def _parse_bias_table(text):
+    """解析报告里的偏差统计表 → {dim: 纯命中率%}"""
+    out = {}
+    for ln in text.split('\n'):
+        if not ln.strip().startswith('|'):
+            continue
+        cells = [c.strip() for c in ln.strip().strip('|').split('|')]
+        if len(cells) < 6:
+            continue
+        dim = DIM_LABEL.get(cells[0])
+        if not dim:
+            continue
+        for c in cells[1:]:
+            m = re.fullmatch(r'\*{0,2}([\d.]+)%\*{0,2}', c)
+            if m:
+                out[dim] = float(m.group(1))
+                break
+    return out
+
+
+def _mentioned_ids(line, path):
+    """从「本期变化」行里反引号标注的样本名还原链记录 id（`9/17-close` → 2026-09-17-close）"""
+    year = (_report_date(path) or '')[:4]
+    ids = set()
+    for tok in re.findall(r'`([^`]+)`', line):
+        tok = tok.strip()
+        m = re.fullmatch(r'(\d{4})-(\d{1,2})-(\d{1,2})-(.+)', tok)
+        if m:
+            ids.add('%s-%02d-%02d-%s' % (m.group(1), int(m.group(2)), int(m.group(3)), m.group(4)))
+            continue
+        m = re.fullmatch(r'(\d{1,2})/(\d{1,2})-(.+)', tok)
+        if m and year:
+            ids.add('%s-%02d-%02d-%s' % (year, int(m.group(1)), int(m.group(2)), m.group(3)))
+    return ids
+
+
+def _period_change_check(text, res):
+    """第 8 类检查：本期变化·基期对账（ERROR，仅当日报告）。
+
+    为什么要有这一类（2026-09-18 审计 P0-1）
+    ---------------------------------------
+    9/18 晨报的「本期变化」把方向的基期写成了**上上期**：标 `56.2%→56.0%`，
+    而 56.2% 是 9/17 **晨报**（n=48）的值，真正的基期应是 9/17 **收盘**档的
+    n=49 → 57.1%。同一句话里区间的基期（36.7%，n=49）却是对的 —— **同句两套基期**，
+    读者（包括复核的人）无从发现，因为两个数看起来都"像真的"。
+
+    这类手写数字错其实**机器完全能查**，两条独立判据：
+      1) 「本期值」必须等于报告自己那张偏差统计表的值（表是程序算的）；
+      2) 「基期值」必须等于「当前链去掉本期新增样本」的实测值。
+    只要有一条对不上就报 ERROR —— 错的是叙述层，而叙述层恰恰没有任何机器检查。
+    """
+    if not _is_today_report(res['path']) or _superseded_same_date(res['path']):
+        return
+    hit = [ln for ln in text.split('\n') if '本期变化' in ln]
+    if not hit:
+        res['infos'].append('本期变化：报告未写「本期变化」段，跳过基期对账')
+        return
+    line = hit[0]
+
+    m = re.search(r'样本\s*(\d+)\s*→\s*(\d+)\s*期', line)
+    if not m:
+        res['infos'].append('本期变化：未找到「样本 A→B 期」声明，跳过基期对账')
+        return
+    before_n, after_n = int(m.group(1)), int(m.group(2))
+    ids = _mentioned_ids(line, res['path'])
+
+    try:
+        sys.path.insert(0, HERE)
+        import chainlib
+        cur = chainlib.bias_stats('forecast')
+        prev = chainlib.bias_stats('forecast', exclude_ids=ids) if ids else None
+    except Exception as e:                                   # noqa: BLE001
+        res['infos'].append('本期变化：读链失败（%s），跳过基期对账' % e)
+        return
+
+    # 一致性前置：报告写的期数必须与链对得上，否则是快照差异，不该判 ERROR
+    if cur.get('periods') != after_n:
+        res['infos'].append('本期变化：报告称样本 %d 期、链上 verified %d 期（快照差异），跳过基期对账'
+                            % (after_n, cur.get('periods')))
+        return
+    if prev is None or prev.get('periods') != before_n:
+        res['infos'].append(
+            '本期变化：无法由链反推基期样本（报称 %d 期；按 `%s` 排除后为 %s 期），跳过基期对账'
+            % (before_n, '`、`'.join(sorted(ids)) or '（未识别到新增样本 id）',
+               prev.get('periods') if prev else '?'))
+        return
+
+    table = _parse_bias_table(text)
+    checked = 0
+    for seg in line.split('；'):
+        labels = [k for k in DIM_LABEL if k in seg]
+        if len(labels) != 1:
+            continue          # 「支撑/压力」这类合并段落无法归维，跳过
+        cn = labels[0]
+        dim = DIM_LABEL[cn]
+        mm = re.search(r'（\s*([\d.]+)\s*%\s*→\s*\*{0,2}\s*([\d.]+)\s*%', seg)
+        if not mm:
+            continue          # 「纯命中率不变（65.3% / 59.2%）」这类无箭头，跳过
+        base, now = float(mm.group(1)), float(mm.group(2))
+        c = (cur.get('dims') or {}).get(dim) or {}
+        if c.get('pure') is None:
+            continue
+        checked += 1
+        if abs(now - c['pure']) > 0.05:
+            res['errors'].append('本期变化·%s 本期值 %.1f%% 与链实测 %.1f%% 不符'
+                                 % (cn, now, c['pure']))
+        t = table.get(dim)
+        if t is not None and abs(t - c['pure']) > 0.05:
+            res['errors'].append('偏差统计表·%s 纯命中率 %.1f%% 与链实测 %.1f%% 不符'
+                                 % (cn, t, c['pure']))
+        p = (prev.get('dims') or {}).get(dim, {}).get('pure')
+        if p is not None and abs(base - p) > 0.05:
+            res['errors'].append(
+                '本期变化·%s 基期 %.1f%% 与上一期实测 %.1f%% 不符 —— 疑似基期取错期数'
+                '（上一期 = 当前链去掉 `%s`）' % (cn, base, p, '`、`'.join(sorted(ids))))
+    if checked:
+        res['infos'].append('本期变化·基期对账：已核对 %d 个维度（本期值 + 基期值）' % checked)
+
+
 def _length_check(text, res):
     """第 7 类检查：篇幅长度约束（《规范_v2》3.8）。
 
@@ -386,6 +511,9 @@ def check(path):
 
     # 7) 篇幅长度约束（规范_v2 3.8，2026-09-17 维护新增）
     _length_check(text, res)
+
+    # 8) 本期变化·基期对账（手写数字 vs 链实测，2026-09-18 审计 P0-1 新增）
+    _period_change_check(text, res)
 
     return res
 

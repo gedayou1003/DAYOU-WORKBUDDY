@@ -43,14 +43,18 @@ def find_workspace():
 WORKSPACE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) or find_workspace()
 
 # 排除规则：相对路径或绝对路径命中即排除
-EXCLUDE_SUFFIX = ("_缓存.json", "zsxq_fetch_raw.json", "forecast_chain.md")
+EXCLUDE_SUFFIX = ("_缓存.json", "zsxq_fetch_raw.json", "zsxq_fetch_meta.json", "forecast_chain.md")
+# 前缀排除：降级抓取会写 zsxq_fetch_raw_degraded_<时间戳>.json 旁路文件、
+# 正常覆盖前会滚一份 zsxq_fetch_raw.prev.json 备份（2026-09-18 新增）——
+# 二者内容与主快照同类（星球原文 + 星球 ID），必须一并排除，否则会进同步包。
+EXCLUDE_PREFIX = ("zsxq_fetch_raw_", "zsxq_fetch_raw.")
 
 
 def _excluded(abspath):
     p = abspath.replace("\\", "/")
     if "zsxq_images" in p:      # 图片中间产物，正文已进 md
         return True
-    if p.endswith(EXCLUDE_SUFFIX):
+    if p.endswith(EXCLUDE_SUFFIX) or os.path.basename(p).startswith(EXCLUDE_PREFIX):
         return True
     if "__pycache__" in p:
         return True
@@ -86,7 +90,10 @@ def main():
         global _excluded
         _orig = _excluded
         def _excluded(p):  # noqa: F811
-            if p.replace("\\", "/").endswith(EXCLUDE_SUFFIX) or "__pycache__" in p:
+            q = p.replace("\\", "/")
+            if (q.endswith(EXCLUDE_SUFFIX)
+                    or os.path.basename(q).startswith(EXCLUDE_PREFIX)
+                    or "__pycache__" in q):
                 return True
             return False
 

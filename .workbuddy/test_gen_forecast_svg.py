@@ -20,6 +20,7 @@
 """
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -31,6 +32,31 @@ PY = sys.executable
 SCRIPT = os.environ.get('FSVG_SCRIPT') or os.path.join(WB, 'gen_forecast_svg.py')
 
 RESULTS = []
+
+
+def local_deps():
+    """正本脚本 import 的、且确实存在于 `.workbuddy/` 的同目录模块文件名。
+
+    为什么需要它（2026-09-18 修复，教训 6）
+    --------------------------------------
+    `gen_forecast_svg.py` 在 9/18 的显示名改造中新增了
+    `from display_names import scrub, scrub_all`，而本测试的沙箱**只复制脚本正本** →
+    沙箱里 `ModuleNotFoundError`，30 条断言里 19 条报这个错。
+    表象是「脚本坏了」，真相是「测试沙箱缺依赖」—— 这道闸门整整哑了一轮**没人发现**，
+    因为没人会去看一个自己没跑过的测试。
+
+    故改为：扫正本脚本里的 `import X` / `from X import`，凡是 `.workbuddy/` 下真实存在
+    的同目录模块一律连带复制。以后再加同目录依赖不会再重演。
+
+    注意依赖从 **WB（仓库 .workbuddy/）** 解析而非 `dirname(SCRIPT)`：
+    负例测试会把变异体写到临时目录再跑，那里没有依赖模块。
+    """
+    src = open(os.path.join(WB, 'gen_forecast_svg.py'), encoding='utf-8').read()
+    names = set()
+    for m in re.finditer(r'^\s*(?:from\s+([A-Za-z_]\w*)\s+import|import\s+([A-Za-z_]\w*))',
+                         src, re.M):
+        names.add(m.group(1) or m.group(2))
+    return [n + '.py' for n in sorted(names) if os.path.exists(os.path.join(WB, n + '.py'))]
 
 
 def check(desc, cond, extra=''):
@@ -91,6 +117,9 @@ def run(chain_records, args=None, with_out=True):
         os.makedirs(os.path.join(d, 'outputs'))       # 默认输出目录必须存在
         os.makedirs(os.path.join(wb, 'out'))          # 显式 --out 目标目录
         shutil.copy2(SCRIPT, os.path.join(wb, 'gen_forecast_svg.py'))
+        # 连带复制同目录依赖模块（2026-09-18：display_names.py 缺失曾让 19 条断言假失败）
+        for dep in local_deps():
+            shutil.copy2(os.path.join(WB, dep), os.path.join(wb, dep))
         with open(os.path.join(wb, 'forecast_chain.json'), 'w', encoding='utf-8') as f:
             json.dump(chain_records, f, ensure_ascii=False, indent=2)
 

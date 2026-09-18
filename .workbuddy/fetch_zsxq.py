@@ -3,7 +3,7 @@
 """批量拉取知识星球主题并筛选时间窗口内容 (Skill通道 + Cookie通道)
 v2：新增图片原图下载 + PDF/文件附件信息记录，确保晨报内容详尽不丢图
 """
-import json, subprocess, urllib.request, urllib.error, os, sys, time
+import json, subprocess, urllib.request, urllib.error, os, shutil, sys, time
 from datetime import datetime, timezone, timedelta
 
 CST = timezone(timedelta(hours=8))
@@ -229,8 +229,14 @@ def extract_files(body):
         })
     return out
 
-def norm_topic(t, group_name):
-    """统一主题结构：兼容 Skill(brief扁平) 与 Cookie(嵌套) 两种格式"""
+def norm_topic(t, group_name, channel=''):
+    """统一主题结构：兼容 Skill(brief扁平) 与 Cookie(嵌套) 两种格式
+
+    channel：本条内容实际来自哪个抓取通道（'skill' / 'cookie'）。
+    2026-09-18 新增 —— 归档脚本原先**写死**「抓取通道：zsxq-cli Skill」，
+    一旦某星球改走 Cookie 通道，归档里的通道说明就是假的（而它是审计线索）。
+    改为随数据落盘，归档按实际值渲染。
+    """
     ttype = t.get("type", "talk")
     text = t.get("content", "") or ""
     body = t.get("talk") or t.get("q&a") or t.get("task") or t.get("solution") or {}
@@ -250,7 +256,7 @@ def norm_topic(t, group_name):
     ct = t.get("create_time", "")
     return {"group": group_name, "gid": t.get("group", {}).get("group_id", ""),
             "topic_id": t.get("topic_id"), "type": ttype, "text": text,
-            "create_time": ct, "images": images, "files": files}
+            "create_time": ct, "images": images, "files": files, "channel": channel}
 
 def _parse_ct(ct):
     """把 create_time 字符串解析为带 CST 时区的 datetime，失败返回 None"""
@@ -269,12 +275,96 @@ def in_window(ct):
     dt = _parse_ct(ct)
     return WIN_START <= dt <= WIN_END if dt else False
 
+MAIN_SNAPSHOT = os.path.normpath(os.path.join(_HERE, 'zsxq_fetch_raw.json'))
+# 覆盖主快照前滚一份备份（单份滚动）。与主快照同级同目录，
+# 同样不进 git / 不进同步包（.gitignore 用 zsxq_fetch_raw*.json 通配，export_backup 用前缀排除）。
+PREV_SNAPSHOT = os.path.normpath(os.path.join(_HERE, 'zsxq_fetch_raw.prev.json'))
+# 本轮抓取的元信息（窗口档位 / 条数 / 是否降级 / 实际写入哪个文件）。
+# 下游（gen_tj_archive.py）据此判断「手上这份快照是不是本轮抓取的结果」——
+# 降级时主快照保持不变，若无此文件，归档脚本会把**上一轮的内容**当成今天的归档。
+META_FILE = os.path.normpath(os.path.join(_HERE, 'zsxq_fetch_meta.json'))
+
+
+def _window_label():
+    """本轮窗口的档位说明（写进 meta，供归档如实标注，避免归档里写死/瞎猜档位）"""
+    if os.environ.get("ZSXQ_WIN_START") and os.environ.get("ZSXQ_WIN_END"):
+        return 'env 覆盖（手动指定窗口）'
+    return {'noon': '午间 noon 窗口', 'afternoon': '下午 afternoon 窗口',
+            'evening': '晚间 evening 窗口'}.get(_win_arg, '晨报 morning 窗口')
+
+
+def _atomic_write_json(path, obj):
+    """临时文件 → 回读断言 → 原子替换，避免中途异常留下半截 JSON。"""
+    tmp = path + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        json.dump(obj, f, ensure_ascii=False, indent=1)
+    with open(tmp, encoding='utf-8') as f:
+        back = json.load(f)
+    # 回读断言：落盘后读回的类型与规模必须一致（防序列化异常导致的静默截断）
+    if type(back) is not type(obj) or len(back) != len(obj):
+        os.remove(tmp)
+        raise RuntimeError('快照回读断言失败：写入 %d 项，读回 %s'
+                           % (len(obj), len(back) if isinstance(back, (list, dict))
+                              else type(back).__name__))
+    os.replace(tmp, path)
+
+
+def save_snapshot(results, degraded):
+    """写本轮抓取快照 + 元信息，返回 (写入路径, 是否已更新主快照)。
+
+    为什么不能无脑覆盖主快照（2026-09-18 全链路审计 P0-2）
+    -------------------------------------------------------
+    主快照 `zsxq_fetch_raw.json` 既**不在 git 跟踪列表**（`git ls-files` 实测），
+    又被 `export_backup.py` 的 `EXCLUDE_SUFFIX` 排除 —— 一旦被残缺结果覆盖，
+    **本机没有任何副本可恢复**，当天的 DRAGON BALL模型 原文归档会跟着一起丢。
+    而旧实现在 auth_failed 非空时照样覆盖主快照、照样打印 `SAVED=...`、照样退出 0，
+    失败被完全伪装成成功（审计里最危险的一条）。
+
+    现口径：
+      - 正常（无降级原因）：先滚一份 .prev 备份，再原子替换主快照；
+      - 降级（鉴权失败 / 限流抖动 / 窗口内 0 条）：**不碰主快照**，
+        改写带时间戳的旁路文件；
+      - 两种情况下都写 meta，明确记录本轮实际写到了哪个文件 —— 让下游能分辨
+        「主快照是新的」还是「主快照是上一轮留下的」。
+    """
+    if degraded:
+        stamp = datetime.now(CST).strftime('%Y%m%d_%H%M%S')
+        out = os.path.normpath(os.path.join(_HERE, 'zsxq_fetch_raw_degraded_%s.json' % stamp))
+        _atomic_write_json(out, results)
+        is_main = False
+    else:
+        if os.path.exists(MAIN_SNAPSHOT):
+            try:
+                shutil.copyfile(MAIN_SNAPSHOT, PREV_SNAPSHOT)
+            except OSError as e:
+                print('[snapshot-warn] 旧快照备份失败（仍继续覆盖主快照）：%s' % e, file=sys.stderr)
+        _atomic_write_json(MAIN_SNAPSHOT, results)
+        out, is_main = MAIN_SNAPSHOT, True
+
+    chans = {}
+    for x in results:
+        c = x.get('channel') or 'unknown'
+        chans[c] = chans.get(c, 0) + 1
+    _atomic_write_json(META_FILE, {
+        'run_at': datetime.now(CST).strftime('%Y-%m-%dT%H:%M:%S%z'),
+        'window': _window_label(),
+        'win_start': WIN_START.strftime('%Y-%m-%dT%H:%M:%S%z'),
+        'win_end': WIN_END.strftime('%Y-%m-%dT%H:%M:%S%z'),
+        'total': len(results),
+        'channels': chans,
+        'degraded': degraded,
+        'snapshot': os.path.basename(out),
+        'updated_main': is_main,
+    })
+    return out, is_main
+
+
 def main():
     results = []
     for gid, name in SKILL_GROUPS.items():
         topics = fetch_skill(gid)
         for t in topics:
-            n = norm_topic(t, name)
+            n = norm_topic(t, name, 'skill')
             if in_window(n["create_time"]):
                 results.append(n)
         print(f"[skill] {name}: {len(topics)}条, 窗口内 {sum(1 for t in topics if in_window(t.get('create_time','')))}条", file=sys.stderr)
@@ -282,7 +372,7 @@ def main():
     for gid, name in COOKIE_GROUPS.items():
         topics = fetch_cookie(gid)
         for t in topics:
-            n = norm_topic(t, name)
+            n = norm_topic(t, name, 'cookie')
             if in_window(n["create_time"]):
                 results.append(n)
         print(f"[cookie] {name}: {len(topics)}条, 窗口内 {sum(1 for t in topics if in_window(t.get('create_time','')))}条", file=sys.stderr)
@@ -296,9 +386,20 @@ def main():
             seen.add(tid)
             uniq.append(x)
     results = uniq
-    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".workbuddy", "zsxq_fetch_raw.json")
-    with open(os.path.normpath(out), "w", encoding="utf-8") as f:
-        json.dump(results, f, ensure_ascii=False, indent=1)
+
+    # 降级原因（任一存在即不覆盖主快照）：鉴权失败 / 限流抖动 / 窗口内 0 条
+    degraded = []
+    if auth_failed:
+        degraded.append('Cookie 鉴权失败 %d 个星球（%s）'
+                        % (len(auth_failed), ', '.join(sorted(auth_failed))))
+    if flaky_failed:
+        degraded.append('限流抖动 %d 个星球（%s）'
+                        % (len(flaky_failed), ', '.join(sorted(flaky_failed))))
+    if not results:
+        degraded.append('时间窗口内 0 条')
+
+    saved, is_main = save_snapshot(results, degraded)
+
     n_img = sum(len(x["images"]) for x in results)
     n_file = sum(len(x["files"]) for x in results)
     print(f"TOTAL_WINDOW={len(results)}  IMAGES={n_img}  FILES={n_file}")
@@ -308,7 +409,22 @@ def main():
     if flaky_failed:
         print(f"COOKIE_FLAKY_FAILED={len(flaky_failed)} "
               f"(gid: {', '.join(sorted(flaky_failed))}) → 限流抖动，非 Cookie 问题，重跑一次即可")
-    print(f"SAVED={os.path.normpath(out)}")
+    if is_main:
+        print(f"SAVED={saved}")
+    else:
+        print(f"SAVED_BYPASS={saved}")
+        print("MAIN_SNAPSHOT_UNCHANGED=%s  ← 本轮降级（%s），未用残缺数据覆盖主快照" %
+              (MAIN_SNAPSHOT, '；'.join(degraded)))
+        print("[WARN] 主快照仍是上一次的完整内容，**不代表本轮结果**。"
+              "若下游必须用本轮数据，请显式指定上面的 SAVED_BYPASS 文件。", file=sys.stderr)
+
+    # 退出码：与 check_layout / check_integrity 统一口径（0=通过，1=ERROR，2=WARN）
+    if auth_failed:
+        return 1     # Cookie 失效 → 整个星球 0 条，本轮数据不可用
+    if degraded:
+        return 2     # 数据不完整或空窗口，需人工看一眼
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

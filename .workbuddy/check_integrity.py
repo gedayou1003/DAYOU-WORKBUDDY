@@ -24,6 +24,23 @@
   - 新增 pending 守卫
   - **退出码语义**：0 = 无实质问题（已知例外 / INFO 不影响）；2 = 存在需处理的问题
 
+2026-09-18 分级（P1-1，本文件与 check_layout 口径统一）
+-------------------------------------------------------
+改前问题：只有「有问题 / 没问题」两档，且**无论如何只要 problems>0 就返回 2**——
+把「ERROR（必须处理）」与「WARN（看一眼）」混成同一个码；而【5】把「开盘前静态初验
+不写 O/H/L/C」这条**设计使然**的情况计成问题，导致每期固定刷同一条告警（就是上一段
+说的「永久噪声」换了个位置复发）。
+
+改后：
+  - 三级：**ERROR / WARN / INFO**，退出码 `1 = 有 ERROR`、`2 = 仅 WARN`、`0 = 干净`
+    —— 与 `check_layout.py`、`fetch_zsxq.py`、`gen_tj_archive.py` 完全同口径
+  - 【5】按语义分流：静态初验（phase/reviewed_at/note 含「静态初验」）→ INFO；
+    历史散文格式 actual → `KNOWN_ACTUAL_EXCEPTIONS` 白名单 → INFO；
+    其余 actual 缺失 / 字段不全 / 类型异常 → WARN
+  - 顺带补上一个**静默盲区**：旧实现对 `actual` 是字符串的记录**两个分支都不进**，
+    等于从不校验（9/11、9/14 两条一直在裸奔），现明确纳入判定
+  - 【1】【2】【4】【6】为 ERROR（数据缺口 / 链停更 / 漏复盘）
+
 用法
 ----
     python check_integrity.py [--from YYYY-MM-DD] [--verbose]
@@ -55,6 +72,29 @@ KNOWN_TJ_GAPS = {
     '2026-08-31': '早于 DRAGON BALL模型 归档机制建立（历史已知）',
     '2026-09-01': '早于 DRAGON BALL模型 归档机制建立（历史已知）',
 }
+
+# 已知例外：review.actual 为「散文格式」而非结构化 O/H/L/C（早于结构化规范，历史已知）。
+# 归 INFO 不报 WARN 是刻意的：这两条永远无法补齐，若报 WARN 就等于每期固定刷两条，
+# 正好复现 2026-09-17 刚清掉的那类「永久噪声」。
+KNOWN_ACTUAL_EXCEPTIONS = {
+    '2026-09-11-morning': 'actual 为旧散文格式（早于结构化 actual 规范）',
+    '2026-09-14-morning': 'actual 为旧散文格式（早于结构化 actual 规范）',
+}
+
+# actual 完整性要求的字段
+ACTUAL_KEYS = ['date', 'open', 'high', 'low', 'close', 'pct_chg']
+
+
+def is_static_precheck(rev):
+    """该 review 是否为「晨报档·开盘前静态初验」。
+
+    晨报档职责含对前一日收盘档做两阶段静态初验：开盘前只判方向/区间，
+    **按设计不写 O/H/L/C**（避免下游走势图误取零值），actual 只留 date/prev_close/note。
+    故【5】不得把它当「数据缺失」报 —— 否则每期固定刷同一条告警，
+    真正的缺口淹没其中，闸门等于没有（本文件 2026-09-17 已因同类原因加固过一次）。
+    """
+    blob = ' '.join(str(rev.get(k, '')) for k in ('phase', 'reviewed_at', 'note'))
+    return '静态初验' in blob
 
 
 def trading_days(start, end):
@@ -104,7 +144,9 @@ def main():
     print('=' * 70)
 
     days = trading_days(start, today)
-    problems = 0   # 需处理的实质问题数（决定退出码）
+    errors = 0     # ERROR：必须处理（数据缺口 / 链停更 / 漏复盘）
+    warns = 0      # WARN：建议看一眼（actual 不完整等）
+    infos = 0      # INFO：上下文与已知例外，不影响退出码
 
     # 1) DRAGON BALL模型 归档缺口
     print('\n【1】DRAGON BALL模型 原文归档缺口（有交易日但无归档文件）')
@@ -114,12 +156,13 @@ def main():
     if tj_real:
         for d in tj_real:
             print(f'  ⚠️ {d} 缺 DRAGON BALL模型 归档（需确认当天是否真的无 DRAGON BALL模型 新帖）')
-        problems += len(tj_real)
+        errors += len(tj_real)
     else:
         print('  ✅ 无新增缺口')
     if tj_known:
         print(f'  ℹ️ 已知例外 {len(tj_known)} 条（不计入问题）：'
               + '、'.join('%s→%s' % (d, KNOWN_TJ_GAPS[d]) for d in tj_known))
+        infos += 1
 
     # 2) forecast_chain 档位缺口
     print('\n【2】forecast_chain 档位缺口（有交易日但无任何预判记录）')
@@ -127,7 +170,7 @@ def main():
     if fc_missing:
         for d in fc_missing:
             print(f'  ⚠️ {d} 无预判记录')
-        problems += len(fc_missing)
+        errors += len(fc_missing)
     else:
         print('  ✅ 无缺口')
 
@@ -135,6 +178,7 @@ def main():
     thin = [d for d in days if d in fc_dates and len(fc_dates[d]) == 1]
     print('\n【3】档位覆盖偏薄（当日仅 1 条晨报）')
     print(f'  ℹ️ {len(thin)} 天（近期既定节奏为「只跑晨报档」，非缺口；--verbose 展开）')
+    infos += 1
     if verbose:
         for d in thin:
             print(f'     · {d} 仅 {fc_dates[d][0]}')
@@ -144,30 +188,50 @@ def main():
     print(f'  最后一条：{cc_last}（共 {len(cchain)} 条）')
     if days and cc_last < max(days):
         print(f'  ⚠️ 停更中（最近交易日 {max(days)} 未写入）')
-        problems += 1
+        errors += 1
 
-    # 5) forecast_chain 数据完整性
+    # 5) forecast_chain 数据完整性（按语义分流，见 is_static_precheck 说明）
     print('\n【5】forecast_chain 数据完整性（review.actual 字段）')
-    bad = 0
+    bad = 0            # WARN 级：actual 确实不完整
+    static, legacy = [], []   # INFO 级：设计使然 / 历史已知
     for r in fchain:
         rev = r.get('review')
         if rev is None:
             continue
         a = rev.get('actual')
+        # 先判「本条 actual 是否完整」，再决定这条不完整该归哪一级
         if a is None or a is False:
-            print(f'  ⚠️ {r["id"]}: 无 actual')
-            bad += 1
+            reason = '无 actual'
+        elif isinstance(a, str):
+            # 旧实现的两个分支都不接字符串 → 这类记录**从不被校验**（静默盲区，本轮补上）
+            reason = 'actual 为字符串（旧格式），OHLC 完整性无法机器校验'
         elif isinstance(a, dict):
-            miss = [k for k in ['date', 'open', 'high', 'low', 'close', 'pct_chg']
-                    if a.get(k) is None]
-            if miss:
-                print(f'  ⚠️ {r["id"]}: 缺 {miss}')
-                bad += 1
-    if bad == 0:
-        print('  ✅ 全部完整')
+            miss = [k for k in ACTUAL_KEYS if a.get(k) is None]
+            reason = ('缺 %s' % miss) if miss else ''
+        else:
+            reason = 'actual 类型异常（%s）' % type(a).__name__
+        if not reason:
+            continue                                   # 完整：无话可说
+        if is_static_precheck(rev):
+            static.append(r['id'])                     # 设计使然：静态初验不写 O/H/L/C
+        elif isinstance(a, str) and r['id'] in KNOWN_ACTUAL_EXCEPTIONS:
+            legacy.append(r['id'])                     # 历史已知例外（附原因）
+        else:
+            print(f'  ⚠️ {r["id"]}: {reason}')
+            bad += 1
+    if bad:
+        print(f'  ⚠️ {bad} 条 actual 不完整（WARN 级）')
+        warns += bad
     else:
-        print(f'  共 {bad} 条异常')
-        problems += bad
+        print('  ✅ 无异常')
+    if static:
+        print(f'  ℹ️ 静态初验样本 {len(static)} 条（开盘前判定，O/H/L/C 按设计不写入，不计入问题）：'
+              + '、'.join(static))
+        infos += 1
+    if legacy:
+        print(f'  ℹ️ 历史已知例外 {len(legacy)} 条（不计入问题）：'
+              + '、'.join('%s→%s' % (k, KNOWN_ACTUAL_EXCEPTIONS[k]) for k in legacy))
+        infos += 1
 
     # 6) pending 守卫（自 chain_apply 下沉：链上超过 1 条 pending 说明可能漏复盘）
     print('\n【6】pending 守卫（> 1 条即可能漏复盘上一条）')
@@ -175,7 +239,7 @@ def main():
         pends = [r.get('id') for r in ch if r.get('status') == 'pending']
         if len(pends) > 1:
             print(f'  ⚠️ {name}: pending={len(pends)} → {", ".join(pends)}')
-            problems += 1
+            errors += 1
         else:
             print(f'  ✅ {name}: pending={len(pends)}'
                   + ('（%s）' % pends[0] if pends else ''))
@@ -183,13 +247,16 @@ def main():
     # 汇总
     print('\n' + '=' * 70)
     print(f'汇总：DRAGON BALL模型 新增缺口 {len(tj_real)}（另有已知例外 {len(tj_known)}）· '
-          f'档位缺口 {len(fc_missing)} · 数据异常 {bad} · 实质问题合计 {problems}')
-    if problems == 0:
-        print('✅ 无实质问题。')
+          f'档位缺口 {len(fc_missing)} · ERROR {errors} · WARN {warns} · INFO {infos}')
+    if errors:
+        print('❌ 存在 ERROR：必须处理（见上方 ⚠️ 行）。')
+    elif warns:
+        print('⚠️ 无 ERROR，但有 WARN：建议看一眼。')
     else:
-        print('⚠️ 存在需处理的问题（见上方 ⚠️ 行）。')
+        print('✅ 无实质问题。')
     print('=' * 70)
-    return 2 if problems else 0
+    # 退出码：与 check_layout.py / fetch_zsxq.py / gen_tj_archive.py 统一（1=ERROR，2=WARN）
+    return 1 if errors else (2 if warns else 0)
 
 
 if __name__ == '__main__':

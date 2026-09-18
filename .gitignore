@@ -6,7 +6,11 @@ _sync_家里/
 _sync_家里.zip
 
 # ===== 运行产物（各自演化，不同步）=====
-zsxq_fetch_raw.json
+# 通配覆盖三类：主快照 zsxq_fetch_raw.json / 滚动备份 .prev.json /
+# 降级旁路 zsxq_fetch_raw_degraded_<时间戳>.json（内容同为星球原文，一律不入库）
+zsxq_fetch_raw*.json
+# 抓取元信息（含窗口时间 + 降级时涉及的星球 gid，同样敏感）
+zsxq_fetch_meta.json
 zsxq_evening_clean.txt
 *信号流缓存.json
 *周线快照缓存.json

@@ -235,17 +235,25 @@ def upsert_pending(recs, record):
 
 # ---------------------------------------------------------------- 偏差统计
 
-def bias_stats(name='forecast', dims=None):
+def bias_stats(name='forecast', dims=None, exclude_ids=None):
     """程序化计算四维偏差统计（纯口径 + 含部分口径）。
 
     四维字段两代格式兼容：早期 review.{dim}，后期 review.{dim}_verdict。
     取值前缀 ✅ / ⚠️ / ❌。纯命中率 = ✅ ÷ (✅+⚠️+❌)，仅统计 status=='verified'。
     返回 {'periods': n, dims: {dim: {hit, partial, miss, pure, weighted}}}
+
+    exclude_ids（2026-09-18 新增）：排除这些记录 id 后再统计。
+    用途：`check_layout.py` 的「本期变化·基期对账」要反查**上一期**的四维真值，
+    即「当前链去掉本期新增样本后的统计」。若无此入口，调用方只能自己复制一份
+    读 verdict 的逻辑 —— 而两代字段（`direction` / `direction_verdict`）的兼容读法
+    散落已经是审计点名的隐患（P1-3），不该再多繁殖一份。
     """
     if dims is None:
         dims = ['direction', 'range', 'support', 'resistance']
     recs, _ = load(name)
-    verified = [r for r in recs if r.get('status') == 'verified']
+    skip = set(exclude_ids or ())
+    verified = [r for r in recs
+                if r.get('status') == 'verified' and r.get('id') not in skip]
     out = {'periods': len(verified), 'dims': {}}
     for d in dims:
         c = {'hit': 0, 'partial': 0, 'miss': 0}
