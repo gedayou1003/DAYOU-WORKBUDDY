@@ -10,7 +10,7 @@
   P0 判定口径：会打印「失败/❌/[FAIL]」但**没有失败退出码**的脚本 —— 属「失败被当成成功」，
   是本项目历史上最贵的一类 BUG（见 memory 2026-09-18 审计）。
 
-检查七项：
+检查九项：
   1. 退出码语义：有入口但无 sys.exit(非零) 的脚本，并标记其中「代码区里输出/抛出失败字样」
      的高危子集（注释、docstring、表格渲染符号 ❌ 一律不计 —— 假阳性会淹没真高危）
   2. 静默失败反模式：危险默认值/静默回退、吞异常 pass、裸 except
@@ -19,6 +19,12 @@
   5. 重复：跨脚本近似重复对、跨脚本同名函数、脚本被多份文档重复描述
   6. 运行件：.workbuddy 下非 .py/.md 文件是否被 gitignore 覆盖（用 git check-ignore 实测）
   7. 校验器体检：check_*/test_* 的退出码取值分布
+  8. 测试覆盖：非 test_ 脚本是否有对应 test_<名字>.py；单列「在役链路缺口」（2026-09-21 新增）
+  9. subprocess 调用点是否校验退出码（其后 6 行内无 returncode/check=）（2026-09-21 新增）
+
+⚠️ 【8】【9】是**信息项**，不参与退出码判定：8 的缺口是长期存量（51 个），
+   若让它长期报红会变成永久噪声、导致闸门被无视；9 的命中多数是「失败也无所谓」的调用。
+   两节的价值在于把印象变成清单，逐条确认时不必再翻全仓代码。
 
 设计约束：只读、不改任何文件；结果可复现（同一输入两次运行一致）。
 """
@@ -240,6 +246,72 @@ def scan_validators(src):
     return rows
 
 
+# ---------------- 8. 测试覆盖 ----------------
+# 在役链路：每日/每档都会被调用到的脚本。这些缺测试才算缺口；
+# 一次性回测/分析脚本（backtest_* / gen_*_html 等）缺测试是正常的，不计入。
+CRITICAL_SCRIPTS = {
+    'fetch_zsxq.py', 'fetch_zsxq_fallback.py', 'backfill_zsxq_window.py',
+    'get_daily_ohlc.py', 'forecast_analyze.py', 'calc_tech_multi.py', 'scan_ths.py',
+    'chain_apply.py', 'chainlib.py', 'normalize_chain.py',
+    'report_builder.py', 'md_to_html_report.py', 'gen_forecast_svg.py', 'gen_tj_archive.py',
+    'check_layout.py', 'check_integrity.py', 'check_display_name.py', 'check_cookie.py',
+    'display_names.py', 'layout_spec.py',
+    'cleanup_workspace.py', 'export_backup.py', 'audit_pipeline.py', 'audit_coverage.py',
+}
+
+# 测试基础设施：本身不是被测对象，不该被算作「缺测试」（否则它会一直在缺口清单里）
+TEST_INFRA = {'run_tests.py'}
+
+
+def scan_coverage(src):
+    """非 test_ 脚本是否有对应测试文件。
+
+    判据（前缀匹配，非严格同名）：存在 `test_<stem>.py` 或 `test_<stem>_*.py`
+    ——`check_integrity.py` 的负例验证是 `test_check_integrity_neg.py`，
+       `check_layout.py` 的是 `test_check_layout_basis.py`，严格同名会把它们误报成缺口。
+
+    2026-09-21 首次盘出缺口清单 —— 缺口本身不是 BUG，价值在于把
+    「在役链路有没有测试」从印象变成清单；其中属 CRITICAL_SCRIPTS 的才重点看。
+    """
+    tests = sorted(f for f in src if f.startswith('test_'))
+
+    def covered_by(stem):
+        return [t for t in tests if t == 'test_%s.py' % stem or t.startswith('test_%s' % stem)]
+
+    covered, uncovered = [], []
+    for f in sorted(src):
+        if f.startswith('test_') or f in TEST_INFRA:
+            continue
+        stem = f[:-3]
+        (covered if covered_by(stem) else uncovered).append(f)
+    crit_gap = [f for f in uncovered if f in CRITICAL_SCRIPTS]
+    return covered, uncovered, crit_gap
+
+
+# ---------------- 9. subprocess 未校验退出码 ----------------
+SPAWN = re.compile(r'\bsubprocess\.(run|Popen|call|check_output)\s*\(|\bos\.system\s*\(')
+
+
+def scan_subprocess(src):
+    """subprocess 调用点之后 **6 行内**未出现 returncode / check= 。
+
+    不代表一定是 BUG：可能由调用方在别处校验，或本身就是「失败也无所谓」的辅助命令
+    （如读剪贴板失败返回空串后仍有 warn）。列出来是为了逐个低成本确认，
+    比出事后再回溯便宜。2026-09-21 首次盘出 5 处。
+    """
+    hits = []
+    for f, s in src.items():
+        lines = code_only_lines(s)
+        for j, (ln, code) in enumerate(lines):
+            if not SPAWN.search(code):
+                continue
+            nxt = '\n'.join(c for _, c in lines[j + 1:j + 7])
+            if 'returncode' in nxt or 'check=' in nxt:
+                continue
+            hits.append((f, ln, SPAWN.search(code).group(1) or 'system'))
+    return hits
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description='链路审计（只读）')
     ap.add_argument('--full', action='store_true', help='打印逐条明细')
@@ -264,6 +336,8 @@ def main(argv=None):
     pairs, shared = scan_dups(src)
     other, not_ignored, rt_err = scan_runtime()
     vals = scan_validators(src)
+    covered, uncovered, crit_gap = scan_coverage(src)
+    spawn = scan_subprocess(src)
 
     W('\n【1】退出码语义')
     W('  有入口但无失败退出码：%d 个' % len(no_code))
@@ -321,9 +395,26 @@ def main(argv=None):
     for f, ex, rt in vals:
         W('      %-28s sys.exit=[%s]  return=[%s]' % (f, ', '.join(ex[:5]), ', '.join(rt[:5])))
 
+    W('\n【8】测试覆盖')
+    W('  有对应 test_：%d 个；缺测试：%d 个（一次性回测脚本不计入缺口）'
+      % (len(covered), len(uncovered)))
+    W('  ⚠️ 在役链路缺口：%d 个  ← 这些每日会被调用，优先补' % len(crit_gap))
+    for f in crit_gap:
+        W('      · %s' % f)
+    if a.full:
+        W('  （全部缺测试脚本）')
+        for f in uncovered:
+            W('      · %s' % f)
+
+    W('\n【9】subprocess 未校验退出码：%d 处' % len(spawn))
+    W('  说明：调用点后 6 行内无 returncode/check=。可能由上层别处校验，逐个确认成本很低')
+    for f, ln, kind in (spawn if a.full else spawn[:10]):
+        W('      %-34s :%-4s subprocess.%s' % (f, ln, kind))
+
     W('\n' + '=' * 72)
     W('汇总：P0（失败退出码缺失·高危）%d · 静默失败 %d · 硬编码 %d · 文档腐烂 %d · 未记录脚本 %d'
       % (len(risky), len(silent), len(hard), len(stale) + len(missing), len(undoc)))
+    W('      · 在役链路缺测试 %d · subprocess 未校验 %d' % (len(crit_gap), len(spawn)))
     W('=' * 72)
 
     blob = '\n'.join(L)

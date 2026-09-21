@@ -113,7 +113,32 @@ def fetch_daily_ohlc(tencent_code, days=1):
     return result
 
 
+def _int_arg(raw, what):
+    """整型入参解析：非法即报错，**不再静默回退默认值**（2026-09-21 加固）。
+
+    旧实现是 `except ValueError: pass`，于是 `--ttl abc`、`000001 abc` 会
+    静默按默认值执行 —— 调用方以为自己指定了 TTL / 拿了 N 天，实际拿到默认值。
+    属「静默失败」反模式，与 fetch_zsxq 的窗口静默回退同族。
+    """
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        raise ValueError('%s 需为整数，收到 %r' % (what, raw))
+
+
+def _need_val(argv, i, opt):
+    """取 `--opt value` 形式的取值；缺值直接报错（旧实现是静默忽略整个选项）。"""
+    if i + 1 >= len(argv):
+        raise ValueError('%s 缺少取值' % opt)
+    return argv[i + 1]
+
+
 def _parse_args(argv):
+    """解析入参。非法入参一律 raise ValueError，由 __main__ 转成 stderr + 退出码 1。
+
+    2026-09-21 加固前：`--ttl abc` / `000001 abc` / `--slot`（缺值）/ `--no-cach`
+    （拼错）**全部被静默忽略并落回默认值**，调用方拿到的数据与预期不符却零提示。
+    """
     code_arg, days = "000001", 1
     slot, force, no_cache, ttl = None, False, False, DEFAULT_TTL_MIN
     pos = []
@@ -125,38 +150,37 @@ def _parse_args(argv):
         elif a == '--no-cache':
             no_cache = True
         elif a == '--slot':
+            slot = _need_val(argv, i, '--slot')
             i += 1
-            if i < len(argv):
-                slot = argv[i]
         elif a.startswith('--slot='):
             slot = a.split('=', 1)[1]
         elif a == '--ttl':
+            ttl = _int_arg(_need_val(argv, i, '--ttl'), '--ttl')
             i += 1
-            if i < len(argv):
-                try:
-                    ttl = int(argv[i])
-                except ValueError:
-                    pass
         elif a.startswith('--ttl='):
-            try:
-                ttl = int(a.split('=', 1)[1])
-            except ValueError:
-                pass
+            ttl = _int_arg(a.split('=', 1)[1], '--ttl')
+        elif a.startswith('-'):
+            # 拼错的选项旧实现会被当成位置参数或直接吞掉；现在显式报错
+            raise ValueError('未知选项 %r' % a)
         else:
             pos.append(a)
         i += 1
     if pos:
         code_arg = pos[0]
     if len(pos) > 1:
-        try:
-            days = int(pos[1])
-        except ValueError:
-            pass
+        days = _int_arg(pos[1], '天数（第 2 个位置参数）')
     return code_arg, days, slot, force, no_cache, ttl
 
 
 if __name__ == "__main__":
-    code_arg, days, slot, force, no_cache, ttl = _parse_args(sys.argv[1:])
+    try:
+        code_arg, days, slot, force, no_cache, ttl = _parse_args(sys.argv[1:])
+    except ValueError as _e:
+        _usage = next((l.strip() for l in (__doc__ or '').splitlines()
+                       if 'python get_daily_ohlc.py' in l),
+                      'python get_daily_ohlc.py [code] [days] [--slot <slot>] [--force] [--no-cache]')
+        sys.stderr.write('[FAIL] 参数错误：%s\n用法：%s\n' % (_e, _usage))
+        sys.exit(1)
 
     resolved = resolve(code_arg)
     if not resolved:

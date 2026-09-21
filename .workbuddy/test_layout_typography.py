@@ -217,6 +217,28 @@ ck(cl.spec is spec_mod, 'check_layout 与本测试引用同一个 layout_spec �
 print('规则生效起点 = %s（起点前一天 %s）｜今天 %s' % (SINCE, D_BEFORE, TODAY))
 
 
+@contextlib.contextmanager
+def pending_since(phrase):
+    """把某条新增结论短语的生效起点临时推到**明天** —— 构造「规则尚未生效」的场景。
+
+    ⚠️ 为什么不能改用「把报告日期写成 SINCE 前一天」来构造（2026-09-21 踩过）：
+      `check_layout.py` 第 191 行有一道 `_is_today_report()` 早退闸门 ——
+      **只对当日报告**做全篇计数，报告日期一旦不是今天，整节直接 return，
+      连豁免 INFO 都不会打。
+      于是「报告日期 < since」与「报告是今天的」这两个条件，
+      在日历越过 SINCE 之后变成**互斥**：「since 未到」这条路径再也没法用真实日期覆盖。
+      → 正确做法是反过来：报告仍用今天，把**规则起点**临时推到未来。
+        这样断言与日历解耦，不会再自坏。
+    """
+    sm = spec_mod.DUP_RULES['phrase'].get('since_map') or {}
+    saved = sm.get(phrase)
+    sm[phrase] = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
+    try:
+        yield sm[phrase]
+    finally:
+        sm[phrase] = saved
+
+
 # ---------------------------------------------------------------------------
 print('\n§0 基线：合规报告不该被新检查搞红')
 with active_since():
@@ -348,7 +370,10 @@ with active_since():
 
 
 # ---------------------------------------------------------------------------
-print('\n§4 结论短语阈值扩容（审计 5.2）—— 这类检查仅对当日报告执行，故用今天日期')
+print('\n§4 结论短语阈值扩容（审计 5.2）—— 这类检查仅对当日报告执行')
+print('   阈值判定用 TODAY（配 active_since() 强制规则生效）；')
+print('   「since 未到应豁免」用 pending_since() 把规则起点推到明天，')
+print('   **不能**靠把报告日期写早 —— 会撞上 _is_today_report 早退闸门，连 INFO 都不打')
 
 with active_since():
     tech7 = '\n'.join('- 第%d处：60F 中轨 是唯一否决点' % i for i in range(1, 8))
@@ -364,11 +389,17 @@ with active_since():
     w = W(run(report(TODAY, tech=tech6), TODAY), LPHR)
     ck(not w, '恰好 6 次（= 上限）→ 不报（边界）')
 
-# 反向验证：不放开 since_map，同样 7 次必须**不报 WARN**，但要打 INFO 说明豁免
-res = run(report(TODAY, tech=tech7), TODAY)
-w = W(res, LPHR)
-ck(not w, 'since 未到（今天 < %s）时，同样 7 次不判红（实测 %d 条）' % (SINCE, len(w)))
-ck(bool(I(res, '60F 中轨')), '但打 INFO 明示「60F 中轨 阈值自 %s 起生效，本报告不参与」' % SINCE)
+# 反向验证：规则起点晚于本报告 → 同样 7 次必须**不报 WARN**，但要打 INFO 说明豁免。
+# 报告日期仍用 TODAY（否则撞上 _is_today_report 早退闸门，什么都测不到），
+# 靠 pending_since() 把「60F 中轨」的起点临时推到明天来构造豁免场景。
+# 2026-09-21 修复：原实现用 TODAY 做日期断言，日历越过 SINCE 后前提永久失效 → 测试连红两天。
+with pending_since('60F 中轨') as future:
+    res = run(report(TODAY, tech=tech7), TODAY)
+    w = W(res, LPHR)
+    ck(not w, 'since 未到（起点 %s 晚于报告 %s）时，同样 7 次不判红（实测 %d 条）'
+       % (future, TODAY, len(w)))
+    ck(bool(I(res, '60F 中轨')),
+       '但打 INFO 明示「60F 中轨 阈值自 %s 起生效，本报告不参与」' % SINCE)
 
 
 # ---------------------------------------------------------------------------

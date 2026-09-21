@@ -13,12 +13,24 @@ CST = timezone(timedelta(hours=8))
 #   - 手动跑：必须取「8:00 ~ 当前时刻」最新内容，用 --window noon（8:00~now）
 #   - 结束时间一律用「当前时刻 now」，禁止写死（否则手动延迟跑会漏掉预设时间之后的内容，如 T&J 12:36）
 #   - 优先级：环境变量 ZSXQ_WIN_START/END > --window 参数 > 默认 morning
+# 窗口取值白名单（2026-09-21 加固）。
+# 旧实现的两个静默回退都会让**窗口悄悄变窄且零提示**：
+#   ① `--window` 后面没跟值 → IndexError 被 `except: pass` 吞掉 → _win_arg=None；
+#   ② `--window nooon` 拼错 → 下面三个 if 全不匹配 → 落回默认 morning。
+# 两者都退回「前一天 16:00 ~ now」，与「漏掉整个周末」属同一族事故（2026-09-21 真实发生）。
+# 现在非法取值一律显式报错退出，绝不静默回退。
+WINDOWS = ("morning", "noon", "afternoon", "evening")
 _win_arg = None
 if "--window" in sys.argv:
-    try:
-        _win_arg = sys.argv[sys.argv.index("--window") + 1]
-    except IndexError:
-        pass
+    _wi = sys.argv.index("--window")
+    if _wi + 1 >= len(sys.argv):
+        sys.stderr.write("[FAIL] --window 缺少取值（可选：%s）\n" % " / ".join(WINDOWS))
+        sys.exit(1)
+    _win_arg = sys.argv[_wi + 1]
+    if _win_arg not in WINDOWS:
+        sys.stderr.write("[FAIL] 未知窗口 %r（可选：%s）\n"
+                         % (_win_arg, " / ".join(WINDOWS)))
+        sys.exit(1)
 
 def _resolve_window():
     # 1) 环境变量覆盖（手动回测用）
@@ -35,7 +47,11 @@ def _resolve_window():
         return (datetime.fromisoformat(f"{today}T12:30:00+08:00"), now)
     if _win_arg == "evening":   # 晚间：当天 12:00 ~ 当前时间
         return (datetime.fromisoformat(f"{today}T12:00:00+08:00"), now)
-    # 3) 默认 morning：前一天 16:00 ~ 当前时间
+    if _win_arg == "morning":   # 晨报：前一天 16:00 ~ 当前时间（显式指定）
+        return (datetime.fromisoformat(f"{prev}T16:00:00+08:00"), now)
+    # 3) 未传 --window → 默认 morning：前一天 16:00 ~ 当前时间
+    #    注：_win_arg 现在有白名单兜底，走到这里只可能是「确实没传」，
+    #    不会再出现「传了但拼错却静默落回默认」的情况。
     return (datetime.fromisoformat(f"{prev}T16:00:00+08:00"), now)
 
 WIN_START, WIN_END = _resolve_window()

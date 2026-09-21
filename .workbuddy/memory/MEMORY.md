@@ -755,4 +755,59 @@ $PY .workbuddy/check_integrity.py                         # 链/归档/产物缺
 → 读图结果应落盘（如 `_image_ocr.json`），让该环节可审计。
 
 
+## 34. 全仓代码梳理（2026-09-21）：主要风险族 = 「非法入参静默回退默认值」
+
+审计报告：`.workbuddy/代码梳理报告_2026-09-21.md`（含完整清单与处置顺序）
+
+### 结论
+- **P0（打印失败却退出 0）= 0**；硬编码绝对路径 / 用户名 = 0 → 这两条底线仍然干净
+- 真问题集中在**一个族**：手工解析 argv 时 `except ValueError/IndexError: pass` →
+  非法取值**静默落回默认值**，不报错、不留痕。**晨报「漏掉整个周末」就是这一族的实例**
+  （当时是没传 `--window`；若传了但拼错，行为完全一样）
+
+### 已修 2 处（都在最关键的抓取/取数脚本上）
+* `fetch_zsxq.py` —— `--window` 白名单（morning/noon/afternoon/evening）；
+  拼错或缺值 → `[FAIL]` + 退出 1；`morning` 改为显式分支
+* `get_daily_ohlc.py` —— `_int_arg()` / `_need_val()`；`--ttl abc`、`000001 abc`、
+  `--ttl=`、`--no-cach`（拼错）一律报错退出 1，不再静默用默认值
+* 新增常驻测试 `test_arg_guard.py`（24 项断言）——**关键路径此前零测试**
+
+### 铁律：变异测试用「非贪婪正则」会只替换一半 → 变异不生效 → 被误读成假红
+`fetch_zsxq` 的守卫块里有**两个** `sys.exit(1)`（缺值 / 未知取值）。
+`(?:.*\n)*?` 只吞掉第一个，第二个仍在拦非法入参 → 变异体 rc 仍为 1 →
+表面上像「修复无效」，实际是**变异本身没做对**。
+→ 改用**标记切片**（`s.index(头标记)` / `s.index(尾标记)`）替换整块，
+并加一条断言：变异后守卫字样必须消失。
+→ 推论：**变异测试自己也要有断言**，否则它给出的红/绿都不可信。
+
+### 铁律：`git ls-files` 的中文路径会被 `core.quotepath` 转义成八进制
+实测 `模型体检报告_2026-09-16.html` 返回成 `".workbuddy/\346\250\241\344\275\223..."`，
+简单子串比对 → 误判为「未跟踪」（实际已入库）。
+→ 凡做「是否被 git 跟踪」的比对，一律 `git -c core.quotepath=false ls-files`。
+→ 与 `git check-ignore --stdin` 读不到 stdin 属**同源**：git 在 shim/编码环境的
+  输入输出约定不可想当然。
+
+### `audit_pipeline.py` 从七项扩到九项（信息项，不参与退出码判定）
+* 【8】测试覆盖：68 常驻脚本 / 有测试 6 / 缺测试 50；**在役链路缺口 17 个**（单列）
+  → 判据必须用**前缀匹配**：`check_integrity.py` 的负例测试叫 `test_check_integrity_neg.py`，
+    严格同名会把它们误报成缺口
+* 【9】subprocess 未校验退出码：8 处（调用点后 6 行内无 `returncode`/`check=`）
+* **为何不参与退出码**：存量缺口（17/8）长期报红 = 永久噪声 → 闸门会被无视（§30 同源）
+
+### 我第一遍审计的误报（复查成本远高于写扫描器，务必先剔注释/docstring）
+* 拿**原始文本**匹配 docstring，把「已修复说明」当成现存问题：
+  `normalize_chain.py` 的 `ID_RENAME`（§29 已改不变量）、`check-ignore --stdin`、
+  `test_chain_apply.py` 固定名（§31 已改 mkdtemp）—— **三处全是误报，代码区命中 0**
+* `urllib.request.urlopen` 被判成「文件 open 缺 encoding」（12 处）
+* 跨行写法：`open(...)` 换行后 `encoding=` 在续行 → 误报
+* 审计工具只扫 `.workbuddy` → 报「真不存在」的脚本其实在 `~/.workbuddy/skills/`、`_sync_家里/`
+
+### 未处理（已写入报告，非本次指令范围）
+* `forecast_analyze.py:38` `run_py()` 不看 rc —— **影响面比预想小**：`get_daily_ohlc.py`
+  出错时会把错误写成 JSON 到 stdout 再退 1，上层 `json.loads` 能消费；
+  真实缺口只有「子脚本崩溃且 stdout 为空」
+* 文档腐烂 21 处（`脚本地图.md` 等仍引用已归档脚本）；13 个脚本未被权威文档提及
+  （`DOCS` 是硬编码 5 份清单，日期型报告不计入）
+
+
 
