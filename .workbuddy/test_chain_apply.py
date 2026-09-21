@@ -29,6 +29,14 @@ v3（2026-09-18）—— 消除一个偶发假失败 + 一个卫生漏洞：
   · 该固定目录名在 .gitignore 里**本就有覆盖**（`.workbuddy/_test_sandbox/`），
     但只匹配精确名称 —— 若日后改成带后缀的固定名就会漏。顺手把该规则改为
     `.workbuddy/_test_sandbox*/` 作兜底。
+
+v4（2026-09-21）—— 「聚合跑必红 / 单跑必绿」的真因钉住了（两处）：
+  1) **删除仓库内文件触发环境删除保护** → 子进程被杀（rc=1、输出截断、无 traceback）。
+     这是 case L 收尾那两句 `os.remove` 导致的。子进程在沙箱内时必杀，
+     而手动单跑因命令被提权、沙箱被绕过，所以一直是绿的 —— 典型的「环境差异假失败」。
+     现改为**不删**（文件已被 .gitignore 覆盖，清理交 cleanup_workspace.py），并在末尾报出。
+  2) `fresh()` 仍在反复 rmtree+makedirs 同一目录，现改为**每用例新开沙箱、运行期零删除**。
+  另：run_tests.py 原先只收 stdout、丢掉 stderr，把 traceback 藏了 —— 已改为合并捕获。
 """
 import os
 import shutil
@@ -37,8 +45,9 @@ import sys
 import tempfile
 
 WB = os.path.dirname(os.path.abspath(__file__))
-# 唯一沙箱：不放仓库内（旧实现是 .workbuddy/_test_sandbox，固定名 → 残留 + 未忽略）
-SB = tempfile.mkdtemp(prefix='wb_chain_apply_')
+# 沙箱：**每个用例一个全新目录**，运行期不做任何删除（见 fresh() 的说明）
+SB = None
+SANDBOXES = []
 CA = os.path.join(WB, 'chain_apply.py')
 PY = sys.executable
 S = '<<< 必填'
@@ -83,8 +92,20 @@ def synth_consensus():
 
 
 def fresh():
-    shutil.rmtree(SB, ignore_errors=True)
-    os.makedirs(SB, exist_ok=True)   # 防残留目录把 makedirs 顶崩（旧实现偶发假失败根因）
+    """开一个**全新沙箱**，不回删旧目录。
+
+    v4（2026-09-21）—— 消除「聚合跑必红、单跑必绿」的偶发假失败：
+      v3 改成 mkdtemp 只解决了「固定名残留」，但 `fresh()` 每次仍是
+      `rmtree(SB)` + `makedirs(SB)`，一个测试文件里要重复 ~10 次。两个后果：
+        · rmtree 与紧随的 makedirs 竞态（v3 注释里记的那个 2026-09-18 EXIT=1 就是这个）；
+        · 聚合跑时进程内累计删除量可观，会撞上环境的安全删除闸门，
+          **进程被直接杀掉** —— 表现是 rc=1、输出写到一半就断、且**没有 traceback**
+          （2026-09-21 实测：聚合跑连红 3 次，单跑连绿 3 次）。
+      现在改为每用例新开一个目录、运行期删除次数 = 0，收尾统一清一次（见文件末尾）。
+    """
+    global SB
+    SB = tempfile.mkdtemp(prefix='wb_chain_apply_')
+    SANDBOXES.append(SB)
     for name, recs in (('forecast_chain.json', synth_forecast()),
                        ('consensus_chain.json', synth_consensus())):
         write(os.path.join(SB, name), recs)
@@ -277,8 +298,13 @@ for label, wp, target in (
             'bias': {'print': True, 'write': wp}})
     check('%s：退出码 = 0（不再因附属文件崩成 1）' % label, r.returncode == 0)
     check('%s：文件已写到 .workbuddy/ 下' % label, os.path.exists(target))
-    if os.path.exists(target):
-        os.remove(target)
+    # ⚠️ 这里**故意不 os.remove**（2026-09-21 把偶发假失败的真因钉住了）：
+    #   `os.remove` 删的是**仓库内**文件，会触发执行环境的删除保护，
+    #   子进程被直接杀掉 —— 表现是 rc=1、输出写到一半断、**没有 traceback**。
+    #   它只在 `run_tests.py` 里发作（子进程在沙箱内），单跑时命令被提权、沙箱被绕过，
+    #   于是长期呈现为「聚合跑必红、单跑必绿」的鬼故事。
+    #   这两个文件名是 `_bias_*.json`，已被 .gitignore 覆盖，留着无害；
+    #   真要清理由 cleanup_workspace.py 统一处理（本项目约定：归档而非就地删除）。
 
 # --- 真链只读校验（仅信息，不作为通过条件 —— 链会随报告前进）
 print('\n===== 真链状态（只读，仅供对照）=====')
@@ -293,13 +319,15 @@ for n, fn in (('forecast', 'forecast_chain.json'), ('consensus', 'consensus_chai
     except Exception as e:
         print('   %-9s 读取失败：%r' % (n, e))
 
-try:
-    shutil.rmtree(SB, ignore_errors=True)
-    print('\n(沙箱已清理：%s)' % SB)
-except Exception as e:
-    print('\n(沙箱清理失败：%s —— 可手动删除 %s)' % (e, SB))
-
 # ---------------------------------------------------------------- 汇总
+# 本用例会在 .workbuddy/ 下留 2 个 _bias_test_tmp*.json（见 L 的注释：刻意不删）。
+# **显式报出来**，免得日后被当成「莫名多出来的文件」—— 静默留垃圾也是一种隐瞒。
+_LEFTOVER = [os.path.join(WB, BIAS_TMP), os.path.join(WB, '_bias_test_tmp2.json')]
+_have = [p for p in _LEFTOVER if os.path.exists(p)]
+if _have:
+    print('\n(按设计保留的临时文件 %d 个，已被 .gitignore 覆盖：%s)'
+          % (len(_have), '、'.join(os.path.basename(p) for p in _have)))
+
 bad = [d for ok, d in RESULTS if not ok]
 print('\n' + '=' * 60)
 print('用例合计 %d，通过 %d，失败 %d' % (len(RESULTS), len(RESULTS) - len(bad), len(bad)))
@@ -308,7 +336,27 @@ if bad:
     for d in bad:
         print('  - %s' % d)
     print('=' * 60)
-    sys.exit(1)
-print('全部通过 ✅')
-print('=' * 60)
-sys.exit(0)
+else:
+    print('全部通过 ✅')
+    print('=' * 60)
+
+
+def _cleanup_sandboxes():
+    """收尾清理：**先出结论、后清理** —— 万一清理被环境拦下（甚至把进程杀掉），
+    判定结果已经打印落纸，不会把绿判成红。超过阈值就只报告、不动手。"""
+    n = sum(len(fs) for d in SANDBOXES for _, _, fs in os.walk(d))
+    if n > 40:
+        print('(沙箱文件 %d 个，超过安全阈值，未删除：%s)' % (n, SANDBOXES))
+        return
+    ok = 0
+    for d in SANDBOXES:
+        try:
+            shutil.rmtree(d, ignore_errors=True)
+            ok += 1
+        except Exception:
+            pass
+    print('(沙箱已清理 %d/%d 个，位于系统临时目录)' % (ok, len(SANDBOXES)))
+
+
+_cleanup_sandboxes()
+sys.exit(1 if bad else 0)

@@ -13,6 +13,11 @@
     $PY .workbuddy/run_tests.py -v              # 失败时多打几行尾部输出
 
 退出码：0 全部通过 · 1 有失败（可直接接进闸门）
+
+2026-09-21 修：原先用 `capture_output=True`，**只收 stdout、把 stderr 丢掉**。
+测试脚本一旦抛异常，traceback 全在 stderr —— 于是闸门只留下「输出写了几行就断了」
+这种线索，最有用的一行反而看不到（test_chain_apply 的偶发红就是这样被藏了一整轮）。
+现改为 `stderr=STDOUT` 合并捕获。
 """
 import argparse
 import glob
@@ -55,7 +60,8 @@ def main(argv=None):
     for t in tests:
         t0 = time.time()
         try:
-            r = subprocess.run([PY, os.path.join(HERE, t)], cwd=HERE, capture_output=True,
+            r = subprocess.run([PY, os.path.join(HERE, t)], cwd=HERE,
+                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                text=True, encoding='utf-8', errors='replace',
                                timeout=PER_TEST_TIMEOUT,
                                env=dict(os.environ, PYTHONIOENCODING='utf-8'))
@@ -69,7 +75,8 @@ def main(argv=None):
         if rc != 0:
             bad.append((t, rc, timed_out))
             if a.verbose or timed_out:
-                for ln in out.splitlines()[-8:]:
+                # 25 行而不是 8 行：traceback + 最后几条断言才够定位（8 行时 traceback 会被截掉）
+                for ln in out.splitlines()[-25:]:
                     print('         ' + ln)
 
     dt_all = time.time() - total_t0

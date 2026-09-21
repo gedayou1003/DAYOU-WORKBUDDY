@@ -54,6 +54,10 @@ _*.log
 .workbuddy/_*.txt
 # 回归测试沙箱（临时链副本，不入库；2026-09-18 改通配，覆盖带后缀的变体）
 .workbuddy/_test_sandbox*/
+# 全链路冒烟的临时目录（2026-09-21 新增）：每次运行一个新 run_<时间戳>，
+# 内含受保护文件的备份 zip（单次 350+ 成员、数十 MB）。**必须忽略** ——
+# 实测未忽略时 `git status` 直接把它列为未跟踪，一次 `git add -A` 就会把几十 MB 备份推进仓库。
+.workbuddy/_smoke_tmp/
 # OHLC 取数缓存（当日有效，各自演化）
 .workbuddy/_ohlc_cache/
 # 链操作 payload（每期临时生成，含当日数据）
