@@ -656,5 +656,53 @@ $PY .workbuddy/check_layout.py "outputs/作战报告_晨报_<日期>.md"
 → 统一用 `tempfile.mkdtemp(prefix='wb_<用途>_')`；`makedirs(..., exist_ok=True)` 兜底；
 清理用 `rmtree(..., ignore_errors=True)`。
 
+## 32. 版面闸门：5 条新规则自 2026-09-19 生效，9/21 晨报是首份受约束报告（2026-09-21）
+
+`check_layout.py` 在 9/18 审计后新增 5 条规则（均带 `since='2026-09-19'`）。
+`_rule_exists_yet()` 让 9/18 及以前的报告豁免并打 INFO，**9/21 晨报是首份被真正约束的报告**：
+首轮 **10 WARN / 0 ERROR**，逐条整改后 **0 WARN**。
+
+### 五条新规则（判据都在 `layout_spec.py`）
+
+| 规则 | 判据 | 阈值 |
+|---|---|---|
+| `TABLE_CELL_RULES` | 单元格去掉 `**`/`` ` ``/`~` 与空白后的字数 | ≤3 列 120 ／ 4 列 90 ／ ≥5 列 80 |
+| `TERM_RULES.ma55_style` | 同一级别同时出现 `30F55` 与 `30F MA55` | 并存即 WARN |
+| `TERM_RULES.ma20_boll` | 全文有 `MA20` 且有 `中轨` 但无等价声明 | 须出现 `BOLL 中轨 ≡ MA20` 字样 |
+| `TERM_RULES.level_table_dash` | 「关键位」+「属性」表里属性列为 `—`/空 | 现价行写 `现价（分界）` 或移出表 |
+| `APPENDIX_COVERAGE` | 附录 B 每个星球名须在附录 A 出现，或有「未覆盖/未配置」说明 | 不许静默省略 |
+
+### 同时触发的旧规则（本轮实际被卡住的）
+
+* `DUP_RULES.price`：同一个 `\b3\d{3}\.\d{2}\b` 全篇 **≤8 次**（3922.42 曾 10 次）
+* `DUP_RULES.phrase`：`60F 中轨` ≤6、`诱多` ≤8、`反向变量` ≤4
+* `DUP_RULES.event`：短语 `401`（实为「4012」）**≤4 次** —— 最反直觉的一条。
+  最终只保留 **T&J 原文引用 + 关键位表** 两处，其余全改指针「见关键位表」
+* `LENGTH_RULES`：核心速览每行 ≤90 ／ 一句话预判 ≤150 ／ 剧本触发条件列 ≤80 ／ 第一块 ≤5000
+
+### 真正踩到的陷阱：这些规则互相拉扯
+
+为压「单元格 ≤80」把「依据」列下沉成表下列表 → 单元格达标但正文变长；
+为压重复把长句改短 → 又可能把 `60F 中轨` 这类结论短语挪到别处触发另一条。
+**必须改完重跑，不能一次算完**；本次迭代 2 轮才归零。
+
+**唯一可靠姿势**：先写一个复刻 `check_layout` 判据的**诊断脚本**，打印**全部**违规明细
+（校验器默认只显示前 6 条，「…共 14 处」的那 8 处会被藏掉），逐条改完再重跑。
+
+```bash
+$PY .workbuddy/check_layout.py                            # EXIT=0 才是 0 WARN
+$PY .workbuddy/check_display_name.py --today YYYY-MM-DD   # 脱敏守卫，EXIT=1 = 有泄漏
+$PY .workbuddy/check_integrity.py                         # 链/归档/产物缺口
+```
+
+⚠️ 脱敏守卫本轮抓到 **11 处 `T&J`**（对外显示名必须统一为「DRAGON BALL模型」）。
+替换时注意 `T&J` → `DRAGON BALL模型` 是 **+9 字**，会顶破刚压好的字数上限 —— 要同步改短同句。
+
+### 顺带：清理工具的覆盖边界
+
+`cleanup_workspace.py` 只认它自己的固定清单（本次「计划归档 0 个」），
+**不覆盖会话临时文件**。批量清理要自建显式清单脚本：不用 glob、先打印全部绝对路径、
+断言 `mtime` 属当日、**用 `shutil.move` 移到 `archive/hygiene_<日期>/_session_tmp/` 而不是 `os.remove`**（可逆）。
+
 
 
