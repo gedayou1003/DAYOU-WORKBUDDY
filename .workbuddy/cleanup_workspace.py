@@ -162,6 +162,29 @@ ACTIONS = [
     ('.workbuddy/_cw_apply3.txt', 'log', 'cleanup_workspace 第三次 --apply 的输出', None),
     ('_st.txt', 'transient', '根目录：git status 取证（quotepath 默认）', None),
     ('_st2.txt', 'transient', '根目录：git status 取证（quotepath=false）', None),
+
+    # ---------- 5. 文档腐烂收口（2026-09-21 第二轮）的取证与输出 ----------
+    ('.workbuddy/_docrot_probe.py', 'oneoff_script',
+     '一次性探针：把「文档引用已归档脚本」逐处展开成原文并判定是否已交代归档；'
+     '判定逻辑已固化进 audit_pipeline.scan_docs + test_audit_detector.py §5', None),
+    ('.workbuddy/_docrot_probe.txt', 'audit_output', '上述探针的输出（逐处原文与判定）', None),
+    ('.workbuddy/_inv_0921.txt', 'audit_output', '根目录脚本清单复点（校正 66→72）', None),
+    ('.workbuddy/_facts_0921.txt', 'audit_output', '归档目录计数 + 未记录脚本职责取证', None),
+    ('.workbuddy/_skill_probe.txt', 'audit_output', '技能目录与引擎脚本真实位置核实（证 run_000001_*.py 确实存在）', None),
+    ('.workbuddy/_audit_full_0921.txt', 'audit_output', 'audit_pipeline --full 输出（改判定前）', None),
+    ('.workbuddy/_audit2_0921.txt', 'audit_output', 'audit_pipeline --full 输出（四分类后）', None),
+    ('.workbuddy/_audit3_0921.txt', 'audit_output', 'audit_pipeline --full 输出（改按出现位置判定后）', None),
+    ('.workbuddy/_audit4_0921.txt', 'audit_output', 'audit_pipeline --full 输出（修文档中）', None),
+    ('.workbuddy/_audit5_0921.txt', 'audit_output', 'audit_pipeline --full 输出（文档腐烂 0）', None),
+    ('.workbuddy/_sec4.txt', 'audit_output', '审计第【4】节与汇总的抽取片段', None),
+    ('.workbuddy/_cw.txt', 'audit_output', 'cleanup_workspace.py 源码片段读取中转件', None),
+    ('.workbuddy/_t1.txt', 'audit_output', 'test_audit_detector.py 输出（19 条断言全绿）', None),
+    ('.workbuddy/_t2.txt', 'audit_output', 'test_audit_docrot_neg.py 输出（5/5 变异被拦下）', None),
+    ('.workbuddy/_run_tests_0921.txt', 'audit_output', 'run_tests.py 全量输出（13/13 通过）', None),
+    ('.workbuddy/_cw_dry2.txt', 'audit_output', 'cleanup_workspace dry-run 输出（第二轮）', None),
+    ('.workbuddy/_cw_tail.txt', 'audit_output', 'cleanup_workspace dry-run 尾部抽取（核对计划数）', None),
+    ('.workbuddy/_verify_final.txt', 'audit_output', '清理后核验：遗留 _ 件、根目录脚本计数、archive 总计', None),
+    ('.workbuddy/_arch_count.txt', 'audit_output', 'archive 明细重新统计（校正 245→282）', None),
 ]
 
 # 提升为正式工具（重命名/替代，不进 archive）

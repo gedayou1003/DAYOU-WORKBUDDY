@@ -150,35 +150,123 @@ DOCS = ['脚本地图.md', '报告生成流程.md', 'README_预判系统.md',
         '报告逻辑排版完整性规范_v2.md', '预判规则_v5.md']
 PLACEHOLDER_OK = re.compile(r'^(\w*MMDD|\w*xxx|xxx)\.py$')   # 命名约定占位符
 
+# 技能家目录：部分在役脚本（缠论引擎）不在本仓库，而在用户级技能目录里。
+SKILL_HOME = os.path.expanduser(os.path.join('~', '.workbuddy', 'skills'))
+
+# 「已交代」标注词：命中即说明**文档自己已经把这条讲清楚了**（历史沿革 / 已归档 / 已废弃 /
+# 尚未创建），读者不会照它去找一个活脚本。→ 归入 explained，不计入文档腐烂。
+#
+# ⚠️ 为什么必须把这类单独列出来而不是继续算作腐烂：
+#   2026-09-21 复核发现，「文档腐烂 37 处」里真正会误导读者的只有 4 处，
+#   其余是「文档已写『已归档 → archive/…』」与「脚本在技能目录且文档写明了技能目录」。
+#   假阳性 = 噪声 = 闸门被无视（与 M-9 审计器假阳性同源）。
+#   **但降噪绝不等于静默** —— explained 会逐条打印命中的标注词，人一眼能看出是否放水过度。
+EXPLAINED = re.compile(r'已归档|归档|移至|移入|移出|存档|已废弃|废弃|~~|旧版|原版'
+                       r'|尚未创建|计划中|改名|取代')
+
+# 文档自述的外部脚本根：`技能目录：`~/.workbuddy/skills/chan-signal__skillhub``
+# 用「文档声明位置 + 真实磁盘解析」替代「硬编码白名单」——
+# 白名单是固定映射表（M-8/M-12 的定时炸弹），声明+解析则天然随环境变化。
+EXTERNAL_ROOT = re.compile(r'(?:技能目录|外部目录|脚本位置|引擎目录)\s*[：:]?\s*`?([^\s`）)，、*]+)`?')
+
+# 行内路径前缀：`skills/chan-signal__skillhub/run_000001_x.py`
+INLINE_PREFIX = re.compile(r'(?:^|[\s`(\[])([\w.~/-]+/)([A-Za-z_][A-Za-z0-9_]*\.py)')
+
+_ARCH_CACHE = None
+
+
+def _archive_index():
+    """归档目录索引：{文件名: 相对路径}。缓存，避免每处引用都走一遍 os.walk。"""
+    global _ARCH_CACHE
+    if _ARCH_CACHE is None:
+        _ARCH_CACHE = {}
+        for root, _dirs, files in os.walk(ARCHIVE):
+            for f in files:
+                _ARCH_CACHE.setdefault(f, os.path.relpath(os.path.join(root, f), ROOT))
+    return _ARCH_CACHE
+
+
+def _resolve(base, fn):
+    """按真实磁盘解析「base/fn」是否存在。base 可为相对路径、`skills/x/` 或 `~/...`。
+
+    只认磁盘事实，不认任何写死的名单：目录不存在 → 解析失败 → 该引用照旧算问题。
+    """
+    base = os.path.expanduser(base)
+    cands = []
+    if os.path.isabs(base):
+        cands.append(os.path.join(base, fn))
+    else:
+        cands += [os.path.join(ROOT, base, fn), os.path.join(HERE, base, fn)]
+        parts = [q for q in base.replace('\\', '/').split('/') if q not in ('', '.')]
+        if parts and parts[0] == 'skills':
+            # 文档里的 `skills/x/` 指用户级技能目录，不是仓库里的 skills/
+            cands.append(os.path.join(os.path.dirname(SKILL_HOME), *parts, fn))
+        elif parts:
+            cands.append(os.path.join(SKILL_HOME, parts[-1], fn))
+    return any(os.path.exists(c) for c in cands)
+
 
 def scan_docs(src):
+    """文档对账 —— 四类分开报，绝不混算：
+
+      stale      引用已归档脚本且**至少一处未交代** → 真腐烂，必须修（退出码相关）
+      missing    引用真不存在且**至少一处未交代**   → 真腐烂，必须修（退出码相关）
+      explained  已归档/已废弃/尚未创建，且**每一处**都交代清楚了 → 不计
+      external   脚本在仓库外（技能目录），且**文档声明了位置 + 磁盘可解析** → 不计
+
+    判定粒度是**出现位置**，不是 (文件, 文档) 对：
+      同一个文件名在一份文档里往往出现多次，语境各不相同（既有「已归档」的历史沿革，
+      也有「现在就用它」的操作指引）。若按对去重，后面的真问题会被前面的「已交代」吃掉 ——
+      实测 `append_consensus.py` 在《脚本地图.md》出现 3 次，前两处写了归档，
+      第 333 行的操作指引没写，去重后这条真腐烂直接消失。
+    故：**只要有一处没交代，整条就算腐烂**，并直接给出该处的行号。
+    """
     docs = {d: io.open(os.path.join(HERE, d), encoding='utf-8').read()
             for d in DOCS if os.path.exists(os.path.join(HERE, d))}
-    mentions, stale, missing, undocumented = {}, [], [], []
+    mentions = {}
+    stale, missing, explained, external, undocumented = [], [], [], [], []
+    arch_idx = _archive_index()
     for d, t in docs.items():
         for f in src:
             if f in t:
                 mentions.setdefault(f, []).append(d)
-        for m in re.finditer(r'\b([A-Za-z_][A-Za-z0-9_]*\.py)\b', t):
-            fn = m.group(1)
-            # 存在性以**磁盘为准**：`src` 里排除了 SKIP（本文件自身），
-            # 若只判 `fn in src`，文档里每提一次 `audit_pipeline.py` 都会被算成「真不存在」——
-            # 纯噪声，会把真正的文档腐烂淹掉。
-            if (fn in src or os.path.exists(os.path.join(HERE, fn))
-                    or PLACEHOLDER_OK.match(fn)):
-                continue
-            key = (fn, d)
-            if key in missing:
-                continue
-            # 是否已在 archive 里
-            arch = None
-            for root, _dirs, files in os.walk(ARCHIVE):
-                if fn in files:
-                    arch = os.path.relpath(os.path.join(root, fn), ROOT)
-                    break
-            (stale if arch else missing).append((fn, d, arch))
+        lines = t.splitlines()
+        # 文档级声明的外部根（同一文档内生效）
+        roots = [m.group(1) for m in (EXTERNAL_ROOT.search(ln) for ln in lines) if m]
+        occ = {}          # fn -> [(行号, 原文, 外部根, 标注词)]
+        for i, ln in enumerate(lines, 1):
+            for m in re.finditer(r'\b([A-Za-z_][A-Za-z0-9_]*\.py)\b', ln):
+                fn = m.group(1)
+                # 存在性以**磁盘为准**：`src` 里排除了 SKIP（本文件自身），
+                # 若只判 `fn in src`，文档里每提一次 `audit_pipeline.py` 都会被算成「真不存在」——
+                # 纯噪声，会把真正的文档腐烂淹掉。
+                if (fn in src or os.path.exists(os.path.join(HERE, fn))
+                        or PLACEHOLDER_OK.match(fn)):
+                    continue
+                # ① 行内带路径前缀 → 按磁盘解析
+                pre = next((pm.group(1) for pm in INLINE_PREFIX.finditer(ln)
+                            if pm.group(2) == fn), '')
+                base = pre if (pre and _resolve(pre, fn)) else ''
+                # ② 文档声明了外部根 → 按磁盘解析
+                if not base:
+                    base = next((r for r in roots if _resolve(r, fn)), '')
+                mk = EXPLAINED.search(ln)
+                occ.setdefault(fn, []).append((i, ln.strip(), base, mk.group(0) if mk else ''))
+        for fn, items in occ.items():
+            hit = next((it for it in items if it[2]), None)          # 有任一处解析到技能目录
+            bad = next((it for it in items if not it[2] and not it[3]), None)  # 未解析且未交代
+            if hit:
+                external.append((fn, d, '%s @L%d' % (hit[2], hit[0])))
+            elif bad:
+                arch = arch_idx.get(fn)
+                detail = 'L%d' % bad[0]
+                if arch:
+                    detail += ' · 在 %s' % arch
+                (stale if arch else missing).append((fn, d, detail))
+            else:
+                explained.append((fn, d, '%s @L%d' % (items[0][3], items[0][0])))
     undocumented = [f for f in src if f not in mentions]
-    return docs, mentions, stale, missing, undocumented
+    return docs, mentions, stale, missing, explained, external, undocumented
 
 
 # ---------------- 5. 重复 ----------------
@@ -332,7 +420,7 @@ def main(argv=None):
     no_code, risky = scan_exit_codes(src)
     silent = scan_silent(src)
     hard = scan_hardcode(src)
-    docs, mentions, stale, missing, undoc = scan_docs(src)
+    docs, mentions, stale, missing, explained, external, undoc = scan_docs(src)
     pairs, shared = scan_dups(src)
     other, not_ignored, rt_err = scan_runtime()
     vals = scan_validators(src)
@@ -360,12 +448,22 @@ def main(argv=None):
         W('      %-34s :%-4s %s' % (f, ln, why))
 
     W('\n【4】文档对账（%d 份）' % len(docs))
-    W('  文档引用已归档脚本：%d 处  ← 文档腐烂' % len(stale))
+    W('  ⚠️ 文档引用已归档脚本（且未交代归档）：%d 处  ← 文档腐烂，必须修' % len(stale))
     for fn, d, arch in (stale if a.full else stale[:10]):
         W('      %-30s ← %-22s (在 %s)' % (fn, d, arch))
-    W('  文档引用真不存在：%d 处' % len(missing))
-    for fn, d, _ in (missing if a.full else missing[:8]):
-        W('      %-30s ← %s' % (fn, d))
+    W('  ⚠️ 文档引用真不存在（且未交代）：%d 处  ← 文档腐烂，必须修' % len(missing))
+    for fn, d, detail in (missing if a.full else missing[:8]):
+        W('      %-30s ← %-22s (%s)' % (fn, d, detail))
+    # 下面两类**不计入腐烂**，但一律逐条打印 —— 降噪不等于静默（否则就是偷偷调松闸门）
+    W('  ── 以下两类不计入腐烂，逐条列出以便人工核对是否放水过度 ──')
+    W('  已交代归档/废弃/未建：%d 处（文档自己写清了，读者不会去找活脚本）' % len(explained))
+    for fn, d, mk in (explained if a.full else explained[:12]):
+        W('      %-30s ← %-22s (标注词「%s」)' % (fn, d, mk))
+    if len(explained) > 12 and not a.full:
+        W('      … 其余 %d 处（--full 展开）' % (len(explained) - 12))
+    W('  仓库外脚本（技能目录，磁盘已解析）：%d 处' % len(external))
+    for fn, d, base in (external if a.full else external[:12]):
+        W('      %-30s ← %-22s (%s)' % (fn, d, base))
     W('  未被任何文档提及的脚本：%d 个' % len(undoc))
     for f in (undoc if a.full else undoc[:12]):
         W('      · %s' % f)
@@ -415,6 +513,9 @@ def main(argv=None):
     W('汇总：P0（失败退出码缺失·高危）%d · 静默失败 %d · 硬编码 %d · 文档腐烂 %d · 未记录脚本 %d'
       % (len(risky), len(silent), len(hard), len(stale) + len(missing), len(undoc)))
     W('      · 在役链路缺测试 %d · subprocess 未校验 %d' % (len(crit_gap), len(spawn)))
+    W('      文档腐烂只计「未交代归档 / 未解析到技能目录」的引用；'
+      '另有已核销 %d 处（已交代归档 %d + 仓库外已解析 %d），明细见【4】'
+      % (len(explained) + len(external), len(explained), len(external)))
     W('=' * 72)
 
     blob = '\n'.join(L)
