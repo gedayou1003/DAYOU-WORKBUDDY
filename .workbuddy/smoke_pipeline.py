@@ -47,7 +47,7 @@ import zipfile
 for _s in (sys.stdout, sys.stderr):
     try:
         _s.reconfigure(encoding='utf-8', errors='replace')
-    except Exception:
+    except Exception:  # silent-ok: 终端编码收口尽力而为，失败不影响结论
         pass
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -106,7 +106,7 @@ def _cleanup(tmp):
                 try:
                     with zipfile.ZipFile(os.path.join(root, f)) as z:
                         members += len(z.namelist())
-                except Exception:
+                except Exception:  # silent-ok: zip 成员数读不到按 0 计，只影响临时目录阈值提示（偏保守）
                     pass
     total = loose + members
     if total > CLEANUP_MAX_FILES:

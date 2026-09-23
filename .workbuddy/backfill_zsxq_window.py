@@ -78,7 +78,7 @@ def parse_dt(s, default):
             if fmt == "%Y-%m-%d":
                 d = d.replace(hour=23 if default is None else 0, minute=59 if default is None else 0)
             return d.replace(tzinfo=CST)
-        except ValueError:
+        except ValueError:  # silent-ok: 多格式逐一尝试，本格式不匹配即试下一个
             continue
     # 兜底：交给 fromisoformat
     try:
@@ -92,7 +92,7 @@ def ct_of(s):
     try:
         d = datetime.fromisoformat(str(s).replace("Z", "+00:00"))
         return d if d.tzinfo else d.replace(tzinfo=CST)
-    except Exception:
+    except Exception:  # silent-ok: 解析失败返回 None，窗口筛选处另计条数并打印
         return None
 
 
@@ -159,8 +159,22 @@ def fetch_group(gid, name, since, until, max_pages=5, count=20):
             break
         end_time = ts[-1].get("create_time", "")
         time.sleep(1.5)
-    picked = [t for t in out if (ct_of(t.get("create_time", "")) or since) >= since
-              and (ct_of(t.get("create_time", "")) or until) <= until]
+    # 窗口筛选（2026-09-23 加固）：旧写法是
+    #     [t for t in out if (ct_of(...) or since) >= since and (ct_of(...) or until) <= until]
+    # —— 解析失败时 `None or since` 使两侧条件恒真，即**静默判成「窗口内」一律保留**，
+    # 且同一条被 ct_of 解析两次。现改为显式循环：解析一次、保留原口径（宁多不少），
+    # 但把解析不了的条数记下来打印 —— 否则「窗口外条目混进来」永远没人知道。
+    picked, unparsed = [], []
+    for t in out:
+        ct = ct_of(t.get("create_time", ""))
+        if ct is None:
+            unparsed.append(str(t.get("create_time", "")))
+            ct = since
+        if since <= ct <= until:
+            picked.append(t)
+    if unparsed:
+        print('[WARN] 窗口筛选：%d 条 create_time 无法解析（按「保留」处理，可能混入窗口外条目）：%s'
+              % (len(unparsed), unparsed[:3]), file=sys.stderr)
     picked.sort(key=lambda t: t.get("create_time", ""))
     return picked, err
 

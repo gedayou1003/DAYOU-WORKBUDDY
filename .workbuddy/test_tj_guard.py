@@ -29,7 +29,7 @@ import tempfile
 for _s in (sys.stdout, sys.stderr):
     try:
         _s.reconfigure(encoding='utf-8', errors='replace')
-    except Exception:
+    except Exception:  # silent-ok: 终端编码收口尽力而为，失败不影响结论
         pass
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -185,6 +185,37 @@ ck(m._plain_text('a\n\n\n\nb') == 'a\n\nb', '多余空行被归一化')
 ck(m._files_text([]) == '无', '无附件渲染为「无」')
 ck(m._files_text([{'name': 'x.pdf', 'size': 1024}]) == 'x.pdf（size 1,024）',
    'download_count 缺失时不硬写 download')
+
+print()
+print('H) 旧归档**读不动** → 必须拒绝覆盖（2026-09-23 加固，与 9/21 那次 P0 同族）')
+print('=' * 62)
+# 改前：读不动就 `old_txt = ''`，而判据是 `if old_txt and STAMP not in old_txt` ——
+# 短路成「不是人工精修版」，**守卫整条跳过、直接覆盖**。缩水守卫同理（`old_n = 0`）。
+# 读不动 ≠ 没有旧文件：该文件不在 git、又被备份排除，猜错方向就是不可恢复的覆盖。
+# 构造「存在但读不动」：把目标路径做成目录（Windows/Linux 上 open() 都抛 OSError 子类）。
+def run_err(argv):
+    """本节看的是 stderr 上的 [FAIL]，故 stdout/stderr 一并捕获。"""
+    old = sys.argv
+    sys.argv = ['gen_tj_archive.py'] + argv
+    buf = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            rc = m.main()
+    finally:
+        sys.argv = old
+    return rc, buf.getvalue()
+
+
+sb = sandbox(3)
+out = target_path(sb)
+os.makedirs(out)
+rc, sout = run_err([])
+ck(rc == 1, '旧归档读不动 → 退 1（ERROR），不当成「没有旧文件」（实际 rc=%s）' % rc)
+ck(os.path.isdir(out), '没有产生副作用：不可读的目标未被改写/删除')
+ck('[FAIL]' in sout and '--force' in sout, '有意报错并给出生路（[FAIL] + --force，非裸崩溃）')
+os.rmdir(out)                       # 恢复成「不存在」，验证逃生通道没被这次加固堵死
+rc, _ = run_err(['--force'])
+ck(rc == 0, '--force 仍可越过（人为确认后照常覆盖）')
 
 print()
 print('=' * 62)

@@ -26,7 +26,7 @@ import json, os, sys, io
 for _s in (sys.stdout, sys.stderr):
     try:
         _s.reconfigure(errors='replace')
-    except Exception:
+    except Exception:  # silent-ok: 终端编码收口尽力而为，失败不影响结论
         pass
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -48,7 +48,7 @@ def _emoji_ok():
     try:
         '\u2705\u26a0\ufe0f\u274c'.encode(enc)
         return True
-    except Exception:
+    except Exception:  # silent-ok: 编码能力探测，False 即结论（表格另有 ascii_safe 兜底）
         return False
 
 

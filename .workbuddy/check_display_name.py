@@ -15,6 +15,9 @@
     $PY .workbuddy/check_display_name.py            # 只看对外产物与生成链路
     $PY .workbuddy/check_display_name.py --all      # 连白名单一起列（排查用）
 
+退出码：0 全读通且无命中 · 1 有泄漏命中（或一个文件都没读通 = 无结论） ·
+        2 无命中但有文件读不动（结论只覆盖读通的部分，**不许据此宣称零泄漏**）
+
 刻意不改、因此**永久白名单**（命中不算问题）：
     · fetch_zsxq.py / fetch_zsxq_fallback.py / backfill_zsxq_window.py
         → group_id → 星球名 的**数据映射**，改名会坏归档筛选
@@ -40,7 +43,7 @@ import sys
 for _s in (sys.stdout, sys.stderr):
     try:
         _s.reconfigure(encoding='utf-8', errors='replace')
-    except Exception:
+    except Exception:  # silent-ok: 终端编码收口尽力而为，失败不影响结论
         pass
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -76,8 +79,16 @@ PAT = re.compile(
 
 
 def scan(show_all=False, today=None):
-    """返回 (命中字典, 白名单跳过数)。命中字典 = {相对路径: (次数, 写法集合)}"""
-    hits, skipped = {}, 0
+    """返回 (命中字典, 白名单跳过数, 读通文件数, 读不动的 [(相对路径, 原因)])。
+
+    为什么后两项必须返回（2026-09-23 加固）
+    -------------------------------------
+    旧实现读文件失败就 `continue` —— **不计数、不上报**；而 main() 在无命中时打印
+    「OK 对外产物与生成链路零泄漏」。于是「一个文件都没读成」与「读了 200 个文件、
+    确实干净」**输出一字不差**，退出码都是 0：闸门的证据缺失被当成了通过。
+    本脚本是**安全守卫**（对外显示名泄漏），假绿的代价是泄漏了也没人知道。
+    """
+    hits, skipped, scanned, unreadable = {}, 0, 0, []
     for dirpath, dirnames, filenames in os.walk(ROOT):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
         for fn in filenames:
@@ -97,12 +108,15 @@ def scan(show_all=False, today=None):
             try:
                 with open(fp, encoding='utf-8', errors='replace') as f:
                     txt = f.read()
-            except Exception:
+            except Exception as e:
+                # 读不动 ≠ 干净：如实记下来，由 main() 逐条打印并降级结论
+                unreadable.append((rel, '%s: %s' % (type(e).__name__, str(e)[:60])))
                 continue
+            scanned += 1
             found = PAT.findall(txt)
             if found:
                 hits[rel] = (len(found), sorted(set(found)))
-    return hits, skipped
+    return hits, skipped, scanned, unreadable
 
 
 def main(argv=None):
@@ -115,13 +129,25 @@ def main(argv=None):
 
     import datetime
     today = a.today or datetime.date.today().isoformat()
-    hits, skipped = scan(show_all=False, today=today)
+    hits, skipped, scanned, unreadable = scan(show_all=False, today=today)
 
     print('=' * 66)
     print('对外显示名守卫 · 检查日期 %s' % today)
     print('=' * 66)
+    print('  扫描 %d 个文件（白名单跳过 %d，读不动 %d）' % (scanned, skipped, len(unreadable)))
+    for rel, err in unreadable:
+        print('  [WARN] 读不动：%s（%s）' % (rel, err))
+    if scanned == 0:
+        # 读通 0 个文件时「无命中」不构成任何证据 —— 不许报 OK（否则就是假绿）
+        print('[FAIL] 一个文件都没读通（ROOT=%s？）—— 本次检查**无结论**，请先查路径与权限' % ROOT)
+        return 1
     if not hits:
-        print('OK  对外产物与生成链路零泄漏（白名单跳过 %d 个文件）' % skipped)
+        if unreadable:
+            # 有读不动的文件就不能宣称「零泄漏」：结论只覆盖读通的那部分
+            print('[WARN] 读通的 %d 个文件无命中，但另有 %d 个读不动、未被检查 —— 不可据此宣称零泄漏'
+                  % (scanned, len(unreadable)))
+            return 2
+        print('OK  %d 个文件全读通、零泄漏（白名单跳过 %d）' % (scanned, skipped))
         return 0
     for rel in sorted(hits):
         n, kinds = hits[rel]

@@ -50,7 +50,7 @@ def run_periods(periods, T):
         try:
             eng = run_engine(sub)
             results[tag] = build_analysis(CODE, sub, eng, cat, recent_bars=0)
-        except Exception:
+        except Exception:  # silent-ok: 一次性回测脚本，单个标的算不出即记 None 由汇总处判空
             results[tag] = None
     return results
 

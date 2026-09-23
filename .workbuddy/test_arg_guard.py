@@ -29,7 +29,7 @@ import tempfile
 for _s in (sys.stdout, sys.stderr):
     try:
         _s.reconfigure(encoding='utf-8', errors='replace')
-    except Exception:
+    except Exception:  # silent-ok: 终端编码收口尽力而为，失败不影响结论
         pass
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -190,7 +190,7 @@ try:
     s = io.open(p, encoding='utf-8').read()
     try:
         s2 = mutate_fetch(s)
-    except ValueError:
+    except ValueError:  # silent-ok: 变异体构造失败即置 None，下方断言会直接判 FAIL
         s2 = None
     ck(s2 is not None, '变异体 fetch_zsxq.py 构造成功（标记缺失即代表源码结构变了，须同步改测试）')
     if s2 is not None:

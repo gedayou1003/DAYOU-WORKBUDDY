@@ -103,13 +103,21 @@ def _appendix_role(title, body):
 
 
 def _verified_count():
+    """链里 verified 期数。返回 `(n, err)`；读不到时 n=None，err 给出原因。
+
+    2026-09-23 加固（消除假绿）：旧实现读不到链就静默返回 None，而调用点是
+    `if report_n is not None and chain_n is not None` —— 于是**链读不动时这条
+    「偏差期数一致性」检查直接不执行**，check_layout 照样输出「无 WARN」通过。
+    校验器的证据缺失被当成了通过（与 check_display_name 的假绿同族）。
+    现在把原因带出去交调用点记 WARN：**检查没跑成 ≠ 检查通过**。
+    """
     if not os.path.exists(FORECAST):
-        return None
+        return None, '链文件不存在（%s）' % os.path.basename(FORECAST)
     try:
         d = json.load(open(FORECAST, encoding='utf-8'))
-        return sum(1 for r in d if r.get('status') == 'verified')
-    except Exception:
-        return None
+    except Exception as e:
+        return None, '链文件读不动（%s: %s）' % (type(e).__name__, str(e)[:50])
+    return sum(1 for r in d if r.get('status') == 'verified'), None
 
 
 def _report_date(path):
@@ -138,7 +146,7 @@ def _superseded_same_date(path):
         return False
     try:
         mt = os.path.getmtime(path)
-    except OSError:
+    except OSError:  # silent-ok: 取 mtime 失败按「无更晚报告」处理，方向偏严（宁可多报 WARN）
         return False
     out = os.path.join(ROOT, 'outputs')
     for f in glob.glob(os.path.join(out, '作战报告_*.md')):
@@ -149,7 +157,7 @@ def _superseded_same_date(path):
         try:
             if os.path.getmtime(f) > mt:
                 return True
-        except OSError:
+        except OSError:  # silent-ok: 候选文件在读 mtime 前消失属竞态，跳过该候选
             continue
     return False
 
@@ -718,8 +726,11 @@ def check(path):
     if 'bias' in pos:
         m = re.search(r'[（(](\d+)\s*期', text)
         report_n = int(m.group(1)) if m else None
-        chain_n = _verified_count()
-        if report_n is not None and chain_n is not None and report_n != chain_n:
+        chain_n, chain_err = _verified_count()
+        if chain_err:
+            # 检查没跑成 ≠ 检查通过：报 WARN 而不是静默跳过（2026-09-23 加固）
+            res['warns'].append('偏差期数一致性**未执行**：%s —— 本项无结论，不可当作通过' % chain_err)
+        elif report_n is not None and report_n != chain_n:
             msg = ('偏差期数：报告标 %d 期，链当前 %d 期' % (report_n, chain_n))
             if _is_today_report(res['path']) and not _superseded_same_date(res['path']):
                 res['warns'].append(msg + '（当日报告需与链一致）')

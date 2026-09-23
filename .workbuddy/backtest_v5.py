@@ -48,23 +48,23 @@ def run_engine_at(df, cat):
     try:
         # 时间戳里的冒号是 Windows 文件名非法字符，替换掉
         last_date = str(df['date'].iloc[-1])[:19].replace(':', '-').replace(' ', '_')
-    except Exception:
+    except Exception:  # silent-ok: 一次性回测脚本；取不到日期只影响缓存文件名（`unknown` 亦不复用）
         last_date = 'unknown'
     cache_file = os.path.join(ENGINE_CACHE, f'{cat}_{last_date}.json')
     try:
         if os.path.exists(cache_file):
             return json.load(open(cache_file, encoding='utf-8'))
-    except Exception:
+    except Exception:  # silent-ok: 引擎缓存读失败按未命中处理，会重算
         pass
     try:
         r = build_analysis(CODE, df, run_engine(df), cat, recent_bars=0)
-    except Exception:
+    except Exception:  # silent-ok: 一次性回测脚本（不在在役链路），取不到引擎结果由调用方判空
         return None
     if r:
         try:
             os.makedirs(ENGINE_CACHE, exist_ok=True)
             json.dump(r, open(cache_file, 'w', encoding='utf-8'), ensure_ascii=False)
-        except Exception:
+        except Exception:  # silent-ok: 缓存写失败不影响本轮回测结果
             pass
     return r
 

@@ -255,6 +255,42 @@ ACTIONS = [
     ('.workbuddy/_rt_after_fix.txt', 'audit_output', 'run_tests 输出（补录后链状态：14/14 ALL PASS）', None),
     ('.workbuddy/_rt_final.txt', 'audit_output',
      'run_tests 输出（补录 + 区间修正后的最终链状态：14/14 ALL PASS，134.3s）', None),
+
+    # ---------- 9. 静默失败扫描器升级（2026-09-23 第四轮）的取证与输出 ----------
+    # 能力已固化为**常驻扫描器**（audit_pipeline.py 的 §2 改为 AST + `# silent-ok` 声明豁免）
+    # 与常驻回归测试（test_audit_detector.py §6/§7/§8、test_display_name_guard.py、
+    # test_scan_ths_guard.py），以下均为一次性中间件。
+    ('.workbuddy/_probe_antipattern.py', 'oneoff_script',
+     'AST 探针：坐实审计器 §2 的正则实现把 31 处静默失败漏成 15 处（三种漏报形态的取证）', None),
+    ('.workbuddy/_probe_antipattern.json', 'audit_output',
+     '上述探针逐处命中明细（文件/行号/类型/上下文），是「逐处核对口径」的原始依据', None),
+    ('.workbuddy/_probe_out.txt', 'audit_output', '上述探针的终端输出（按类型/文件/抽样三档汇总）', None),
+    ('.workbuddy/_ap_context.txt', 'audit_output',
+     '每处命中 ±4 行原文展开（第零原则要求：动手前先展开成「哪 N 处、每处原文」）', None),
+    ('.workbuddy/_ap_new1.txt', 'audit_output',
+     'AST 版首跑（未加任何声明）：29 处未声明 —— 与旧正则的 15 处形成对照', None),
+    ('.workbuddy/_ap_new2.txt', 'audit_output', '标注存量刻意守卫后的复跑（3 处未声明 + 22 处已声明）', None),
+    ('.workbuddy/_ap_new3.txt', 'audit_output',
+     '补上「被并行写覆盖」丢失的 3 处声明后的复跑（0 处未声明）', None),
+    ('.workbuddy/_ap_new4.txt', 'audit_output',
+     '最终基线（P0 0 · 静默失败 0 未声明 / 30 已声明 · 其余全 0），已并入《脚本地图》§〇·补9', None),
+    ('.workbuddy/_rt_new.txt', 'audit_output', '聚合测试最终输出（16/16 ALL PASS，115.4s）', None),
+    # 同轮 09-21 遗留的审计输出（该轮基线数字已被 §〇·补9 更正：静默失败 15 是少报）
+    ('.workbuddy/_ap_after.txt', 'audit_output', '09-21 轮：审计输出（修复中）', None),
+    ('.workbuddy/_ap_final.txt', 'audit_output', '09-21 轮：审计输出（收尾）', None),
+    ('.workbuddy/_ap_final2.txt', 'audit_output',
+     '09-21 轮：审计基线（静默失败 15 —— 已被 AST 实测更正为 31）', None),
+    ('.workbuddy/_cli.txt', 'audit_output', '09-21 轮：CLI 相关排查输出', None),
+    ('.workbuddy/_cw_dry3.txt', 'audit_output', '09-21 轮：cleanup_workspace dry-run 输出（第 3 次）', None),
+    ('.workbuddy/_cw_dry4.txt', 'audit_output', '09-21 轮：cleanup_workspace dry-run 输出（第 4 次）', None),
+    ('.workbuddy/_cw_apply4.txt', 'audit_output', '09-21 轮：cleanup_workspace --apply 输出（第 4 次）', None),
+    ('.workbuddy/_cw_apply5.txt', 'audit_output', '09-21 轮：cleanup_workspace --apply 输出（第 5 次）', None),
+    ('.workbuddy/_smoke_final.txt', 'audit_output', '09-21 轮：冒烟最终输出', None),
+    ('.workbuddy/_bias_test_tmp.json', 'oneoff_output',
+     '测试运行期在仓库内落下的临时件（`_` 前缀、已被 .gitignore 排除），归档即可', None),
+    ('.workbuddy/_bias_test_tmp2.json', 'oneoff_output', '同上（第二个）', None),
+    ('.workbuddy/_cw_dry9.txt', 'audit_output', '本轮 cleanup_workspace dry-run 输出', None),
+    ('.workbuddy/_cw_apply9.txt', 'audit_output', '本轮 cleanup_workspace --apply 输出（20 个文件）', None),
 ]
 
 # 提升为正式工具（重命名/替代，不进 archive）

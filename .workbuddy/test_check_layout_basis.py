@@ -114,6 +114,33 @@ bad_table = make_report(base_ok).replace('**%.1f%%** | n=%d' % (now_v, n),
 res_tbl = run_with(bad_table)
 ck(any('偏差统计表' in e for e in res_tbl['errors']), '统计表与链不符被拦下')
 
+print('4) 链文件读不动 → 「偏差期数一致性」必须报 WARN，不许静默跳过（2026-09-23 加固）')
+# 改前：_verified_count() 读不到链就返回 None，而调用点写的是 `chain_n is not None` ——
+# 于是**链读不动时这条检查直接不执行**，check_layout 照样输出「无 WARN」通过。
+# 现在的判据：WARN 里必须出现「未执行」字样，且带上原因（检查没跑成 ≠ 检查通过）。
+_saved_fc = cl.FORECAST
+_sb = tempfile.mkdtemp(prefix='layout_chain_')
+try:
+    cl.FORECAST = os.path.join(_sb, 'forecast_chain.json')
+    res_missing = run_with(make_report(base_ok))
+    miss_w = [w for w in res_missing['warns'] if '未执行' in w]
+    ck(bool(miss_w), '链文件不存在 → WARN 明示「未执行」：%s' % (miss_w or '未报 ← 仍是假绿'))
+
+    with open(cl.FORECAST, 'w', encoding='utf-8') as f:
+        f.write('{ 这不是合法 JSON')
+    res_broken = run_with(make_report(base_ok))
+    brk_w = [w for w in res_broken['warns'] if '未执行' in w and '读不动' in w]
+    ck(bool(brk_w), '链文件损坏 → WARN 带上具体原因：%s' % (brk_w or '未报'))
+
+    # 反向：链可读时不许出现这条 WARN（防「加了检查就永久报红」）
+    cl.FORECAST = _saved_fc
+    res_ok_chain = run_with(make_report(base_ok))
+    ck(not [w for w in res_ok_chain['warns'] if '未执行' in w],
+       '链可读 → 不报「未执行」（新判据没有变成永久噪声）')
+finally:
+    cl.FORECAST = _saved_fc
+    shutil.rmtree(_sb, ignore_errors=True)
+
 print()
 print('RESULT: %s' % ('ALL PASS' if not fails else 'FAIL %d 项' % len(fails)))
 sys.exit(1 if fails else 0)

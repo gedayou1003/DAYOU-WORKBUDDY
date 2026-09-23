@@ -353,7 +353,7 @@ def _cleanup_sandboxes():
         try:
             shutil.rmtree(d, ignore_errors=True)
             ok += 1
-        except Exception:
+        except Exception:  # silent-ok: 沙箱清理失败已由下方 ok/total 计数并打印
             pass
     print('(沙箱已清理 %d/%d 个，位于系统临时目录)' % (ok, len(SANDBOXES)))
 

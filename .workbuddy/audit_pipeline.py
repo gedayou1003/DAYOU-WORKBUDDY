@@ -13,7 +13,8 @@
 检查九项：
   1. 退出码语义：有入口但无 sys.exit(非零) 的脚本，并标记其中「代码区里输出/抛出失败字样」
      的高危子集（注释、docstring、表格渲染符号 ❌ 一律不计 —— 假阳性会淹没真高危）
-  2. 静默失败反模式：危险默认值/静默回退、吞异常 pass、裸 except
+  2. 静默失败反模式：危险默认值/静默回退、吞异常 pass/continue、静默 return、裸 except
+     （2026-09-23 起用 AST 扫描，此前是三条正则 —— 实测漏报过半：31 处只报出 15 处）
   3. 硬编码：绝对路径（含用户名）、写死的具体日期
   4. 文档对账：文档引用的 *.py 是否存在（区分「已归档」与「真不存在」）、脚本是否被文档遗漏
   5. 重复：跨脚本近似重复对、跨脚本同名函数、脚本被多份文档重复描述
@@ -26,9 +27,16 @@
    若让它长期报红会变成永久噪声、导致闸门被无视；9 的命中多数是「失败也无所谓」的调用。
    两节的价值在于把印象变成清单，逐条确认时不必再翻全仓代码。
 
+静默失败的「刻意豁免」约定（与 §4 文档对账的 explained/external 同口径）：
+   确属刻意（终端编码收口、缓存读写、getmtime 竞态、多格式尝试这类）的吞异常，
+   在 **except 行尾**写 `# silent-ok: <原因>`（原因 ≥4 字）。扫描器把它单列【2】的
+   「已声明豁免」并逐条打印原因，不计入阈值 —— 于是**未声明项数 = 真待办数**。
+   原因过短或写在别的行一律不算声明：声明要能被人复核，不是用来把闸门关掉的开关。
+
 设计约束：只读、不改任何文件；结果可复现（同一输入两次运行一致）。
 """
 import argparse
+import ast
 import io
 import os
 import re
@@ -38,7 +46,7 @@ import sys
 for _s in (sys.stdout, sys.stderr):
     try:
         _s.reconfigure(encoding='utf-8', errors='replace')
-    except Exception:
+    except Exception:  # silent-ok: 终端编码收口尽力而为，失败不影响结论
         pass
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -90,16 +98,97 @@ def scan_exit_codes(src):
 
 
 # ---------------- 2. 静默失败反模式 ----------------
+# 2026-09-23 由正则改为 AST。起因：用一次性 AST 探针实测，旧正则实现把 **31 处漏成 15 处**。
+# 三种漏报形态（都是正则本身的局限，不是代码里没有）：
+#   ① body 是 `continue` / `return` 而不是 `pass` —— 正则只认 pass；
+#   ② except 与 pass 之间夹了注释行 —— `\s*\n\s*pass` 匹配不上；
+#   ③ 同行写 `except Exception: pass` —— 正则要求换行。
+# 还有一类反向失真：正则按字符偏移推算行号，docstring / 字符串里的示例代码会被算成真命中。
+# AST 直接看 ExceptHandler.body 的结构，与排版无关，也不受注释、docstring、字符串干扰。
+#
+# 五类形态（要求 body **全部**由该形态构成，避免误伤正常处理逻辑）：
+#   BARE   裸 except（无异常类型）—— 连捕获什么都说不清。命中即不再按 body 分类，避免一条记两次
+#   PASS   body 只有 pass / continue —— 完全静默
+#   RETURN body 只有 return（无值）—— 静默返回 None
+#   RETVAL body 只有 return <字面量> —— 静默返回默认值（参数静默回退就是这个形态）
+#   ASSIGN body 只有赋值、RHS 是**裸字面量**、且异常未绑定名字 —— 即「读不动就回退到写死的默认值」。
+#          判据刻意收窄（`as e` 或 RHS 里出现表达式一律不算）：把异常转写成错误记录
+#          （`r = {'error': str(e)}`）、超时按 124 计这类**正常降级**不算反模式，
+#          否则 17 处里只有 7 处是真的，噪声会把真问题淹掉。
+#          为什么必须收这一类：2026-09-23 实测 gen_tj_archive 的两处 `old_x = ''` / `= 0`
+#          会让「人工精修版不许覆盖」的守卫**整条跳过**（`if old_txt and ...` 短路），
+#          与 2026-09-21 那次 P0 数据丢失同族 —— 而旧实现（三条正则）对它完全无感。
+#
+# 刻意豁免的写法：在 except 行尾写 `# silent-ok: <原因>`。
+#   · 原因少于 4 个字视为**未声明**（防止用空声明把闸门蒙混过关，与「声明了不存在的目录照样算问题」同口径）
+#   · 已声明项**逐条打印原因**，但不计入阈值 —— 降噪不等于静默，否则就是偷偷把闸门调松
+SILENT_OK = re.compile(r'#\s*silent-ok\s*[:：]\s*(\S.{3,})')
+SILENT_LABEL = {'BARE': '裸 except（无异常类型）', 'PASS': 'body 只有 pass/continue',
+                'RETURN': '静默 return None', 'RETVAL': '静默返回字面量（参数回退）',
+                'ASSIGN': '危险默认值（读不动就回退到写死的字面量）'}
+# 写死日期兜底：原先混在 §2 的三条正则里各扫一遍，现改到 code_only_lines 的代码区上扫
+DEAD_DATE = re.compile(r"""\bor\s+['"]20\d\d[-/][0-9]{2}['"]""")
+
+
 def scan_silent(src):
-    hits = []
+    """扫描静默失败反模式。返回 (未声明, 已声明豁免)，元素均为 (文件, 行号, 说明)。"""
+    undecl, declared = [], []
     for f, s in src.items():
-        for m in re.finditer(r'except[^\n:]*:\s*\n\s*pass\b', s):
-            hits.append((f, s[:m.start()].count('\n') + 1, 'except → pass（吞异常）'))
-        for m in re.finditer(r"^\s*except\s*:", s, re.M):
-            hits.append((f, s[:m.start()].count('\n') + 1, '裸 except'))
-        for m in re.finditer(r"""\bor\s+['"]20\d\d[-/][0-9]{2}['"]""", s):
-            hits.append((f, s[:m.start()].count('\n') + 1, '疑似静默回退到写死日期'))
-    return hits
+        try:
+            tree = ast.parse(s)
+        except SyntaxError as e:
+            # 解析不了就不能假装「这里没问题」—— 如实报成待办
+            undecl.append((f, 0, 'PARSE   语法不可解析，静默失败扫描跳过（%s）' % str(e)[:40]))
+            continue
+        lines = s.split('\n')
+
+        def _note(node, kind):
+            ln = node.lineno
+            head = lines[ln - 1] if 0 < ln <= len(lines) else ''
+            m = SILENT_OK.search(head)
+            body = '%-7s %s' % (kind, SILENT_LABEL[kind])
+            if m:
+                declared.append((f, ln, '%s（silent-ok：%s）' % (body, m.group(1))))
+            else:
+                undecl.append((f, ln, body))
+
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.ExceptHandler):
+                continue
+            if node.type is None:
+                _note(node, 'BARE')
+                continue                      # 裸 except 已是最强判定，不再按 body 二次计数
+            kinds = set()
+            for st in (node.body or []):
+                if isinstance(st, ast.Pass):
+                    kinds.add('pass')
+                elif isinstance(st, ast.Continue):
+                    kinds.add('continue')
+                elif isinstance(st, ast.Return):
+                    if st.value is None:
+                        kinds.add('ret')
+                    elif isinstance(st.value, ast.Constant):
+                        kinds.add('retval')
+                    else:
+                        kinds.add('other')
+                elif isinstance(st, (ast.Assign, ast.AnnAssign)):
+                    v = st.value
+                    lit = isinstance(v, (ast.Constant, ast.Dict, ast.List, ast.Tuple, ast.Set))
+                    kinds.add('assign' if (lit and not node.name) else 'other')
+                else:
+                    kinds.add('other')
+            if kinds and kinds <= {'pass', 'continue'}:
+                _note(node, 'PASS')
+            elif kinds == {'ret'}:
+                _note(node, 'RETURN')
+            elif kinds and kinds <= {'retval'}:
+                _note(node, 'RETVAL')
+            elif kinds and kinds <= {'assign'}:
+                _note(node, 'ASSIGN')
+        for ln, code in code_only_lines(s):
+            if DEAD_DATE.search(code):
+                undecl.append((f, ln, 'DEAD    疑似静默回退到写死日期'))
+    return undecl, declared
 
 
 # ---------------- 3. 硬编码 ----------------
@@ -418,7 +507,7 @@ def main(argv=None):
     W('=' * 72)
 
     no_code, risky = scan_exit_codes(src)
-    silent = scan_silent(src)
+    silent, silent_ok = scan_silent(src)
     hard = scan_hardcode(src)
     docs, mentions, stale, missing, explained, external, undoc = scan_docs(src)
     pairs, shared = scan_dups(src)
@@ -436,12 +525,18 @@ def main(argv=None):
         for f in no_code:
             W('      · %s' % f)
 
-    W('\n【2】静默失败反模式：%d 处' % len(silent))
-    shown = silent if a.full else silent[:8]
-    for f, ln, why in shown:
+    W('\n【2】静默失败反模式：%d 处未声明' % len(silent))
+    for f, ln, why in (silent if a.full else silent[:8]):
         W('      %-34s :%-4s %s' % (f, ln, why))
-    if len(silent) > len(shown):
-        W('      … 其余 %d 处（--full 展开）' % (len(silent) - len(shown)))
+    if len(silent) > 8 and not a.full:
+        W('      … 其余 %d 处（--full 展开）' % (len(silent) - 8))
+    # 已声明豁免同样**逐条打印**（含原因）—— 不计入阈值不等于不打印，否则就是偷偷调松闸门
+    W('  ── 以下不计入：except 行尾声明了 `# silent-ok: 原因` 的刻意豁免 ──')
+    W('  已声明豁免：%d 处' % len(silent_ok))
+    for f, ln, why in (silent_ok if a.full else silent_ok[:12]):
+        W('      %-34s :%-4s %s' % (f, ln, why))
+    if len(silent_ok) > 12 and not a.full:
+        W('      … 其余 %d 处（--full 展开）' % (len(silent_ok) - 12))
 
     W('\n【3】硬编码：绝对路径 %d 处' % len(hard))
     for f, ln, why in (hard if a.full else hard[:8]):
@@ -510,12 +605,14 @@ def main(argv=None):
         W('      %-34s :%-4s subprocess.%s' % (f, ln, kind))
 
     W('\n' + '=' * 72)
-    W('汇总：P0（失败退出码缺失·高危）%d · 静默失败 %d · 硬编码 %d · 文档腐烂 %d · 未记录脚本 %d'
+    W('汇总：P0（失败退出码缺失·高危）%d · 静默失败 %d（未声明） · 硬编码 %d · 文档腐烂 %d · 未记录脚本 %d'
       % (len(risky), len(silent), len(hard), len(stale) + len(missing), len(undoc)))
     W('      · 在役链路缺测试 %d · subprocess 未校验 %d' % (len(crit_gap), len(spawn)))
     W('      文档腐烂只计「未交代归档 / 未解析到技能目录」的引用；'
       '另有已核销 %d 处（已交代归档 %d + 仓库外已解析 %d），明细见【4】'
       % (len(explained) + len(external), len(explained), len(external)))
+    W('      静默失败只计「未声明」的；另有已声明豁免 %d 处'
+      '（except 行尾 `# silent-ok: 原因`，逐条见【2】）' % len(silent_ok))
     W('=' * 72)
 
     blob = '\n'.join(L)

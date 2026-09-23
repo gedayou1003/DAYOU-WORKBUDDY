@@ -129,7 +129,7 @@ def main():
             try:
                 recs, _ = CL.load(n)
                 prev_ids[n] = recs[-1].get('id') if recs else ''
-            except Exception:
+            except Exception:  # silent-ok: 模板骨架预填，填空串会立刻显形（人必须自己填）
                 prev_ids[n] = ''
         S = CL.PLACEHOLDER_MARK + ' 必填'
         tpl = {

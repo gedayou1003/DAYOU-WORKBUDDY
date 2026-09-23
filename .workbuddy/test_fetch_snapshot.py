@@ -110,6 +110,39 @@ rc = m.main()
 ck(rc == 0, '正常抓到数据时 main() 返回 0')
 ck(json.load(open(m.MAIN_SNAPSHOT, encoding='utf-8')) != [], '正常路径已更新主快照')
 
+print('7) 窗口时间解析失败不许静默丢弃（2026-09-23 加固）')
+# 改前：in_window 解析不了直接返回 False，**零痕迹** —— 报告里「少了几条」与
+# 「本来就没有」在输出上无法区分。现在记名、stderr 出声、并落进 meta。
+del m._BAD_CT[:]
+_fut = _dt.datetime(2099, 1, 1, 12, 0, tzinfo=m.CST)
+m.WIN_START, m.WIN_END = _fut - _dt.timedelta(hours=1), _fut + _dt.timedelta(hours=1)
+ck(m.in_window('2099-01-01T12:30:00+08:00') is True, '窗口内时间 → True（判定口径未变）')
+ck(m.in_window('not-a-time') is False, '解析不了 → False（判定口径未变）')
+ck(m._BAD_CT == ['not-a-time'], '解析失败被记名（旧实现零痕迹）')
+ck(m.in_window('') is False and len(m._BAD_CT) == 2, '空串同样记名')
+
+# 端到端：坏 create_time 的条数要真的落进 meta，且不影响好条目入快照
+m.SKILL_GROUPS = {}
+m.COOKIE_GROUPS = {'48841181481248': 'fake'}
+m.auth_failed, m.flaky_failed = set(), set()
+m.fetch_cookie = lambda gid, count=20: [
+    {'topic_id': 2, 'type': 'talk', 'create_time': 'not-a-time', 'text': 'x',
+     'group': {'group_id': gid}, 'talk': {'text': 'x'}},
+    {'topic_id': 3, 'type': 'talk', 'create_time': '2099-01-01T12:00:00.000+0800', 'text': 'y',
+     'group': {'group_id': gid}, 'talk': {'text': 'y'}},
+]
+import contextlib as _cl
+import io as _io
+_ebuf = _io.StringIO()
+with _cl.redirect_stderr(_ebuf):
+    rc = m.main()
+meta2 = json.load(open(m.META_FILE, encoding='utf-8'))
+ck(meta2['unparsed_ct'] == 1, 'meta.unparsed_ct = 1（解析失败条数落盘，下游可见）')
+ck(meta2.get('unparsed_ct_sample') == ['not-a-time'], 'meta 带上原值样本，便于判断是哪种格式坏了')
+ck('[WARN]' in _ebuf.getvalue() and 'not-a-time' in _ebuf.getvalue(),
+   'stderr 打出 [WARN] 并带上原值（不再无声）')
+ck(rc == 0 and meta2['total'] == 1, '坏条目仍按窗口外丢弃（口径未变），好条目照常入快照')
+
 print()
 print('RESULT: %s' % ('ALL PASS' if not fails else 'FAIL %d 项' % len(fails)))
 sys.exit(1 if fails else 0)

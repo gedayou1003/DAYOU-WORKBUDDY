@@ -52,12 +52,20 @@ def _parse_ct(ct):
         else:
             dt = dt.astimezone(CST)
         return dt
-    except Exception:
+    except Exception:  # silent-ok: 解析失败返回 None，窗口过滤处另计条数并上报
         return None
 
 def in_window(ct):
     dt = _parse_ct(ct)
-    return WIN_START <= dt <= WIN_END if dt else False
+    if dt is None:
+        # 2026-09-23 加固：解析不了要出声（旧实现静默判 False 丢弃）。与 fetch_zsxq 同口径。
+        _BAD_CT.append(str(ct))
+        return False
+    return WIN_START <= dt <= WIN_END
+
+
+# 本轮窗口过滤中 create_time 解析失败的条目；写 meta 前同步给 fetch_zsxq._BAD_CT
+_BAD_CT = []
 
 def _download_image(url, save_path):
     try:
@@ -166,6 +174,7 @@ def main():
         return 1
 
     results, failed = [], []
+    del _BAD_CT[:]                      # 每次运行从零起算
     for gid, name in ALL_GROUPS.items():
         topics = fetch_cookie(gid, name)
         cnt = 0
@@ -178,6 +187,9 @@ def main():
         if not topics:                      # 退避 3 次仍 0 条 → 记入降级（旧实现静默继续）
             failed.append(gid)
         time.sleep(2)
+    if _BAD_CT:
+        print('[WARN] 窗口过滤：%d 条 create_time 无法解析（已按窗口外丢弃）：%s'
+              % (len(_BAD_CT), _BAD_CT[:3]), file=sys.stderr)
     results.sort(key=lambda x: x["create_time"])
     seen, uniq = set(), []
     for x in results:
@@ -200,6 +212,7 @@ def main():
     import fetch_zsxq as fz
     fz.WIN_START, fz.WIN_END = WIN_START, WIN_END
     fz._win_arg = 'evening'
+    fz._BAD_CT[:] = _BAD_CT          # 让复用的 save_snapshot 把本轮的解析失败数一并写进 meta
     saved, is_main = fz.save_snapshot(uniq, degraded)
 
     print(f"TOTAL_WINDOW={len(uniq)}  IMAGES={sum(len(x['images']) for x in uniq)}  "

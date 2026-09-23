@@ -252,7 +252,7 @@ def _engine_json_path(code):
         info = resolve(code)
         if info:
             std = info['code']
-    except Exception:
+    except Exception:  # silent-ok: 注册表解析失败则按原样代号继续，最终取不到文件会返回 None 交上层报错
         pass
     d = os.path.join(CHAN_DIR, 'output')
     exact = os.path.join(d, '%s_%s_chansignal.json' % (std, day))

@@ -55,7 +55,7 @@ def _read_cache(code, slot, day, ttl_min=None):
     try:
         with open(p, encoding='utf-8') as f:
             payload = json.load(f)
-    except Exception:
+    except Exception:  # silent-ok: 缓存读失败按未命中处理，会走网络重新抓取
         return None
     if ttl_min:
         ts = payload.get('_cached_at_ts')
@@ -74,7 +74,7 @@ def _write_cache(code, slot, day, data):
             json.dump({'_cached_at': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                        '_cached_at_ts': datetime.datetime.now().timestamp(),
                        '_slot': slot, 'data': data}, f, ensure_ascii=False, indent=2)
-    except Exception:
+    except Exception:  # silent-ok: 缓存写失败不影响本轮已取到的行情
         pass
 
 

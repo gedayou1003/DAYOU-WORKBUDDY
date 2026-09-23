@@ -11,6 +11,9 @@
 
 输出：backtest_data/scan_result_sw_realtime.json + 终端打印实时强弱榜
 
+退出码（2026-09-23 统一，与其他脚本一致）：0 通过 · 1 一个行业都没取到（**不写结果文件**）·
+        2 有行业拿到了值但解析不了（已单列 unparsed，结果文件仍写）
+
 用法：python .workbuddy/run.py scan_sw_realtime.py
 依赖：akshare（venv 已装）
 """
@@ -21,7 +24,7 @@ sys.path.insert(0, HERE)
 
 try:
     from scan_ths import SW_NAMES
-except Exception:
+except Exception:  # silent-ok: 取不到 SW_NAMES 就用下方内置的 31 行业名录（两处同源，人工核对）
     SW_NAMES = {}
 
 SW_LIST = [SW_NAMES[k] for k in sorted(SW_NAMES)] if SW_NAMES else [
@@ -53,7 +56,7 @@ def main():
     for x in fetch_realtime():
         data[x['name']] = f"{x['pct']:+.2f}%"
 
-    items = []
+    items, unparsed = [], []
     for sw in SW_LIST:
         pct = data.get(sw)
         if pct is None:
@@ -61,15 +64,25 @@ def main():
         try:
             v = float(pct.replace("%", "").strip())
         except Exception:
+            # 拿到了但解析不了：旧实现直接 continue —— 该行业既不在 industries、
+            # 也不在 missing，落进**第三态**且无人知晓（2026-09-23 加固，改为记名上报）
+            unparsed.append((sw, str(pct)[:20]))
             continue
         items.append({"name": sw, "pct": v})
     items.sort(key=lambda x: -x["pct"])
+
+    # 0 条不写空壳（2026-09-23）：写个空结果会让下游「按文件存在性判定」的缺口检测变成假绿
+    if not items:
+        print('[FAIL] 一个行业的实时涨跌幅都没取到 —— 不写结果文件（写空壳会让下游误判）',
+              file=sys.stderr)
+        return 1
 
     out = {
         "source": source,
         "ts": ts,
         "count": len(items),
         "missing": [n for n in SW_LIST if n not in data],
+        "unparsed": [{"name": n, "raw": raw} for n, raw in unparsed],
         "industries": items,
     }
     os.makedirs(os.path.join(HERE, "backtest_data"), exist_ok=True)
@@ -84,8 +97,14 @@ def main():
     for x in items[-5:]:
         print(f"    {x['name']:6s} {x['pct']:+.2f}%")
     print(f"  缺失: {out['missing']}")
+    if unparsed:
+        print(f"  [WARN] 涨跌幅解析失败 {len(unparsed)} 个（不在 industries 也不在 missing，"
+              f"已单列 unparsed）：{[n for n, _ in unparsed][:5]}")
     print(f"结果已保存 backtest_data/scan_result_sw_realtime.json（{len(items)} 个行业）")
+    # 退出码与其他脚本统一：0 通过 · 1 ERROR（0 条）· 2 WARN（有解析失败）——
+    # 打印了 WARN 却退 0，正是本项目历史上最贵的一类「失败被当成成功」
+    return 2 if unparsed else 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

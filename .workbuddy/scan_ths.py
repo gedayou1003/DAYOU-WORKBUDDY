@@ -114,7 +114,7 @@ def fetch_tencent(code, period='day', count=250):
     u = f'/appstock/app/fqkline/get?param={code},{period},,,{count},qfq'
     try:
         d, _src = qt_api.get_json(u)
-    except Exception:
+    except Exception:  # silent-ok: 取数失败返回 None，调用方记入 failed_idx 并逐条打印
         return None
     data = d.get('data', {}).get(code, {})
     rows = data.get('qfqday') or data.get('qfqweek') or data.get('day') or data.get('week') or []
@@ -230,15 +230,22 @@ def _atomic_write_json(path, obj):
     os.replace(tmp, path)
 
 
-def _old_ths_count():
-    """上次主结果里的行业条数（读不到返回 None，不阻断）。"""
+def _shrink_guard():
+    """缩水守卫的输入：返回 `(上次条数, 降级原因)`。
+
+    2026-09-23 加固：旧实现读不动就 `return None`，而调用点写的是 `if old_n and ...`
+    —— 于是**缓存损坏时缩水守卫静默失效**，残缺结果照样覆盖完整主结果。
+    「文件不存在」（首次运行，本该无从比较）与「文件在但读不动」（证据损坏）
+    必须分开：前者 (None, None)，后者把原因带出去由调用点记降级。
+    """
     if not os.path.exists(CACHE):
-        return None
+        return None, None
     try:
         with open(CACHE, encoding='utf-8') as f:
-            return len((json.load(f) or {}).get('ths') or [])
-    except Exception:
-        return None
+            return len((json.load(f) or {}).get('ths') or []), None
+    except Exception as e:
+        return None, ('上次结果读不动（%s: %s），缩水守卫无法比较'
+                      % (type(e).__name__, str(e)[:40]))
 
 
 def main():
@@ -325,7 +332,10 @@ def main():
         degraded.append('同花顺行业本轮 0 条成功（失败 %d/%d）' % (len(failed_ths), len(ths_names)))
     if not results_idx:
         degraded.append('宽基/恒生本轮 0 条成功（失败 %d/%d）' % (len(failed_idx), len(idx_list)))
-    old_n = _old_ths_count()
+    old_n, guard_note = _shrink_guard()
+    if guard_note:
+        # 证据损坏 ≠ 没有上次结果：缩水守卫失效必须出声，并按降级处理（不覆盖主结果）
+        degraded.append(guard_note)
     if old_n and results_ths and len(results_ths) < old_n * SHRINK_RATIO:
         degraded.append('行业成功条数 %d 较上次 %d 缩水超 %d%%'
                         % (len(results_ths), old_n, int((1 - SHRINK_RATIO) * 100)))

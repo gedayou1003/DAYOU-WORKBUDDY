@@ -214,7 +214,7 @@ def _atomic_write(path, text, expect_sub):
     if len(back) != len(text) or expect_sub not in back:
         try:
             os.remove(tmp)
-        except OSError:
+        except OSError:  # silent-ok: 清临时文件失败，紧随其后必然 raise，不影响报错语义
             pass
         raise RuntimeError('回读断言失败：写入 %d 字、读回 %d 字，锚点 %r 缺失'
                            % (len(text), len(back), expect_sub))

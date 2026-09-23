@@ -168,6 +168,103 @@ ck(not s and not mi, '⑧ 命名占位符（MMDD / xxx）不报')
 ck(len(run_docs({'a.md': '`calc_tech_MMDD.py`\n'}, [], want_raw=True)) == 7,
    '⑨ scan_docs 返回 7 元组（契约未漂移）')
 
+# ── 静默失败扫描（scan_silent）的双向元测试 ─────────────────────────
+# 为什么单列一节（2026-09-23）：旧实现是三条正则，用一次性 AST 探针实测**把 31 处漏成 15 处**：
+#   ① body 是 continue/return 而不是 pass（正则只认 pass）；
+#   ② except 与 pass 之间夹了注释行；③ 同行写 `except Exception: pass`。
+# 改用 AST 后必须反过来证明：四类真形态都抓得到、声明过的真豁免不误红、空声明蒙混不过去、
+# 正常处理逻辑与注释/docstring 里的示例一律不算。否则这次「换实现」可能只是把闸门关掉了。
+print('\n6) 静默失败扫描（scan_silent）—— 该红的红、该绿的不报')
+
+
+def sl(src):
+    return m.scan_silent({'x.py': src})
+
+
+CASES_RED = [
+    ('跨行 pass', 'def f():\n    try:\n        go()\n    except Exception:\n        pass\n'),
+    ('continue（旧正则漏）',
+     'def f():\n    for x in y:\n        try:\n            g()\n        except Exception:\n            continue\n'),
+    ('return None（旧正则漏）',
+     'def f():\n    try:\n        g()\n    except Exception:\n        return None\n'),
+    ('return 字面量（静默回退默认值）',
+     'def f():\n    try:\n        g()\n    except Exception:\n        return False\n'),
+    ('同行 pass（旧正则漏）', 'def f():\n    try:\n        g()\n    except Exception: pass\n'),
+    ('except 与 pass 之间夹注释（旧正则漏）',
+     'def f():\n    try:\n        g()\n    except Exception:\n        # 说明\n        pass\n'),
+    ('裸 except（无异常类型）', 'def f():\n    try:\n        g()\n    except:\n        pass\n'),
+    ('带类型 except + pass', 'def f():\n    try:\n        g()\n    except ValueError:\n        pass\n'),
+]
+for label, src in CASES_RED:
+    und, dec = sl(src)
+    ck(len(und) >= 1 and not dec, '%s → 计入未声明' % label)
+
+_und, _dec = sl('def f():\n    try:\n        g()\n    except:\n        pass\n')
+ck(len(_und) == 1 and 'BARE' in _und[0][2], '裸 except 只记一次（不因 body 是 pass 而二次计数）')
+
+CASES_GREEN = [
+    ('body 有实质处理（多语句）',
+     'def f():\n    try:\n        g()\n    except Exception as e:\n        log(e)\n        raise\n'),
+    ('docstring 里的示例代码',
+     '"""示例：\n    except Exception:\n        pass\n"""\ndef f():\n    pass\n'),
+    ('字符串里的示例代码', 'S = "except Exception:\\n    pass"\n'),
+    ('只有 raise（抛异常自带非零退出）', 'def f():\n    raise RuntimeError("x")\n'),
+    ('try 正常收尾、无 except', 'def f():\n    try:\n        g()\n    finally:\n        pass\n'),
+]
+for label, src in CASES_GREEN:
+    und, dec = sl(src)
+    ck(not und and not dec, '%s → 不进任何清单' % label)
+
+print('\n7) 声明豁免（`# silent-ok: 原因`）—— 声明了才不计入，空声明蒙混不过去')
+und, dec = sl('def f():\n    try:\n        g()\n'
+              '    except Exception:  # silent-ok: 终端编码收口尽力而为\n        pass\n')
+ck(not und and len(dec) == 1 and '终端编码收口' in dec[0][2],
+   '写了原因 → 只进「已声明豁免」，且把原因带出来供人复核')
+
+und, dec = sl('def f():\n    try:\n        g()\n'
+              '    except Exception:  # silent-ok: abc\n        pass\n')
+ck(len(und) == 1 and not dec, '原因过短（3 字）→ 视为未声明（空声明不能当白名单用）')
+
+und, dec = sl('def f():\n    try:\n        g()\n'
+              '    # silent-ok: 写在别的行\n    except Exception:\n        pass\n')
+ck(len(und) == 1 and not dec, '声明没写在 except 行尾 → 不算声明')
+
+und, dec = sl('def f():\n    try:\n        g()\n'
+              '    except Exception:  # silent-ok: 注释里顺嘴提一句 silent-ok 不算\n        return None\n')
+ck(not und and len(dec) == 1, '声明对四类形态一律生效（含静默 return）')
+
+# ── 契约守卫：返回值元数固定 ────────────────────────────────────────
+_pack = sl(CASES_RED[0][1])
+ck(isinstance(_pack, tuple) and len(_pack) == 2
+   and all(len(r) == 3 for r in _pack[0] + _pack[1]),
+   'scan_silent 返回 2 元组、每项 3 元组（契约未漂移）')
+
+print('\n8) 危险默认值（ASSIGN 类）—— 「读不动就回退到写死的字面量」')
+# 为什么单列：审计 docstring 一直声称覆盖「危险默认值/静默回退」，但旧正则与 AST 四类
+# 都漏了它。2026-09-23 实测它在 gen_tj_archive 里让「人工精修版不许覆盖」的生成戳守卫
+# **整条跳过**（`if old_txt and ...` 短路）—— 与 2026-09-21 那次 P0 数据丢失同族。
+CASES_ASSIGN = [
+    ('只有赋值 + 裸字面量，异常未绑定名',
+     "def f():\n    try:\n        g()\n    except OSError:\n        old = ''\n"),
+    ('赋数字默认值',
+     'def f():\n    try:\n        g()\n    except Exception:\n        n = 0\n'),
+]
+for label, src in CASES_ASSIGN:
+    und, dec = sl(src)
+    ck(len(und) == 1 and 'ASSIGN' in und[0][2], '%s → 计入未声明' % label)
+
+CASES_ASSIGN_GREEN = [
+    ('异常被绑定（as e）→ 视为有意的降级记录，不误红',
+     'def f():\n    try:\n        g()\n    except Exception as e:\n        msg = str(e)\n'),
+    ('RHS 是表达式，不是写死的默认值',
+     'def f():\n    try:\n        g()\n    except Exception:\n        n = len(x)\n'),
+    ('赋值之外还有别的语句（不止是赋值）',
+     'def f():\n    try:\n        g()\n    except Exception:\n        n = 0\n        print(n)\n'),
+]
+for label, src in CASES_ASSIGN_GREEN:
+    und, dec = sl(src)
+    ck(not und and not dec, '%s → 不进任何清单' % label)
+
 print()
 print('RESULT: %s' % ('ALL PASS' if not fails else 'FAIL %d 项' % len(fails)))
 sys.exit(1 if fails else 0)

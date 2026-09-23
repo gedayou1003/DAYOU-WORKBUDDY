@@ -283,13 +283,23 @@ def _parse_ct(ct):
         else:
             dt = dt.astimezone(CST)
         return dt
-    except Exception:
+    except Exception:  # silent-ok: 解析失败返回 None，窗口过滤处另计条数并在 stderr/meta 上报
         return None
 
 
 def in_window(ct):
     dt = _parse_ct(ct)
-    return WIN_START <= dt <= WIN_END if dt else False
+    if dt is None:
+        # 2026-09-23 加固：旧实现直接返回 False —— 该条被**静默丢弃**，报告里
+        # 「少了几条」与「本来就没有」在输出上完全无法区分。这里记下原值，
+        # 由 main() 打印并在 meta 里落字段（不改变窗口判定本身，只让它出声）。
+        _BAD_CT.append(str(ct))
+        return False
+    return WIN_START <= dt <= WIN_END
+
+
+# 本轮窗口过滤中 create_time 解析失败的条目（main() 开头清空，save_snapshot 写进 meta）
+_BAD_CT = []
 
 MAIN_SNAPSHOT = os.path.normpath(os.path.join(_HERE, 'zsxq_fetch_raw.json'))
 # 覆盖主快照前滚一份备份（单份滚动）。与主快照同级同目录，
@@ -369,6 +379,10 @@ def save_snapshot(results, degraded):
         'total': len(results),
         'channels': chans,
         'degraded': degraded,
+        # 「窗口外被丢弃的条数」与「create_time 解析不了被丢弃的条数」分开记：
+        # 前者正常，后者意味着判定依据坏了，下游看到非 0 就该查（2026-09-23 加固）
+        'unparsed_ct': len(_BAD_CT),
+        'unparsed_ct_sample': _BAD_CT[:3],
         'snapshot': os.path.basename(out),
         'updated_main': is_main,
     })
@@ -377,22 +391,31 @@ def save_snapshot(results, degraded):
 
 def main():
     results = []
+    del _BAD_CT[:]                      # 每次运行从零起算（module 级计数器，防多次调用累加）
     for gid, name in SKILL_GROUPS.items():
         topics = fetch_skill(gid)
+        in_n = 0
         for t in topics:
             n = norm_topic(t, name, 'skill')
             if in_window(n["create_time"]):
+                in_n += 1
                 results.append(n)
-        print(f"[skill] {name}: {len(topics)}条, 窗口内 {sum(1 for t in topics if in_window(t.get('create_time','')))}条", file=sys.stderr)
+        print(f"[skill] {name}: {len(topics)}条, 窗口内 {in_n}条", file=sys.stderr)
         time.sleep(3)
     for gid, name in COOKIE_GROUPS.items():
         topics = fetch_cookie(gid)
+        in_n = 0
         for t in topics:
             n = norm_topic(t, name, 'cookie')
             if in_window(n["create_time"]):
+                in_n += 1
                 results.append(n)
-        print(f"[cookie] {name}: {len(topics)}条, 窗口内 {sum(1 for t in topics if in_window(t.get('create_time','')))}条", file=sys.stderr)
+        print(f"[cookie] {name}: {len(topics)}条, 窗口内 {in_n}条", file=sys.stderr)
         time.sleep(5)
+    if _BAD_CT:
+        # 解析不了 = 窗口判定的依据坏了：必须出声，否则「少抓了」看起来和「本来就没有」一样
+        print('[WARN] 窗口过滤：%d 条 create_time 无法解析（已按窗口外丢弃）：%s'
+              % (len(_BAD_CT), _BAD_CT[:3]), file=sys.stderr)
     results.sort(key=lambda x: x["create_time"])
     # 去重（按 topic_id）
     seen, uniq = set(), []

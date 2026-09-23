@@ -307,8 +307,17 @@ def main():
         try:
             with open(out, encoding='utf-8') as f:
                 old_txt = f.read()
-        except OSError:
-            old_txt = ''
+        except OSError as e:
+            # 2026-09-23 加固（与 2026-09-21 那次 P0 同族）：
+            # 旧实现此处写 `old_txt = ''`，而下面判据是 `if old_txt and STAMP not in old_txt`
+            # —— 读不动就短路成「不是人工精修版」，**守卫整条跳过、直接覆盖**。
+            # 读不动 ≠ 没有旧文件：旧文件可能正是人工精修版，猜错方向就是不可恢复的覆盖。
+            # 保守处置：拒绝写入 + 非零退出，把选择权交回人（已有 --force 逃生通道）。
+            print('[FAIL] 当天归档存在但读不动（%s: %s）'
+                  % (type(e).__name__, e), file=sys.stderr)
+            print('       无法判定它是否为人工精修版 —— **拒绝覆盖**：%s' % out, file=sys.stderr)
+            print('       处理：确认可以覆盖后加 --force 重跑。', file=sys.stderr)
+            return 1
         if old_txt and STAMP not in old_txt:
             print('[WARN] 当天归档**不含生成器标记** —— 判定为人工精修版，拒绝覆盖：%s' % out)
             print('       机械重生成会丢：人工挑选的标题（如「9/21 核心定调」）、'
@@ -324,8 +333,13 @@ def main():
         try:
             with open(out, encoding='utf-8') as f:
                 old_n = _entry_count(f.read())
-        except OSError:
-            old_n = 0
+        except OSError as e:
+            # 同守卫 3：读不动 ≠ 没有旧文件（`old_n = 0` 会让缩水守卫静默失效 → 放行覆盖）
+            print('[FAIL] 当天归档存在但读不动（%s: %s）'
+                  % (type(e).__name__, e), file=sys.stderr)
+            print('       缩水守卫无法比较 —— **拒绝覆盖**：%s' % out, file=sys.stderr)
+            print('       处理：确认可以覆盖后加 --force 重跑。', file=sys.stderr)
+            return 1
         if old_n > len(items):
             print('[WARN] 当天归档已有 %d 条，本轮只筛出 %d 条 —— 疑似抓取残缺。' % (old_n, len(items)))
             print('       已保留原归档（不覆盖）：%s' % out)
