@@ -230,6 +230,31 @@ ACTIONS = [
      '写死 2026-09-17 收盘 payload 的一次性生成器（47KB），全仓库零引用，成分已并入 chain_apply', None),
     ('.workbuddy/模型体检报告_2026-09-16.html', 'oneoff_output',
      '过期的一次性模型体检报告（《代码梳理报告》§六 第 6 项；同日报告已并入后续梳理，无脚本引用）', None),
+
+    # ---------- 8. 补录 2026-09-18-close（2026-09-23）的取证与补判脚本 ----------
+    # 补判能力是否要固化为常驻工具：**否** —— 该场景已被 backfill_actual_data.py
+    # （批量历史回填，K 线快照止于 2026-09-04）与「正规回填路径（apply_review /
+    # 直改 JSON）」覆盖，单条补判按先例属一次性操作（参考 _fix_0907_sr.py）。
+    ('.workbuddy/_probe_ohlc_0921.py', 'oneoff_script',
+     '拉取上证综指最近 12 个交易日真实日线（腾讯 fqkline），供补录 9/21 的 actual 比对', None),
+    ('.workbuddy/_probe_ohlc_0921.json', 'audit_output', '上述取数结果（含 9/21、9/22 两日实况）', None),
+    ('.workbuddy/_probe_outputs_sensitive.py', 'oneoff_script',
+     'outputs/ 入库前的敏感项体检（凭证 / gid / 星球真名 / 通道信息 / 长数字串 / 手机号形态）', None),
+    ('.workbuddy/_probe_outputs_sensitive.json', 'audit_output',
+     '上述体检结果：cred=0、gid=1 处、真名命中 121 个文件 —— 入库决策的直接依据', None),
+    ('.workbuddy/_fix_0918_close.py', 'oneoff_script',
+     '一次性补判（一阶段）：补齐 2026-09-18-close 的 actual + 支撑/压力两维，'
+     '四维总期数 51→52 对齐；备份于 archive/backup_20260923_0918fix', None),
+    ('.workbuddy/_fix_0918_range.py', 'oneoff_script',
+     '一次性补判（二阶段）：按用户拍板把区间维度由「✅ 静态守住」修正为「❌ 突破」；'
+     '备份于 archive/backup_20260923_0918range', None),
+    ('.workbuddy/_ee_after.txt', 'audit_output',
+     'engine_effectiveness 补录后输出（证明 2026-09-18-close 已进入指标1、不再是「未纳入统计」）', None),
+    ('.workbuddy/_cw_dry.txt', 'audit_output', 'cleanup_workspace 本次 dry-run 输出', None),
+    ('.workbuddy/_band_run.txt', 'audit_output', 'build_range_band 执行输出（补齐后 22 天区间带）', None),
+    ('.workbuddy/_rt_after_fix.txt', 'audit_output', 'run_tests 输出（补录后链状态：14/14 ALL PASS）', None),
+    ('.workbuddy/_rt_final.txt', 'audit_output',
+     'run_tests 输出（补录 + 区间修正后的最终链状态：14/14 ALL PASS，134.3s）', None),
 ]
 
 # 提升为正式工具（重命名/替代，不进 archive）
