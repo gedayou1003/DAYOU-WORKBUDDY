@@ -84,9 +84,19 @@ m.SKILL_GROUPS = {}
 m.COOKIE_GROUPS = {'48841181481248': 'fake'}
 
 # 6a) 鉴权失败 → 退出码 1（ERROR），且不覆盖主快照
-m.auth_failed = {'48841181481248'}
+# 注意：**不能「先塞 m.auth_failed 再调 main()」** —— main() 现在开头会清计数器
+# （2026-09-23：防同进程内重复调用 main() 时跨轮串味，旧版只清了 _BAD_CT）。
+# 所以必须让 stub 在**运行期**记账，这也正是真实路径（fetch_cookie 命中 401/403）。
+m.auth_failed = set()
 m.flaky_failed = set()
-m.fetch_cookie = lambda gid, count=20: []
+
+
+def _auth_fail(gid, count=20):
+    m.auth_failed.add(gid)
+    return []
+
+
+m.fetch_cookie = _auth_fail
 before = open(m.MAIN_SNAPSHOT, encoding='utf-8').read()
 rc = m.main()
 ck(rc == 1, '鉴权失败时 main() 返回 1（旧实现返回 None→退出 0）')
@@ -94,6 +104,7 @@ ck(open(m.MAIN_SNAPSHOT, encoding='utf-8').read() == before, '鉴权失败时主
 
 # 6b) 鉴权正常但窗口内 0 条 → 退出码 2（WARN），仍不覆盖主快照
 m.auth_failed = set()
+m.fetch_cookie = lambda gid, count=20: []
 rc = m.main()
 ck(rc == 2, '窗口内 0 条时 main() 返回 2（WARN）')
 ck(open(m.MAIN_SNAPSHOT, encoding='utf-8').read() == before, '0 条时主快照未被覆盖')

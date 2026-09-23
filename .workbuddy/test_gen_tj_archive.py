@@ -19,6 +19,13 @@ SANDBOX = tempfile.mkdtemp(prefix='p03_')
 os.makedirs(os.path.join(SANDBOX, 'outputs'), exist_ok=True)
 m.ROOT = SANDBOX
 m.SRC = os.path.join(SANDBOX, 'zsxq_fetch_raw.json')
+# META 也必须指向沙箱，**且要在这里就改**（原来拖到 §8 才改，是个真坑）：
+# §1–§7 读的是**真实仓库**的 zsxq_fetch_meta.json，而只要当天有过一次降级抓取
+# （例如冒烟 C1 跑出 0 条），降级守卫就会把「正常路径」用例判红 ——
+# **测试红得与代码无关**，闸门开始撒谎（2026-09-23 实测：冒烟 A3 阶段早于 C1 是绿的，
+# 冒烟结束后单跑就红了，两次跑的是同一份代码）。
+# 这里**不创建**该文件 → 走脚本的「旧快照无 meta：向后兼容、不阻断、不标注」分支。
+m.META = os.path.join(SANDBOX, 'zsxq_fetch_meta.json')
 OUT = os.path.join(SANDBOX, 'outputs', 'DRAGON_BALL_原始记录_%s.md'
                    % __import__('datetime').datetime.now().strftime('%Y-%m-%d'))
 
@@ -29,6 +36,20 @@ def ck(cond, msg):
     print('  [%s] %s' % ('OK' if cond else 'FAIL', msg))
     if not cond:
         fails.append(msg)
+
+
+print('0) 沙箱自检：被测脚本读写的每条路径都必须落在沙箱内')
+# 为什么单列成一节、而且是**致命**的：沙箱漏掉一条路径，测试就会读（甚至写）
+# 真实仓库状态。症状是「同一份代码，换个时间/换个顺序跑就红」，最容易被当成偶发。
+# 本测试会写 m.META（§8–§10 的 write_meta）与 OUT，所以这里**发现漏项必须立刻中止** ——
+# 只记一笔失败然后继续跑，等于放任它把测试数据写进真实 meta。
+_lost = [n for n in ('SRC', 'META') if SANDBOX not in getattr(m, n)]
+if _lost or m.ROOT != SANDBOX:
+    sys.stderr.write('[FAIL] 沙箱未覆盖 %s —— 立即中止：本测试会写 META/OUT，'
+                     '沙箱没兜住就可能改到真实仓库状态\n'
+                     % ('、'.join(_lost) if _lost else 'ROOT'))
+    sys.exit(1)
+ck(not os.path.exists(m.META), 'META 在沙箱内且不存在 → 走兼容分支，不受真实 meta 影响')
 
 
 def write_src(items):
@@ -89,7 +110,6 @@ m.sys.argv = ['gen_tj_archive.py']
 ck(m.main() == 1, '快照不存在时返回 1')
 
 print('8) 降级守卫：主快照不是本轮结果时拒绝归档（--force 也不放行）')
-m.META = os.path.join(SANDBOX, 'zsxq_fetch_meta.json')
 write_src([topic(11, '2026-09-18T09:10:00.000+0800', '第一条正文'),
            topic(12, '2026-09-18T09:20:00.000+0800', '第二条正文')])
 

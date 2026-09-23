@@ -77,6 +77,12 @@ UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like 
 auth_failed = set()
 # 本轮「限流抖动」且退避重试后仍无数据的星球 gid（区别于鉴权失败，2026-09-17 新增）
 flaky_failed = set()
+# 本轮 skill 通道（zsxq-cli）报错的星球 gid（2026-09-23 新增）
+#   旧实现把这些错误只 print 到 stderr —— 既不计数、也不进 degraded、更不影响退出码。
+#   后果：zsxq-cli 未安装 / 退出码非 0 / 返回非 JSON 时，只要 Cookie 通道还有数据，
+#   脚本就退出 0、快照照写，报告**静默缺掉整个星球**（含 T&J 原文归档的上游）。
+#   现在：记入本集合 → 进 degraded（不覆盖主快照）+ 打印 SKILL_FAILED=n + 退 2。
+skill_errored = set()
 
 def _cookie():
     return open(COOKIE_FILE, encoding="utf-8").read().strip()
@@ -92,14 +98,23 @@ def fetch_skill(gid, limit=30):
         try:
             r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=90)
         except subprocess.TimeoutExpired:
+            skill_errored.add(gid)
             print(f"[skill-err {gid}] zsxq-cli 超时(>90s)，本星球本次跳过", file=sys.stderr)
             break
         except Exception as e:
+            skill_errored.add(gid)
             print(f"[skill-err {gid}] {e}", file=sys.stderr)
+            break
+        if r.returncode != 0:
+            # 退出码非 0 必须出声：旧实现直接当它没发生（第五原则）。
+            skill_errored.add(gid)
+            print(f"[skill-err {gid}] zsxq-cli 退出码 {r.returncode}："
+                  f"{(r.stderr or r.stdout or '')[:200]}", file=sys.stderr)
             break
         try:
             d = json.loads(r.stdout)
         except Exception as e:
+            skill_errored.add(gid)
             print(f"[skill-err {gid}] {e} :: {r.stderr[:200]}", file=sys.stderr)
             break
         topics = d.get("topics_brief", [])
@@ -391,7 +406,13 @@ def save_snapshot(results, degraded):
 
 def main():
     results = []
-    del _BAD_CT[:]                      # 每次运行从零起算（module 级计数器，防多次调用累加）
+    # 每次运行从零起算（module 级计数器，防同进程内多次调用累加）
+    # 2026-09-23：_BAD_CT 早就清了，但 auth_failed / flaky_failed / skill_errored
+    # 一直没清 —— 被 import 后重复调用 main() 时会跨轮串味（测试里就会踩到）。
+    del _BAD_CT[:]
+    auth_failed.clear()
+    flaky_failed.clear()
+    skill_errored.clear()
     for gid, name in SKILL_GROUPS.items():
         topics = fetch_skill(gid)
         in_n = 0
@@ -434,6 +455,10 @@ def main():
     if flaky_failed:
         degraded.append('限流抖动 %d 个星球（%s）'
                         % (len(flaky_failed), ', '.join(sorted(flaky_failed))))
+    if skill_errored:
+        # skill 通道整星球失败 = 该星球本轮零数据，与「窗口内本来就没内容」必须区分开
+        degraded.append('skill 通道失败 %d 个星球（%s）'
+                        % (len(skill_errored), ', '.join(sorted(skill_errored))))
     if not results:
         degraded.append('时间窗口内 0 条')
 
@@ -448,6 +473,10 @@ def main():
     if flaky_failed:
         print(f"COOKIE_FLAKY_FAILED={len(flaky_failed)} "
               f"(gid: {', '.join(sorted(flaky_failed))}) → 限流抖动，非 Cookie 问题，重跑一次即可")
+    if skill_errored:
+        print(f"SKILL_FAILED={len(skill_errored)} "
+              f"(gid: {', '.join(sorted(skill_errored))}) → skill 通道失败，本星球本轮无数据"
+              f"（检查 zsxq-cli 是否可用）")
     if is_main:
         print(f"SAVED={saved}")
     else:

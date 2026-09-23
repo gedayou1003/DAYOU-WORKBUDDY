@@ -265,6 +265,124 @@ for label, src in CASES_ASSIGN_GREEN:
     und, dec = sl(src)
     ck(not und and not dec, '%s → 不进任何清单' % label)
 
+print('\n9) 代码区过滤（code_only_lines）—— 不许与源码失步')
+# 为什么单列：旧实现是手写三引号状态机，**会失步**。实测 gen_tj_archive.py 只保留 139/356 行，
+# 失步点之后的 __main__ 与 sys.exit(main()) 被整段吞掉 → §1 把它误报成「无失败退出码」，
+# 而 §1/§3/§9 对该文件后半部分**永久失明**（看着干净，其实没扫到）。这是审计器自身的盲区，
+# 比被审对象的问题更危险：它让所有后续结论都建立在半份源码上。
+_HAIRY = (
+    '# 纯注释行\n'
+    'DOC = """docstring 正文里的 \' 单引号与 # 井号与 \'\'\' 三连单引号\n'
+    '第二行：这里出现 "" 两个双引号，还有一个历史路径 @@U@@\n'
+    '"""\n'
+    'T = f"""\n'
+    '模板行 {name} 还有 %s\n'
+    '"""\n'
+    '\n'
+    'def main():\n'
+    '    return 0\n'
+    '\n'
+    'if __name__ == "__main__":\n'
+    '    sys.exit(main())\n'
+    '\n'
+    'P = "@@U@@"  # 尾注\n'
+).replace('@@U@@', '/'.join(('', 'C:', 'Users', 'alice', 'old', 'x.json')))
+# ↑ 用户名用**拼装**而不是字面量：本文件会被 §3 硬编码扫描器扫，
+#   写死 `C:/Users/alice/...` 就得再补一条声明来豁免自己造的样本 ——
+#   拼装后源码里不存在字面路径，既不用豁免，也没把闸门调松。
+#   注意 `C:/Users/@@U@@` 这种写法**不会**被 §3 正则命中（`@` 不是 \w）。
+_code = '\n'.join(c for _, c in m.code_only_lines(_HAIRY))
+_kept = {i for i, _ in m.code_only_lines(_HAIRY)}
+ck('sys.exit(main())' in _code, '失步陷阱（引号/多行 f-string/字符串内 #）之后，__main__ 仍可见')
+ck(len(_kept) == len(_HAIRY.split('\n')), '行数不缩水（%d/%d）' %
+   (len(_kept), len(_HAIRY.split('\n'))))
+ck('docstring 正文里的' not in _code and '模板行' not in _code,
+   '三引号字符串（含多行 f-string 模板）正文被剔除 —— docstring 里的「失败」不会进 §1 高危')
+ck(not m.scan_exit_codes({'x.py': _HAIRY})[0],
+   '有 sys.exit(main()) → 不进「无失败退出码」清单')
+_hc, _hcd = m.scan_hardcode({'x.py': _HAIRY})
+ck(len(_hc) == 1 and _hc[0][1] == len(_HAIRY.split('\n')) - 1,
+   '**【反向】硬编码判定双向**：docstring 里的历史路径（第 3 行）不误报，真代码里字符串的路径照报'
+   '（命中 %d 处：%s）' % (len(_hc), [(h[1], h[2]) for h in _hc]))
+ck(not _hcd, '样本里没写声明 → 不进「已声明豁免」（不会自己给自己开后门）')
+
+# §3 声明出口（2026-09-23 加）：`# silent-ok: 原因` 与 §2 同口径。
+# 第六原则要求**任何放宽都配双向元测试**：写了的必须豁免、没写的必须照抓、
+# 原因过短的必须不算 —— 三条都要，否则就是偷偷把闸门调松。
+# 用户名同样拼装，避免本文件自己变成「硬编码」样本（见上）。
+_U = lambda who: '/'.join(('', 'C:', 'Users', who, 'tmp', 'x.json'))   # noqa: E731
+_DECL_SRC = ('P = "%s"\n' % _U('carol')
+             + 'Q = "%s"  # silent-ok: 样本路径，非真硬编码\n' % _U('dave'))
+_dh, _dd = m.scan_hardcode({'x.py': _DECL_SRC})
+ck(len(_dh) == 1 and _dh[0][1] == 1, '声明出口·未声明行照抓（第 1 行）')
+ck(len(_dd) == 1 and _dd[0][1] == 2, '声明出口·声明行进豁免清单（第 2 行）')
+ck('silent-ok' in _dd[0][2], '豁免条目带上原因 —— 可复核，不是静默放行')
+_SHORT = 'R = "%s"  # silent-ok: 短\n' % _U('erin')
+ck(len(m.scan_hardcode({'x.py': _SHORT})[0]) == 1,
+   '声明出口·原因过短（<4 字）不算声明，仍计入（与 §2 同口径）')
+
+# 声明必须来自**真注释**：字符串里的 `# silent-ok: …` 不得伪造声明。
+# 这条是 2026-09-23 的实证 —— 上面 `_SHORT` 的样本串就曾被当成正式声明
+# （原因只有 1 个字，靠串尾的 `\n'` 凑够长度），等于**改一行测试数据就能关掉闸门**。
+_FORGE = 'S = "%s  # silent-ok: 这是字符串内容，不是注释"\n' % _U('grace')
+_fh, _fd = m.scan_hardcode({'x.py': _FORGE})
+ck(len(_fh) == 1 and not _fd,
+   '字符串里的 silent-ok 不算声明（否则一行数据就能关闸门）'
+   '（未声明 %d / 已声明 %d）' % (len(_fh), len(_fd)))
+_fs = 'T = "%s"  # silent-ok: 真注释，应当生效\n' % _U('frank')
+_fh2, _fd2 = m.scan_hardcode({'x.py': _fs})
+ck(len(_fd2) == 1 and not _fh2, '对照组：真注释里的 silent-ok 生效（不误伤真声明）')
+_ci = m.comment_text_lines('X = 1  # 真注释\nY = "# 假注释"\n')
+ck(_ci.get(1) == '# 真注释' and 2 not in _ci,
+   'comment_text_lines 只认 COMMENT 记号（第 2 行的「注释」在字符串里）')
+
+# 真正的回归闸门：对**仓库里每个真实脚本**，源码中出现的这些记号必须在代码区可见。
+# 失步是静默的（行数变少看不出来），用「关键记号可见性」才能自动抓住它。
+_missing = []
+for _f in sorted(os.listdir(HERE)):
+    if not _f.endswith('.py') or _f.startswith('_'):
+        continue
+    with open(os.path.join(HERE, _f), encoding='utf-8') as _fh:
+        _src = _fh.read()
+    _cv = '\n'.join(c for _, c in m.code_only_lines(_src))
+    for _k in ('sys.exit', 'def main', 'if __name__'):
+        if _k in _src and _k not in _cv:
+            _missing.append('%s:%s' % (_f, _k))
+ck(not _missing, '全仓 %d 个脚本：源码里的 sys.exit/def main/__main__ 都在代码区可见%s'
+   % (len([f for f in os.listdir(HERE) if f.endswith('.py') and not f.startswith('_')]),
+      '' if not _missing else '（失步：%s）' % ', '.join(_missing[:5])))
+
+_brk = 'def f(:\n  x = 1\n'          # 语法不完整 → tokenize 抛错
+ck(len(m.code_only_lines(_brk)) == len(_brk.split('\n')),
+   'tokenize 失败时退回整行原样返回（宁可多看，也不静默少看）')
+
+print('\n10) subprocess 判据（scan_subprocess）—— 块级窗口 + 直接传递识别')
+# 旧判据是「后 6 行内无 returncode/check=」，2026-09-23 实测 6 处命中**全部是误报**，
+# 长期挂着 → 闸门被无视。收紧后必须双向证明：真问题仍会被抓。
+SUB_RED = [
+    ('调用点所在函数体里始终无 rc 校验',
+     'def f():\n    r = subprocess.run(["ls"])\n    print("done")\n\n\ndef g():\n    pass\n'),
+    ('rc 只在 40 行窗口之外才出现（证明窗口有界，不是「往后看整份文件」）',
+     'def f():\n    r = subprocess.run(["ls"])\n'
+     + '\n'.join('    x%d = %d' % (i, i) for i in range(45)) + '\n    return r.returncode\n'),
+]
+SUB_GREEN = [
+    ('rc 写在调用点后第 9 行（fetch_zsxq 实形，旧版 6 行窗口误报）',
+     'def f():\n    for i in range(2):\n        try:\n            r = subprocess.run(["ls"])\n'
+     '        except Exception:\n            break\n        x = 1\n        y = 2\n'
+     '        if r.returncode != 0:\n            break\n'),
+    ('顶层脚本形态：rc 在紧邻的下一条同级语句里（test_arg_guard:97 实形）',
+     'r = subprocess.run(["ls"], capture_output=True)\nck(r.returncode == 0, "ok")\n'),
+    ('sys.exit 直接传递（run.py 实形）', 'def m():\n    sys.exit(subprocess.call(["ls"]))\n'),
+    ('return 直接传递（测试 helper 实形）',
+     'def run(a):\n    return subprocess.run(["ls"] + a, capture_output=True)\n'),
+    ('check=True（与调用同行）', 'def f():\n    subprocess.run(["ls"], check=True)\n'),
+]
+for _label, _s in SUB_RED:
+    ck(bool(m.scan_subprocess({'x.py': _s})), '应报：%s' % _label)
+for _label, _s in SUB_GREEN:
+    ck(not m.scan_subprocess({'x.py': _s}), '不该报：%s' % _label)
+
 print()
 print('RESULT: %s' % ('ALL PASS' if not fails else 'FAIL %d 项' % len(fails)))
 sys.exit(1 if fails else 0)

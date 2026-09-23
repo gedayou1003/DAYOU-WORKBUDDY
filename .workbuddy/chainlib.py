@@ -351,10 +351,33 @@ def write_json(path, obj):
         json.dump(obj, f, ensure_ascii=False, indent=2)
 
 
-if __name__ == '__main__':
-    # 自检：py chainlib.py  → 打印两条链状态 + 偏差统计
+def _selfcheck():
+    """自检主体：打印两条链状态 + 偏差统计。返回退出码（0 全绿 / 1 有读不动的链）。
+
+    失败路径**必须有意报错**，不能让它抛 traceback（2026-09-23 加固）：
+    缺链文件时裸 `io.open` 会 FileNotFoundError 崩栈，退出码同样是 1，
+    于是「脚本崩了」与「自检查出问题」在退出码上完全不可区分，
+    调用方（smoke F1 / 人）拿到的只有一坨栈、没有一句诊断。
+    """
+    rc = 0
     for n in ('forecast', 'consensus'):
-        print(chain_status(n))
+        try:
+            print(chain_status(n))
+        except Exception as e:                              # noqa: BLE001
+            rc = 1
+            print('[FAIL] %s 链读不动（%s：%s）—— 自检无法给出该链结论'
+                  % (n, type(e).__name__, e), file=sys.stderr)
         print()
     print('--- 偏差统计（forecast）---')
-    print(render_bias_table(bias_stats('forecast')))
+    try:
+        print(render_bias_table(bias_stats('forecast')))
+    except Exception as e:                                  # noqa: BLE001
+        rc = 1
+        print('[FAIL] 偏差统计算不出（%s：%s）—— 自检未完成' % (type(e).__name__, e),
+              file=sys.stderr)
+    return rc
+
+
+if __name__ == '__main__':
+    # 自检：py chainlib.py  → 打印两条链状态 + 偏差统计
+    sys.exit(_selfcheck())

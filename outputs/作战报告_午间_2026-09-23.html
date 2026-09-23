@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>作战报告 · 午间 · 2026-09-23（周三）</title>
+<style>
+* { box-sizing: border-box; }
+body { background: #f6f2e9; color: #2b2b2b;
+  font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+  font-size: 15px; line-height: 1.85; max-width: 880px; margin: 0 auto; padding: 44px 36px 96px; }
+h1 { font-size: 26px; color: #1f3a3a; font-weight: 700; line-height: 1.35;
+  border-bottom: 3px solid #1f3a3a; padding-bottom: 14px; margin: 0 0 10px; }
+h2 { font-size: 20px; color: #1f3a3a; font-weight: 700; margin: 52px 0 18px;
+  padding-top: 18px; border-top: 1px solid #e0d8c8; }
+h3 { font-size: 16px; color: #b33a1f; font-weight: 600; margin: 30px 0 12px; }
+h4 { font-size: 15px; color: #1f3a3a; font-weight: 600; margin: 24px 0 8px; }
+p { margin: 12px 0; }
+blockquote { margin: 16px 0; padding: 12px 18px; background: #fffdf6;
+  border-left: 3px solid #b33a1f; color: #5a5a4f; font-size: 14px; line-height: 1.75;
+  border-radius: 0 6px 6px 0; }
+blockquote p { margin: 6px 0; }
+table { border-collapse: collapse; width: 100%; margin: 18px 0;
+  font-size: 13.5px; line-height: 1.65; background: #fffdf6; }
+th, td { border: 1px solid #e0d8c8; padding: 9px 13px; text-align: left; vertical-align: top; }
+th { background: #ece4d0; color: #1f3a3a; font-weight: 600; white-space: nowrap; }
+tr:nth-child(even) td { background: #fbf7ec; }
+ul, ol { margin: 10px 0; padding-left: 26px; }
+li { margin: 7px 0; }
+hr { border: none; border-top: 2px solid #e0d8c8; margin: 42px 0; }
+strong { color: #1f3a3a; font-weight: 600; }
+code { background: #ece4d0; padding: 1px 6px; border-radius: 4px;
+  font-family: 'SF Mono', Consolas, monospace; font-size: 12.5px; color: #b33a1f; }
+</style>
+</head>
+<body>
+<h1>作战报告 · 午间 · 2026-09-23（周三）</h1>
+<blockquote>
+<p><strong>数据时点（须先读）</strong>：本报告生成于 <strong>2026-09-23 13:45</strong>，此时<strong>下午盘已开盘 45 分钟</strong>。为免口径混淆，全篇分两层：
+- <strong>午间基准层</strong>（O/H/L/C、成交额、行业快照）取自 12:59 的 <code>noon</code> 槽位快照 → <strong>纯上午（≤11:30）口径</strong>；
+- <strong>技术复核层</strong>（MA / MACD / BOLL / 缠论）为 13:35~13:45 的引擎读数 → <strong>含下午开盘后数据</strong>，凡与 13:20 定稿值有差异处均已并列标注。</p>
+<p><strong>本期落地 9/21 交接的三项整改</strong>：④ 附件正文已抽取入库（<strong>11 个附件已读 11 / 未读 0 / 失败 0</strong>）；⑤ 抓取后、撰写前已跑 <code>audit_coverage.py</code>（结论见附录 A）；⑥ 读图结果已落盘 <code>_image_ocr_2026-09-23.json</code>（<strong>19 张图已读 18 / 未读 1</strong>，未读者为单文件 3.2MB 超读取上限）。</p>
+</blockquote>
+<hr />
+<h2>核心主线速览（三行）</h2>
+<ol>
+<li><strong>加息定价压顶</strong>：瑞银预期美联储 12 月再加息一次、2 年期美债破新高，长端反弹定价面临逆转风险。</li>
+<li><strong>地产二次脉冲</strong>：房贷补贴传闻驱动地产再度上扬，但消息未证实、涨幅已自高点回落，机构明示减持困境房企。</li>
+<li><strong>AI 硬件链研报与资金流背离</strong>：五家投行集体看多先进封装·CCL·光互连，高盛资金流却在卖出覆铜板。</li>
+</ol>
+<hr />
+<h2>第一块 星球信息（午间窗口 · 28 条 / 6 个星球）</h2>
+<blockquote>
+<p>窗口 2026-09-23 08:00~12:54。两条通道均正常、<code>degraded</code> 为空（无降级）。<strong>附件 11 个已读 11 / 未读 0</strong>（研报 PDF 全文已抽取入库）；<strong>图片 19 张已读 18 / 未读 1</strong>。</p>
+</blockquote>
+<h3>一、宏观与流动性</h3>
+<p><strong>1. 隔夜大类资产：油价大概率见顶，但加息定价仍高（11:00 附件，41 页）</strong>
+油价连跌 5 日，美伊外交乐观情绪升温。<strong>关键矛盾在成品油</strong>：若美国施行柴油出口禁令，将引发全球能源供应冲击与利率波动率风险。美债 2 年期<strong>不跌反破新高</strong>、年底加息路径定价未松动，长端或已见顶；<strong>权益市场对长久期资产反弹的乐观定价，可能在实际利率重新上行时逆转</strong>。</p>
+<p><strong>2. 全球央行路径：瑞银预期 2026 年 12 月美联储再加息一次（11:06，37,641 字）</strong>
+<strong>美联储 12 月再加息一次至 4.0-4.25%</strong>，2027 年 6 月一次降息至 3.75-4.0%（中性利率约 2.9%）；<strong>ECB 12 月加息 25bp 至 2.75%</strong>；BoE 于 2026/11 与 2027/02 各加息 25bp。<strong>主流机构预期仍处加息路径。</strong></p>
+<p><strong>3. 美股隔夜收盘（08:18）</strong>：标普 7764 持平，纳指 100 <strong>+82bp 报 30732</strong>（连续第 4 日上涨），道指 -36bp。VIX <strong>14.27</strong>；WTI 94.59；10 年期美债 4.9531%；美元指数 100.55；黄金 4362。交易台最热主题为 Meta Muse 发布后的智能体 AI 影响。</p>
+<p><strong>4. 美国政治：民主党众议院胜率升至约 90%（12:43，图 8 张）</strong>
+预测市场定价<strong>民主党拿下众议院概率约 90%</strong>、参议院约 60%；特朗普净支持率 -15%~-20%，<strong>通胀项最弱（-42%）</strong>。<strong>行业相关性</strong>：半导体与半导体设备对共和党控制<strong>正相关</strong>（参 +0.42 / 众 +0.56），医疗设备与服务、药企生物科技对民主党控制<strong>正相关</strong>（众 +0.57 / +0.48）。</p>
+<p><strong>5. 德银：布雷顿森林体系 II 稳定性下降（12:51，图 4 张）</strong>
+机制为「亚洲出口商→美国消费→结汇→央行储备→美债市场→低成本融资回流」。<strong>弱化证据</strong>：中国官方外储 2014 年见顶后私人部门外汇持有持续增加、银行代客结汇显著低于贸易顺差；<strong>中国银行 2025 年大幅回收美元约 370bn，2026Q1 回落至约 130bn</strong>。</p>
+<h3>二、A 股盘面实况</h3>
+<p><strong>6. 高盛中国开盘（08:31 / 09:16）</strong>：昨日 A 股回落至平盘附近，焦点<strong>重新转向 AI 交易、旧经济主题趋于平淡</strong>。今日启程访美，WSJ 报道<strong>大概率不携带中国企业代表团</strong>，比亚迪/宁德时代/小米等 CEO 随行预期下调。隔夜美股内存走强对国内硬件标的属利好。</p>
+<p><strong>7. 高盛中国午间（12:18，本窗口信息密度最高）</strong>：SHCOMP <strong>-0.36%</strong> / 上证 50 -0.41% / 沪深 300 -0.50% / 科创 50 -0.12% / 创业板指 -0.43% / 中证 500 -0.38%。<strong>总成交额 1.17 万亿元、环比 -18.75%</strong>（预计全日约 1.8 万亿）。半导体相对走强；软件板块昨日受 Meta-Muse 推动后<strong>今日普遍整固</strong>。</p>
+<p><strong>8. 高盛午间·行业轮动与资金流（同上）</strong>：<strong>地产股早盘再次大幅上扬</strong>，房贷补贴讨论在聊天群组中活跃，<strong>但尚无确切消息证实、涨幅已从上午高点回落</strong>；<strong>CRO/生物科技股再度领跑，成为行业轮动的主要流向</strong>。资金流：<strong>卖出力度为买入的 1.2 倍，买入半导体设备、卖出 AIDC 电源与覆铜板（CCL）</strong>。</p>
+<p><strong>9. 大鹏鸟午间总结（12:37）</strong>：小跌但<strong>大幅缩量</strong>；科技内<strong>玻璃基板与 ABF 稍强</strong>（盘前有消息）；<strong>CPU 继续开得弱</strong>，未复制上轮「炸板次日转强」。<strong>长假前为无量行情，波段可留底仓、轻仓过节，不适合重仓。</strong></p>
+<h3>三、地产链</h3>
+<p><strong>10. 摩根大通：国庆前将推出房贷补贴？（08:02）</strong>
+过去两个交易日<strong>开发商涨 5%（HSI 仅 +2%），融创等困境房企领涨</strong>——此类高贝塔标的是<strong>政策博弈的代理变量</strong>。传闻为<strong>国庆前可能宣布全国性房贷补贴</strong>；2025 年 11-12 月曾有类似传闻并驱动脉冲反弹但无实质落地。<strong>历史规律：即便无新传闻，板块在 9 月末政策窗口前夕通常跑赢大盘。</strong></p>
+<p><strong>11. 同一报告的量化另一面（关键）</strong>：1ppt 补贴可将有效利率由 3.05% 降至 2.05%，<strong>但通常设上限（每套 2-5 万元、非年度额度）</strong>——500 万元贷款<strong>仅相当于约 4 个月利息节省</strong>；2026 年 8 月上海补贴池仅 2 亿元、<strong>约 4000 套（占年新房成交约 4%）</strong>可受益。<strong>风险：若国庆前无政策或不及预期，板块将面临新一轮抛售。操作建议为「反弹中卖出困境股」，首选非困境类</strong>。</p>
+<h3>四、家电链</h3>
+<p><strong>12. 摩根大通：欧洲 HVAC 专家电话会（08:26）</strong>：欧洲并非天气驱动的制冷脉冲，而是<strong>多年期供暖系统替换周期</strong>（油气锅炉→热泵）。2025 年 21 国热泵销量约 <strong>290 万台</strong>，2024 年热泵占供暖设备销量 <strong>29%</strong>。<strong>欧盟 F-gas 法规分阶段淘汰传统制冷剂 → 全行业产品周期重置</strong>，为具备认证能力的追赶者打开窗口；<strong>美的通过 MBT Climate 整合 Clivet 与 Arbonia 的欧洲打法被认为方向正确</strong>。</p>
+<p><strong>13. 家电出口退税专家交流（10:39）</strong>：<strong>家电直接取消出口增值税退税的概率较低</strong>，若调整或以温和分步方式推进。核心差异在于家电长期平稳销往全球，<strong>不具备光伏、电池的冲击式出口特征</strong>；退税率调整后通常不会同步出台全行业专项补贴。</p>
+<h3>五、AI 算力硬件链</h3>
+<p><strong>14. 大摩：中国先进封装、CCL 与 AI 铜箔（08:32）</strong>：<strong>2029 年中国先进封装 TAM 达 1000 亿元</strong>，Chiplet 2.5D 以 <strong>40% CAGR</strong> 扩张，设备厂商优于封测。<strong>AI/数据中心相关 CCL 2025-30 年 CAGR 47%</strong>、PCB 同期 18%、<strong>AI 需求为 PCB 新增逾 700 亿美元</strong>；先进 AI PCB 生产周期 <strong>102 天（常规的 2.2 倍）</strong>；<strong>HVLP4 铜箔 2027 年缺口约 31%、2028 年约 20%</strong>。</p>
+<p><strong>15. 野村：AI 网络 scale-across 与 scale-in（附件，17 页）</strong>：单集群受电力/散热/土地限制，分布式训练需 <strong>scale-across 网络</strong>支撑，推动相干光模块、空芯光纤、DCI/WAN/Metro 路由器需求；<strong>AI-WAN TAM 预计自 USD 7bn 增至 14bn（2026-2029E 约 30% CAGR，Ciena 口径）</strong>。</p>
+<p><strong>16. 瑞银：美国半导体与设备（08:05）</strong>：<strong>算力每两年提升约 3 倍，而内存带宽仅 1.6 倍、I/O 仅 1.4 倍</strong>，内存与数据搬运成为关键瓶颈；<strong>网络深度嵌入计算体系</strong>，更多任务从 CPU 卸载至 NIC/SmartNIC/DPU。<strong>CoWoS 产能 2026 年底 16 万片/月 → 2027 年底 26 万片/月。</strong></p>
+<p><strong>17. 英伟达 IR 与卖方对话（09:02）</strong>：管理层强烈反对「定制 ASIC 侵蚀 NVIDIA 地位」；NVIDIA 在超大规模云 capex 份额<strong>从 ChatGPT 前约 5% 升至约 20% 中段</strong>；数据中心内容向<strong>每吉瓦约 400 亿美元</strong>演进；<strong>FY27 仍约 70% 受供应限制</strong>。</p>
+<p><strong>18. 汇丰：中国股票的两条 AI 算力链（10:37，38,080 字）</strong>：<strong>海外算力链</strong>围绕光模块、PCB、AI 服务器；<strong>国产算力链</strong>围绕芯片设计、代工、设备、存储，更受益国产替代。<strong>2023 年初以来海外链涨超 1100%（盈利:估值 = 4:1）、国产链涨超 400%（1:1）</strong>；海外链前瞻 <strong>PEG 0.33</strong>、国产链 <strong>PEG 1.08</strong>。周边受益：液冷、储能、PCB 上游。</p>
+<p><strong>19. 海亮股份调研（11:29）</strong>：27 年新增印尼铜箔 10 万吨 + 美国铜排 3.5 万吨，铜箔出货上调至 22 万吨；电子箔占比升至 20-30%；<strong>HVLP1-2 于 26Q4 量产、HVLP3-4 于 27Q1 量产</strong>。Q3 预计 5-6 亿，27 年上调至 35 亿，对应当前 12X。</p>
+<p><strong>20. 伯恩斯坦：半导体周期观察（附件，77 页）</strong>：SOX 虽较 6 月高点回落 15%，<strong>但 YTD 仍 +76%</strong>；YTD NTM 盈利 <strong>+113%</strong>、估值 <strong>-18%</strong>——<strong>回报全由盈利驱动</strong>。</p>
+<p><strong>21. 高盛：纬颖 8 月营收超预期（10:10）</strong>：8 月营收 <strong>1,443 亿新台币，超高盛预测 27%、同比 +50%</strong>；预计 3Q26/4Q26 营收环比 <strong>+46% / +22%</strong>；<strong>目标价上调 13% 至 3,777 新台币</strong>，维持买入。</p>
+<p><strong>22. 12 吋矽晶圆 2027 年长约看涨（09:01，图 1 张）</strong>：晶圆价格 <strong>+15%~25%</strong>（曝光机晶圆 <strong>+40% 以上</strong>）；2027 年 <strong>CoWoS 产能 +70.9%、GPU/AI ASIC 出货 +44.9%、CPU 出货 +36%</strong>；<strong>2027 年 DRAM 位元供给仅年增 22%</strong>；<strong>2028 年前仍有涨价空间</strong>。</p>
+<p><strong>23. 科技日报 0923 美股盘后（附件）</strong>：QQQ +80bp，<strong>半导体 +2% 领涨</strong>，存储器与 HDD 加入上涨行列，CPU 继续强劲；Agentic AI 赢家/输家交易延续并外溢至保险等板块。</p>
+<h3>六、散热与新材料</h3>
+<p><strong>24. 石墨烯散热材料专家交流（09:06）</strong>：<strong>AI 芯片 TIM 材料沿硅脂→相变材料→石墨烯垫片迭代</strong>，目前 NVIDIA 服务器除单独销售的芯片外<strong>全部采用石墨烯作为 TIM2 材料</strong>。按明年 Rubin 10 万柜测算对应 <strong>10 亿元以上市场空间</strong>；<strong>国内龙头在 NVIDIA 份额达 80-90% 接近独供</strong>。</p>
+<p><strong>25. 金刚石铜与 CVD 金刚石调研（08:22）</strong>：SPS 烧结优于熔渗（热循环 1000 次后导热率衰减 &lt;5% vs 约 10%）；金刚石铜冷板<strong>已通过模组厂向 NVIDIA 交付测试</strong>；单晶金刚石热导率 1800 W/(m·K) 以上、长速为多晶 3-4 倍。</p>
+<p><strong>26. 京东方玻璃基板交流（09:07）</strong>：<strong>力争 27Q1 或上半年量产</strong>；试验线已全线拉通，覆盖 TGV 打孔、镀铜、ABF 增层、封装切割全流程，产品送样验证中。</p>
+<h3>七、储能与机器人</h3>
+<p><strong>27. 瑞银：中国储能「2026 逆风、2027 反弹」（08:01）</strong>：8M26 招标 <strong>413GWh（+52% YoY）</strong> vs 装机 <strong>仅 77GWh（+2% YoY）</strong>，<strong>错配主因为并网延迟、成本上升致项目取消、政策不确定</strong>。专家预计<strong>系统运行费下调、容量电价细化、辅助服务补偿改善</strong>将驱动 <strong>4Q26 至 2027 年需求复苏</strong>；当前广东/内蒙/山西 IRR 已 &gt;15%。</p>
+<p><strong>28. 瑞银：人形机器人——上游优于本体（附件，35 页）</strong>：需求超预期但结构分化（<strong>研究/娱乐/数据采集超预期，工业部署落后</strong>）；<strong>上调 2026-30 全球需求预测至年均 &gt;70%</strong>，但明确<strong>「2030 年前不会有机器人的 EV 时刻」</strong>。<strong>偏好上游零部件</strong>（传感器、减速器、滚柱丝杠），中国首选 <strong>OPT、科达利、恒立液压</strong>；<strong>绿的谐波因估值超前基本面给予卖出</strong>。</p>
+<h3>八、医药 / CRO</h3>
+<p><strong>29. 盘面轮动主线（12:18）</strong>：<strong>CRO/生物科技股再度领跑，成为行业轮动的主要流向</strong>。⚠️ <strong>与 9/21 对照</strong>：9/21 医药生物 +3.59%（行业第 2）时，本体系因<strong>附件未读</strong>而漏掉该主线；本期 11 份附件已全部读毕，该线<strong>未再出现覆盖缺口</strong>。</p>
+<h3>九、DRAGON BALL模型（本档唯一方向因子来源 · 无定调）</h3>
+<p><strong>30. 本窗口 3 条，全部无市场定调</strong>：08:51 答「<strong>带结构 vs X 段</strong>」定义；10:50 情绪性表态（关闭评论区）；12:25 答「标准/非标准顶底分型」——<strong>回复为「缠论自己有定义」</strong>。</p>
+<blockquote>
+<p>⚠️ <strong>因子影响</strong>：本期 4 因子中 <strong>DRAGON BALL模型 定调因子缺失（计 0，属「信息缺失」而非「中性判断」）</strong>，实际生效因子仅 3 个。这是本期置信度不能再高的直接原因之一。<strong>本档按午间档 SOP 不做原文归档。</strong></p>
+</blockquote>
+<h2>第二块 信息判断（跨星球观点对比 + 共识复盘）</h2>
+<h3>一、跨星球观点对比</h3>
+<h4>共同观点（≥2 球一致，细节见第一块）</h4>
+<ol>
+<li><strong>AI 硬件链上游材料是本窗口最强共识</strong>（5 家投行同向，见第一块·五）：先进封装千亿 TAM、CCL 高增、HVLP4 铜箔缺口、光互连增量、散热材料迭代——且<strong>全部为附件全文已读</strong>。</li>
+<li><strong>地产是「政策博弈」而非「基本面改善」</strong>（2 源一致）：涨的驱动是传闻与历史规律，但<strong>消息未证实、涨幅已回落</strong>，且机构操作建议是<strong>反弹卖出困境股</strong>。</li>
+<li><strong>节前是缩量行情，不宜重仓</strong>（2 源一致）：机构口径（成交额环比 -18.75%、预计全日 1.8 万亿）与游资口径（无量行情、轻仓过节）<strong>同向</strong>。</li>
+<li><strong>全球利率路径仍偏鹰</strong>（2 源一致）：2 年期美债破新高 + 加息路径定价未松动 + 瑞银预期 12 月再加息一次。</li>
+</ol>
+<h4>相反观点</h4>
+<blockquote>
+<p><strong>对立观点 ①：地产链 —— 政策预期驱动 vs 补贴上限使实际影响有限</strong></p>
+</blockquote>
+<p><strong>A 方（看多：政策窗口临近 + 历史规律 + 困境股高贝塔弹性）</strong>
+- 过去两个交易日开发商涨 5%（同期 HSI 仅 +2%），融创等困境房企领涨；
+- 历史规律：<strong>即便无最新传闻，板块在 9 月末政策窗口前夕通常跑赢大盘</strong>；
+- 政策方向具备可行性——上海、广州等多地已有地方层面类似措施；
+- 9/23 盘面已部分验证：<strong>地产股早盘再次大幅上扬</strong>。</p>
+<p><strong>B 方（看空/提示：补贴设上限使实际节省有限，政策落空则再抛售）</strong>
+- 1ppt 补贴虽把有效利率由 3.05% 降至 2.05%，<strong>但设上限（每套 2-5 万元、非年度额度）</strong>——500 万元贷款<strong>仅相当于约 4 个月利息节省</strong>；
+- 地方实践受限（上海补贴池 2 亿元、<strong>约 4000 套 ≈ 年新房成交的 4%</strong>）；
+- <strong>关键风险：若国庆前无政策或不及预期，板块将面临新一轮抛售</strong>；
+- 9/23 盘面佐证：<strong>尚无确切消息证实，涨幅已从上午高点回落</strong>；
+- 操作建议本身即「<strong>反弹时卖出困境股</strong>」、首选非困境类（华润万象生活、华润置地、贝壳）。</p>
+<blockquote>
+<p><strong>对立观点 ②：储能链 —— 「2026 逆风、2027 反弹」的时间表 vs 头部厂商下调排产指引</strong></p>
+</blockquote>
+<p><strong>A 方（看多：错配是并网延迟而非需求消失，政策顺风驱动 4Q26-2027 反弹）</strong>
+- 招标 413GWh（+52%）vs 装机 77GWh（+2%）的错配<strong>主因是并网审批延迟与政策不确定</strong>，存量将在 6-12 个月转化周期后释放；
+- <strong>系统运行费下调是最关键驱动</strong>（每降 0.1 元/kWh → IRR +3pct），最早 26 年底落地；
+- 当前广东/内蒙/山西 IRR 已 &gt;15%；另有 2 家机构独立支持（装机至 2030 年 CAGR &gt;20%）。</p>
+<p><strong>B 方（看空：实地调研显示多家头部厂商下调 Q4 及 2027 排产指引）</strong>
+- 产业链全覆盖调研显示，受终端需求增速边际放缓、并网节奏波动与去库存影响，<strong>多家头部电池与材料厂商下调 Q4 及 2027 年排产指引</strong>；
+- <strong>锂盐冶炼端库存天数攀升至约 15 天（历史均值约 7 天）</strong>，下游采购意愿弱；
+- <strong>本期盘面与该侧一致</strong>：电力设备 9/21 <strong>-0.15%，在 31 个行业中排第 30 位（倒数第二）</strong>。</p>
+<blockquote>
+<p><strong>对立观点 ③：AI 硬件链 —— 研报侧集中看多 vs 卖方资金流反向卖出该链两端</strong></p>
+</blockquote>
+<p><strong>A 方（看多：先进封装千亿 TAM、CCL CAGR 47%、HVLP4 铜箔缺口 31%、scale-across 光互连增量）</strong>
+- 5 家投行在同一方向给出量化背书，且<strong>全部为附件全文已读</strong>；
+- 产业侧落地信息密集：12 吋矽晶圆 2027 长约涨价、佰维存储 45 亿三期、京东方玻璃基板 27Q1 量产、石墨烯 TIM2 接近独供。</p>
+<p><strong>B 方（看空/分歧：卖方资金流正在卖出该链两端，且盘面落后）</strong>
+- <strong>高盛午间资金流原文：「卖出力度为买入的 1.2 倍，买入半导体设备 vs 卖出 AIDC 电源与覆铜板（CCL）」</strong>——与研报侧对 CCL/铜箔的集中看多<strong>方向相反</strong>；
+- 盘面亦不支持：9/21 电子 <strong>+0.86%（第 22 位）</strong>、计算机 +1.27%（第 16 位），均在 31 个行业中处中下位；
+- 大鹏鸟侧同向：<strong>CPU 继续开得弱</strong>、未复制上轮炸板次日转强的模式。</p>
+<h4>隐含共识</h4>
+<ul>
+<li><strong>都在等国庆前的政策窗口</strong> —— 地产、家电、消费链的定价均以「节前政策」为锚；</li>
+<li><strong>都承认这是缩量行情</strong> —— 机构与游资对量能的描述完全一致，分歧只在「缩量后往哪走」；</li>
+<li><strong>AI 硬件链的确定性来自「产能壁垒」而非「需求叙事」</strong> —— 大摩原话为「具备产能壁垒、技术领先及份额提升逻辑的子环节与标的，是当前最具确定性的投资方向」。</li>
+</ul>
+<h3>二、上期共识复盘（9/21-morning → 9/23 午间验证）</h3>
+<blockquote>
+<p>上期 window 为 9/18 19:00~9/21 09:00（112 条），target 为 9/21。本档依据 9/21 与 9/22 两个完整交易日的<strong>申万一级行业实测数据（31/31 全覆盖）</strong>与盘面事实完整补判。</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>上期共识</th>
+<th>类型</th>
+<th>判定</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>MLCC 三环通知提价 30-80%（10/1 起执行）</td>
+<td>short</td>
+<td>⏸ 不参与</td>
+</tr>
+<tr>
+<td>2</td>
+<td>存储超级周期：多方给硬数据，但出现产业方公开反驳</td>
+<td>mid</td>
+<td>⏸ 不参与</td>
+</tr>
+<tr>
+<td>3</td>
+<td>AI 算力国产化提速：华为 NPO 方案落地 + 超节点放量</td>
+<td>mid</td>
+<td>⏸ 不参与</td>
+</tr>
+<tr>
+<td>4</td>
+<td>PCB/CCL 升级周期获机构集中背书</td>
+<td>mid</td>
+<td>⚠️ 部分</td>
+</tr>
+<tr>
+<td>5</td>
+<td>外部流动性紧缩延续：美债抛售、日央行加息</td>
+<td>short</td>
+<td>⚠️ 部分</td>
+</tr>
+<tr>
+<td>6</td>
+<td>中美峰会（9/24）前瞻：管控竞争、延长休战</td>
+<td>mid</td>
+<td>⚠️ 部分</td>
+</tr>
+<tr>
+<td>7</td>
+<td>A 股短期是「存量博弈 + 无量温和」</td>
+<td>short</td>
+<td>✅ 命中</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>#1 MLCC</strong>：上期自设判定依据为「9/21 是否高开走低」，实测<strong>高开高走</strong>（开 3920.27、收 3949.91、最高 3950.94），节奏风险当日未兑现；但电子仅 +0.86%（第 22 位），<strong>无法据此判定题材成立</strong> → 既不命中也不失效，记 ⏸。</li>
+<li><strong>#2 存储</strong>：分界指标属 Q4 及以后的中期指标，9/21-9/23 无法裁决；本期出现同向旁证（隔夜美股存储走强、A 股半导体相对走强），但<strong>不构成裁决</strong>，样本留待 Q4。</li>
+<li><strong>#3 华为算力</strong>：9/21 当日三条链（计算机第 16、通信第 14、电子第 22）均处中下位，<strong>盘面对该主线不利</strong>；9/23 出现「焦点重回 AI 交易」的方向性变化，但属<strong>不同交易日的事实</strong>，不足以裁决 → ⏸。</li>
+<li><strong>#4 PCB/CCL</strong>：<strong>叙事侧延续且被第三重背书强化</strong>（本期大摩量化框架 + 海亮股份产业链佐证）；<strong>盘面侧未确认</strong>（9/21 电子第 22 位）；<strong>且本期出现反向资金信号</strong>（资金流卖出 CCL）→ ⚠️ 部分。</li>
+<li><strong>#5 流动性紧缩</strong>：机构预期延续（本期瑞银进一步强化至「12 月再加息一次」）；<strong>但长端与波动率边际缓和</strong>——10Y 美债由 5.00% 回落至 4.9531%、VIX 降至 14.27、WTI 跌至 94.59 → ⚠️ 部分。</li>
+<li><strong>#6 中美峰会</strong>：事件如期临近（今日启程赴美），但<strong>出现预期下修</strong>——WSJ 报道大概率不携带中国企业代表团，解释了本期新能车/电池链未获资金聚焦 → ⚠️ 部分。</li>
+<li><strong>#7 存量博弈</strong>：<strong>连续三日兑现且获机构口径独立确认</strong>（本期成交额环比 -18.75%、预计全日 1.8 万亿）→ ✅ 命中。</li>
+</ul>
+<h3>三、本期新共识（已追加 <code>consensus_chain</code>，8 条）</h3>
+<p>内容与上文「共同观点 / 相反观点」同源，按「信息原子唯一落地」原则<strong>不重复展开</strong>，仅列标题备查：① 储能「2026 逆风、2027 反弹」时间表；② 地产房贷补贴传闻（含上限约束）；③ AI 硬件三线并行强化；④ 人形机器人上游优于本体；⑤ 半导体与产业催化密集（矽晶圆/散热/玻璃基板/佰维）；⑥ 隔夜全球（存储与 CPU 领涨、油价与长端利率同步回落）；⑦ A 股「节前缩量 + AI 接棒旧经济」；⑧ 家电出口退税与欧洲热泵周期。</p>
+<hr />
+<h2>第三块 技术分析（缠论买卖点 + BOLL×缠论变盘）</h2>
+<blockquote>
+<p>引擎读数时点 <strong>13:35~13:45（含下午开盘后 45 分钟）</strong>；与 13:20 定稿值有差异处已并列标注。</p>
+</blockquote>
+<h3>引擎 B：chan-signal 缠论买卖点（五周期）</h3>
+<table>
+<thead>
+<tr>
+<th>周期</th>
+<th>最新价</th>
+<th>涨跌</th>
+<th>趋势</th>
+<th>中枢位置</th>
+<th>买点</th>
+<th>卖点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>日线</td>
+<td>3936.91</td>
+<td>-0.39%</td>
+<td>向上</td>
+<td>中枢上方（上沿 3884.44 / 下沿 3842.72）</td>
+<td>—</td>
+<td>一卖@3967.68</td>
+</tr>
+<tr>
+<td>周线</td>
+<td>3936.91</td>
+<td>+0.64%</td>
+<td>向上</td>
+<td>中枢内部或未明显离开（上沿 4034.08 / 下沿 3927.85）</td>
+<td>—</td>
+<td>一卖@3995.18</td>
+</tr>
+<tr>
+<td>60F</td>
+<td>3936.91</td>
+<td>-0.03%</td>
+<td>向上</td>
+<td>中枢内部或未明显离开（上沿 3967.59 / 下沿 3927.55）</td>
+<td>—</td>
+<td>三卖@3891.48</td>
+</tr>
+<tr>
+<td>15F</td>
+<td>3937.12</td>
+<td>-0.02%</td>
+<td>向下</td>
+<td>无中枢参考</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>5F</td>
+<td>3937.12</td>
+<td>+0.01%</td>
+<td>向上</td>
+<td>无中枢参考</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>日线一卖@3967.68（置信度 0.8）</strong>：与 9/22 高点、60F 中枢上沿 3967.59 构成<strong>三重共振</strong>——本档上行空间的实际天花板。</li>
+<li><strong>周线一卖@3995.18（置信度 0.5）</strong>：大级别卖点，落在日线 BOLL 上轨附近。</li>
+<li><strong>60F 三卖@3891.48（置信度 0.75）</strong>：现价已<strong>站上该位 45.43 点</strong>，按既有口径（现价决定性越过则效力被否定）<strong>本档不计分</strong>。</li>
+<li><strong>15F/5F 均无明确买卖点</strong>，小级别处于信号空窗。</li>
+</ul>
+<h3>BOLL×缠论变盘概率（多因子方向打分）</h3>
+<table>
+<thead>
+<tr>
+<th>级别</th>
+<th>上涨概率</th>
+<th>下跌概率</th>
+<th>方向</th>
+<th>带宽状态</th>
+<th>关键依据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>15F</td>
+<td>19%</td>
+<td>81%</td>
+<td>看空</td>
+<td>极度收口（变盘）</td>
+<td>中轨下方-1，中轨下行-2，收口偏空-2，趋势向下-2</td>
+</tr>
+<tr>
+<td>60F</td>
+<td>72%</td>
+<td>28%</td>
+<td>看多</td>
+<td>常态</td>
+<td>中轨上方+1，中轨上行+2，趋势向上+2</td>
+</tr>
+<tr>
+<td>120F（纯 BOLL）</td>
+<td>88%</td>
+<td>12%</td>
+<td>看多</td>
+<td>开口（趋势启动）</td>
+<td>中轨上方+1，中轨上行+2，开口向上+2</td>
+</tr>
+<tr>
+<td>日线</td>
+<td>72%</td>
+<td>28%</td>
+<td>看多</td>
+<td>开口（趋势启动）</td>
+<td>中轨上方+1，中轨上行+2，开口向上+2，趋势向上+2，缠论卖点-2</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>概率 = 多因子信号强度归一化（映射 5%~95%），<strong>非历史回测胜率</strong>。因子：BOLL 位置 ±2、中轨斜率 ±2、带宽变盘 ±2、缠论趋势 ±2、缠论最新信号 ±2；无缠论数据的级别（120F）仅 3 因子，置信度较低。<strong>BOLL 中轨 ≡ MA20</strong>（数学恒等），表内「中轨」与均线体系中的 MA20 为同一个数。</p>
+</blockquote>
+<p><strong>BOLL 轨道读数（13:45）</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>级别</th>
+<th>上轨</th>
+<th>中轨</th>
+<th>下轨</th>
+<th>带宽</th>
+<th>价格位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>15F</td>
+<td>3960.55</td>
+<td>3946.55</td>
+<td>3932.56</td>
+<td><strong>0.71%</strong>（极度收口）</td>
+<td>中轨下方 -9.28</td>
+</tr>
+<tr>
+<td>60F</td>
+<td>3980.65</td>
+<td>3922.11</td>
+<td>3863.56</td>
+<td>2.99%（常态）</td>
+<td>中轨上方 +15.16</td>
+</tr>
+<tr>
+<td>120F</td>
+<td>3970.16</td>
+<td>3908.84</td>
+<td>3847.52</td>
+<td>3.14%（开口）</td>
+<td>中轨上方 +28.43</td>
+</tr>
+<tr>
+<td>日线</td>
+<td>3995.77</td>
+<td>3930.19</td>
+<td>3864.61</td>
+<td>3.34%（开口）</td>
+<td>中轨上方 +7.08</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>⚠️ <strong>15F 带宽口径</strong>：13:45 复核为 <strong>0.71%</strong>、13:20 定稿时为 <strong>0.83%</strong>——两者<strong>均在 1% 阈值下方</strong>，方向判定结论不受影响，但可确认<strong>收口仍在深化</strong>。</li>
+<li><strong>BOLL×缠论共振</strong>：日线一卖与日线 BOLL 上轨 3995.77 相距 0.71%、评级「弱共振」；60F 三卖@3891.48 与 60F 中轨 3922.11 相距 0.78%（因现价已越过，仅作结构记录）。</li>
+</ul>
+<h3>关键均线与 MACD（55 线体系 + 级别分裂）</h3>
+<table>
+<thead>
+<tr>
+<th>级别</th>
+<th>收盘</th>
+<th>MA55</th>
+<th>相对</th>
+<th>MA20</th>
+<th>相对</th>
+<th>DIF</th>
+<th>DEA</th>
+<th>区域</th>
+<th>DIF 方向</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>5F</td>
+<td>3939.81</td>
+<td>3948.72</td>
+<td>-0.23%</td>
+<td>3941.12</td>
+<td>-0.03%</td>
+<td>-2.54</td>
+<td>-2.70</td>
+<td>多头区</td>
+<td>向上</td>
+</tr>
+<tr>
+<td>15F</td>
+<td>3939.81</td>
+<td>3936.55</td>
+<td>+0.08%</td>
+<td>3948.87</td>
+<td>-0.23%</td>
+<td>-0.84</td>
+<td>+1.68</td>
+<td>空头区</td>
+<td>向下</td>
+</tr>
+<tr>
+<td>30F</td>
+<td>3939.81</td>
+<td>3907.73</td>
+<td>+0.82%</td>
+<td>3945.87</td>
+<td>-0.15%</td>
+<td>+8.29</td>
+<td>+12.06</td>
+<td>空头区</td>
+<td>向下</td>
+</tr>
+<tr>
+<td>60F</td>
+<td>3939.81</td>
+<td>3917.67</td>
+<td>+0.57%</td>
+<td>3922.23</td>
+<td>+0.45%</td>
+<td>+12.54</td>
+<td>+10.63</td>
+<td>多头区</td>
+<td>向下</td>
+</tr>
+<tr>
+<td>120F</td>
+<td>3939.81</td>
+<td>3924.69</td>
+<td>+0.39%</td>
+<td>3907.29</td>
+<td>+0.83%</td>
+<td>+5.93</td>
+<td>-1.62</td>
+<td>多头区</td>
+<td>向上</td>
+</tr>
+<tr>
+<td>日线</td>
+<td>3939.72</td>
+<td>3907.09</td>
+<td>+0.84%</td>
+<td>3930.31</td>
+<td>+0.24%</td>
+<td><strong>+0.20</strong></td>
+<td>-2.67</td>
+<td>多头区</td>
+<td>向上</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>日线 DIF 已上穿零轴转正</strong>（-1.53 → <strong>+0.20</strong>），为 <strong>9 月以来首次</strong>；日线 MA55 与 MA20 双双在现价下方，本轮上行结构完好。</li>
+<li><strong>中级别 55 线全部被收复</strong>：15F / 60F / 120F / 日线 MA55 均在现价下方，<strong>上方最近的 55 线只剩 5F MA55</strong>——机械口径下压力位降到最小级别，本身即是<strong>结构偏多</strong>的信号。</li>
+<li><strong>短长端分裂</strong>：15F 处空头区且 DIF 向下、30F 亦为空头区；而 60F / 120F / 日线均为多头区——<strong>短端回调、长端向上</strong>。</li>
+</ul>
+<h3>级别联动解读</h3>
+<ol>
+<li><strong>五周期结构镜像反转（本档最重要的结构变化）</strong>：由 9/18~9/21 的「日线/周线/60F 向下 + 15F/5F 向上」<strong>整体翻转为「日线/周线/60F 向上 + 15F/5F 向下」</strong>——多空的主导级别发生对调。</li>
+<li><strong>日线一卖是唯一的大级别约束</strong>：日线、周线两个卖点分别落在 3967.68 与 3995.18，构成<strong>两道天花板</strong>；而日线 DIF 刚转正、MA55 支撑完好，故「上有压制、下有支撑」的箱体特征强于单边特征。</li>
+<li><strong>15F 极度收口是本期唯一的时间敏感项</strong>：带宽 0.71%、20 周期内波动被压缩至 28 点，<strong>变盘窗口临近</strong>；15F 看空 81%（中轨下行 + 趋势向下 + 收口偏空）与 60F/120F/日线看多 72%~88% 形成<strong>短长端对立</strong>。</li>
+<li><strong>与星球侧技术判断的呼应</strong>：附件侧「先进封装/CCL/铜箔」的产能壁垒逻辑属<strong>中期结构</strong>，与 60F/日线级别的多头区一致；而资金流卖出该链属<strong>短期节奏</strong>，与 15F 空头区一致——<strong>同一产业链在长短两个级别上给出了相反的读数</strong>，这解释了对立观点 ③ 的来源。</li>
+</ol>
+<hr />
+<h2>第四块 预判（技术预判与复盘）</h2>
+<h3>一、上期复盘（9/21-morning 补判）</h3>
+<blockquote>
+<p>本条 target=9/21（周一），此前为晨报档<strong>开盘前静态初验</strong>（<code>actual</code> 为空、四维悬空）；现依据 9/21 真实日线 OHLC 完整补判。上期判<strong>方向不明</strong>（v5 总分 +1）、核心带 3902-3922、主压力 3920.19、主支撑 3842.72、置信度低。</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>上期预判</th>
+<th>实际</th>
+<th>判定</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>方向</td>
+<td>方向不明（偏多倾向略占优）</td>
+<td>收 3949.91，<strong>+0.97%</strong></td>
+<td>⚠️ 部分</td>
+</tr>
+<tr>
+<td>区间</td>
+<td>核心 3902-3922 / 扩展 3843-3926</td>
+<td>O 3920.27 / L 3918.13 / H 3950.94 / C 3949.91</td>
+<td>❌ 突破</td>
+</tr>
+<tr>
+<td>支撑</td>
+<td>主支撑 3842.72</td>
+<td>最低 3918.13，距主支撑 +75.41 点</td>
+<td>✅ 守住（未触及型）</td>
+</tr>
+<tr>
+<td>压力</td>
+<td>主压力 3920.19</td>
+<td>开盘即跳空站上、收盘站稳上方 +29.72 点</td>
+<td>❌ 突破</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>方向 ⚠️ 部分的理由</strong>：按「方向不明即不下方向注，实测偏多侧兑现记 ⚠️」的既有口径维持部分，<strong>不因事后上涨改判 ✅</strong>。⚠️ 但须并列记明两点：① 「偏多倾向略占优」的<strong>强度被低估</strong>——实际是<strong>放量突破 60F MA55 并站稳 +29.72 点</strong>的强形态；② <strong>名义最高剧本为 B（带内震荡 40%）而非实际主导的 A（突破 35%）</strong>——方向对了、路径给错了。</li>
+<li><strong>区间/压力双突破</strong>：开盘 3920.27 即以跳空站上主压力 0.08 点，全天最高 3950.94、收盘 3949.91。<strong>3920-3925 密集带整体被穿越</strong>，属「开盘跳空穿越」最强形态。</li>
+<li><strong>⚠️ 量能旁证（关键）</strong>：9/21 成交 5.0235 亿手，环比仅 <strong>+3.43%（约 1.03 倍）</strong>，<strong>属温和放量、不构成「放量」</strong>。按 2026-08-31 实装的「<strong>压力位突破确认</strong>」规则（须同时满足「放量 + 收盘站稳」），<strong>只有「收盘站稳」成立</strong> → 判定为<strong>未确认的突破，按规则不追多</strong>。</li>
+<li><strong>✅ 事后验证该判定正确</strong>：突破次日（9/22）跳空高开至 3963.81、最高 3967.68，但收盘回落至 3952.13（仅 +0.06%）；第三日（9/23）半日即跌回 3938.08（-0.36%）——<strong>突破未获量能承接、两日内回吐全部突破涨幅</strong>，与「未确认」判定一致。</li>
+<li><strong>可预见性</strong>：记<strong>可预见</strong>——定调已把「站稳 60F MA55 + 日线中轨则日线拐点出现」写入，压力被穿越属「预设路径被启动」。⚠️ 但<strong>路径形态不可预见</strong>：剧本 A 定义为「先回踩 15F 中轨不破、再站上压力」，实测是<strong>开盘直接跳空站上、全程未回踩</strong>——触发顺序与剧本相反，属<strong>剧本定义粒度不足</strong>（只定义结果、未穷尽到达方式），是 OBS-2 现象的一种具体形态。</li>
+<li><strong>bias_type</strong>：区间上沿破位 / 压力位突破 / 方向正确路径偏移。</li>
+</ul>
+<h3>二、偏差观察统计表（53 期 · v5 配对计数 · 截止 2026-09-23 13:20）</h3>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>命中</th>
+<th>部分</th>
+<th>失效</th>
+<th>纯命中率</th>
+<th>加权</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>方向</td>
+<td>28</td>
+<td>19</td>
+<td>6</td>
+<td><strong>52.8%</strong></td>
+<td>70.8%</td>
+<td>n=53</td>
+</tr>
+<tr>
+<td>区间</td>
+<td>18</td>
+<td>30</td>
+<td>5</td>
+<td><strong>34.0%</strong></td>
+<td>62.3%</td>
+<td>n=53</td>
+</tr>
+<tr>
+<td>支撑</td>
+<td>36</td>
+<td>7</td>
+<td>10</td>
+<td><strong>67.9%</strong></td>
+<td>74.5%</td>
+<td>n=53</td>
+</tr>
+<tr>
+<td>压力</td>
+<td>29</td>
+<td>11</td>
+<td>13</td>
+<td><strong>54.7%</strong></td>
+<td>65.1%</td>
+<td>n=53</td>
+</tr>
+</tbody>
+</table>
+<p><strong>本期变化</strong>：新增 <code>9/21-morning</code> 补判样本，样本 52 → 53 期。方向（53.8%→<strong>52.8%</strong>）；区间（34.6%→<strong>34.0%</strong>）；支撑（67.3%→<strong>67.9%</strong>）；压力（55.8%→<strong>54.7%</strong>）。</p>
+<p><strong>结构未变</strong>：支撑（67.9%）&gt; 压力（54.7%）&gt; 方向（52.8%）&gt; 区间（<strong>34.0%，连续 53 期垫底</strong>）。区间维「部分」占比 30/53 = 57%，仍是四维中最高——<strong>区间判定本质是「方向对、幅度差一点」</strong>，非方向错误。该结构连续 53 期未变，继续观察、不修改规则。</p>
+<p><strong>bias_type 三分类观察（累计）</strong>：压力位突破 14（✅ 规律已现）｜支撑跌破 11（✅）｜区间下沿/上沿破位 10（✅）｜方向错误/相反 6（✅）。<strong>本期新增「压力位突破」与「区间上沿破位」各 1 次</strong>；本档为该类第 14/10 次，<strong>按第六节纪律仅标注观察、不自动改规则</strong>。</p>
+<h3>三、本期预判（9/23 下午 13:00-15:00，含已开盘部分）</h3>
+<h4>一句话预判</h4>
+<blockquote>
+<p><strong>方向不明（v5 总分 +2 但 15F 带宽收口拦下），核心带 3936-3952</strong>。上方 3948.72 是下午第一决策位，3967.68 为实际天花板；下方 3936.55 失守则测试 3917.67。<strong>倾向偏多但路径未定，按箱体对待</strong>。</p>
+</blockquote>
+<svg style="width:100%;height:auto;max-width:880px;display:block;margin:20px auto;" xmlns="http://www.w3.org/2000/svg" viewBox="-40 0 940 580" font-family="-apple-system,'PingFang SC',sans-serif">
+<defs><style>
+.grid{stroke:#d8d2c4;stroke-width:0.5;stroke-dasharray:2 3}
+.axis{stroke:#3a4a4a;stroke-width:1;fill:none}
+.label{fill:#3a4a4a;font-size:10px}
+.actual{stroke:#1f3a3a;stroke-width:2.2;fill:none}
+.node-up{fill:#fdf0ec;stroke:#b33a1f;stroke-width:2}
+.node-dn{fill:#edf5ee;stroke:#1a7a3a;stroke-width:2}
+.tt{font-size:11px;font-weight:700}
+.tb{font-size:10px}
+.ts{font-size:9px}
+</style></defs>
+<text x="430" y="18" text-anchor="middle" class="tt" fill="#1f3a3a" font-size="15">上证综指 2026-09-23 预判 · 震荡区间 + 变盘路径图（v5）</text>
+<line class="grid" x1="20" y1="472.1" x2="600" y2="472.1"/>
+<text class="label" x="14" y="475.1" text-anchor="end">3880</text>
+<line class="grid" x1="20" y1="404.4" x2="600" y2="404.4"/>
+<text class="label" x="14" y="407.4" text-anchor="end">3900</text>
+<line class="grid" x1="20" y1="336.7" x2="600" y2="336.7"/>
+<text class="label" x="14" y="339.7" text-anchor="end">3920</text>
+<line class="grid" x1="20" y1="269.1" x2="600" y2="269.1"/>
+<text class="label" x="14" y="272.1" text-anchor="end">3940</text>
+<line class="grid" x1="20" y1="201.4" x2="600" y2="201.4"/>
+<text class="label" x="14" y="204.4" text-anchor="end">3960</text>
+<line class="grid" x1="20" y1="133.7" x2="600" y2="133.7"/>
+<text class="label" x="14" y="136.7" text-anchor="end">3980</text>
+<line class="grid" x1="20" y1="66.0" x2="600" y2="66.0"/>
+<text class="label" x="14" y="69.0" text-anchor="end">4000</text>
+<line class="axis" x1="20" y1="40" x2="20" y2="480"/>
+<line class="grid" x1="240" y1="40" x2="240" y2="480" stroke="#a89e87" stroke-dasharray="3 4"/>
+<text x="130" y="500" text-anchor="middle" class="label">当日实况</text>
+<text x="420" y="500" text-anchor="middle" class="label">震荡区间 · 变盘路径</text>
+<path class="actual" d="M 20.0,335.8 L 100.0,343.1 L 170.0,232.0 L 240.0,235.5"/>
+<circle cx="20" cy="335.8" r="3" fill="#1f3a3a"/>
+<text class="ts" x="18" y="349.8" text-anchor="end" fill="#1a5a3a">O 3920.27</text>
+<circle cx="170" cy="232.0" r="3" fill="#b33a1f"/>
+<text class="ts" x="174" y="228.0" fill="#b33a1f">H 3950.94</text>
+<circle cx="100" cy="343.1" r="3" fill="#1a7a3a"/>
+<text class="ts" x="104" y="357.1" fill="#1a7a3a">L 3918.13</text>
+<circle cx="240" cy="235.5" r="3" fill="#1f3a3a"/>
+<text class="ts" x="228" y="227.5" text-anchor="end" fill="#1f3a3a">C 3949.91</text>
+<text class="tb" x="170" y="216.0" fill="#b33a1f">⚠ 假突破 3949 失败</text>
+<text x="22" y="48.0" class="tb" fill="#b33a1f">▸ 当日关键信号</text>
+<text x="24" y="63.0" class="ts" fill="#5a5a4f">· v5 总分 +2（买卖点 0 + DRAGON BALL模型 0 + BOLL +1 + MACD DIF +1）已达偏多阈值，但 15F 带宽 0.83% 极度收口触发方向不明</text>
+<text x="24" y="78.0" class="ts" fill="#5a5a4f">· 日线 DIF 上穿零轴转正（-1.53 → +0.20），9 月以来首次</text>
+<text x="24" y="93.0" class="ts" fill="#5a5a4f">· 五周期结构镜像反转：由「日/周/60F 向下 + 15F/5F 向上」变为「日/周/60F 向上 + 15F/5F 向下」</text>
+<rect x="240" y="239.5" width="360" height="41.2" fill="#f3eddd" opacity="0.55"/>
+<text class="ts" x="592" y="260.1" text-anchor="end" fill="#8a7a55">震荡带 3937–3949</text>
+<circle cx="240" cy="275.6" r="4.5" fill="#2b2b2b"/>
+<text class="tb" x="234" y="267.6" text-anchor="end" fill="#2b2b2b">现价 3938.08</text>
+<path d="M 240.0,275.6 L 320.0,269.4 L 400.0,281.7 L 480.0,271.8 L 600.0,275.6" stroke="#8a8a80" stroke-width="2.2" fill="none" stroke-dasharray="4 3"/>
+<text class="tb" x="330" y="283.4" fill="#6a6a5f">区间震荡（35%）</text>
+<polygon class="node-up" points="420.0,228.54157372509854 431.0,239.54157372509854 420.0,250.54157372509854 409.0,239.54157372509854"/>
+<path d="M 420.0,239.5 L 510.0,207.5 L 600.0,175.4" stroke="#b33a1f" stroke-width="2.3" fill="none"/>
+<polygon points="600,167.4 608,175.4 600,183.4 592,175.4" fill="#b33a1f"/>
+<text class="tb" x="436.0" y="233.5" fill="#b33a1f">突破 3949（40%）</text>
+<text class="ts" x="490" y="204.2" fill="#b33a1f">放量站稳 → 看 3968 日线一卖@3967.68·9/22高点·60F中枢上沿3967.59 三重共振</text>
+<polygon class="node-dn" points="420.0,269.7291746788701 431.0,280.7291746788701 420.0,291.7291746788701 409.0,280.7291746788701"/>
+<path d="M 420.0,280.7 L 510.0,312.7 L 600.0,344.6" stroke="#1a7a3a" stroke-width="2.0" fill="none"/>
+<polygon points="600,336.6 608,344.6 600,352.6 592,344.6" fill="#1a7a3a"/>
+<text class="tb" x="436.0" y="294.7" fill="#1a7a3a">跌破 3937（25%）</text>
+<text class="ts" x="490" y="319.9" fill="#1a7a3a">缩量跌破 → 看 3918 60F55·与9/21低点3918.13、60F中轨3919.87 重合带</text>
+<line x1="20" y1="175.4" x2="600" y2="175.4" stroke="#b33a1f" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
+<text class="ts" x="610" y="178.4" fill="#b33a1f">RESIST 3967.68 日线一卖@3967.68·9/22高点·60F中枢上沿3967.59 三重共振</text>
+<line x1="20" y1="239.5" x2="600" y2="239.5" stroke="#b33a1f" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
+<text class="ts" x="610" y="242.5" fill="#b33a1f">RESIST 3948.72 5F55·与15F MA20 3948.89 重合·下午第一决策位</text>
+<line x1="20" y1="280.7" x2="600" y2="280.7" stroke="#1a7a3a" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
+<text class="ts" x="610" y="283.7" fill="#1a7a3a">SUPP 3936.55 15F55·今日最低3937.20上方·下午多空线</text>
+<line x1="20" y1="344.6" x2="600" y2="344.6" stroke="#1a7a3a" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
+<g>
+<rect x="615" y="385" width="270" height="150" rx="6" fill="#fffdf6" stroke="#a89e87" stroke-width="0.8"/>
+<text x="627" y="403" class="tb" fill="#1f3a3a">盘面应对（v5 纪律）</text>
+<text x="627" y="423" class="ts" fill="#6a6a5f">震荡：3937–3949 内不追涨杀跌，等变盘</text>
+<text x="627" y="441" class="ts" fill="#b33a1f">突破：放量站稳 3949 → 追多，看 3968</text>
+<text x="627" y="459" class="ts" fill="#1a7a3a">跌破：跌破 3937 → 减仓，看 3918</text>
+<text x="627" y="477" class="ts" fill="#5a5a4f">信号：v5 总分 +2（买卖点 0 + DRAGON BALL模型 0 + BO…</text>
+<text x="627" y="491" class="ts" fill="#5a5a4f">信号：日线 DIF 上穿零轴转正（-1.53 → +0.20），9 月以…</text>
+<text x="627" y="505" class="ts" fill="#5a5a4f">信号：五周期结构镜像反转：由「日/周/60F 向下 + 15F/5…</text>
+<text x="627" y="523" class="ts" fill="#5a5a4f">概率：突破40% / 震荡35% / 跌破25%</text>
+</g>
+<g>
+<rect x="20" y="545" width="580" height="26" rx="4" fill="#fffdf6" stroke="#a89e87" stroke-width="0.6"/>
+<line x1="30" y1="558" x2="52" y2="558" stroke="#1f3a3a" stroke-width="2"/>
+<text x="56" y="562" class="ts" fill="#1f3a3a">当日实况</text>
+<line x1="130" y1="558" x2="152" y2="558" stroke="#8a8a80" stroke-width="2.5" stroke-dasharray="4 3"/>
+<text x="156" y="562" class="ts" fill="#5a5a4f">震荡（常态）</text>
+<line x1="250" y1="558" x2="272" y2="558" stroke="#b33a1f" stroke-width="3"/>
+<text x="276" y="562" class="ts" fill="#b33a1f">突破（线宽=概率）</text>
+<line x1="380" y1="558" x2="402" y2="558" stroke="#1a7a3a" stroke-width="3"/>
+<text x="406" y="562" class="ts" fill="#1a7a3a">跌破（线宽=概率）</text>
+<line x1="495" y1="558" x2="517" y2="558" stroke="#7a7a7a" stroke-width="1" stroke-dasharray="2 3"/>
+<text x="521" y="562" class="ts" fill="#5a5a4f">关键位</text>
+</g>
+</svg>
+<h4>完整预判字段</h4>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>方向</strong></td>
+<td>方向不明（v5 总分 <strong>+2</strong>：买卖点 <strong>0</strong> + DRAGON BALL模型 <strong>0（缺失）</strong> + BOLL 变盘 <strong>+1</strong> + MACD DIF 拐头 <strong>+1</strong>）。<strong>性质说明</strong>：本期是「总分达偏多阈值、却被带宽收口拦下」，与 9/18~9/21 三期「总分落在 ±1 的平衡型方向不明」<strong>性质不同</strong></td>
+</tr>
+<tr>
+<td><strong>区间</strong></td>
+<td>3936-3952（核心 16 点）/ 3918-3968（扩展 50 点）；精确上下沿见下方关键位表</td>
+</tr>
+<tr>
+<td><strong>支撑/压力</strong></td>
+<td><strong>见下方「关键位相对现价」表（唯一落地处）</strong>——主支撑为前低与日线中枢下沿重合位，主压力为 5F MA55 与 15F MA20 构成的密集带</td>
+</tr>
+<tr>
+<td><strong>置信度</strong></td>
+<td><strong>低</strong>——方向倾向明确（+2 已越阈值）但路径未定；且 <strong>4 因子中 1 项信息缺失</strong>（DRAGON BALL模型 本档无定调），因子覆盖度低于 9/17~9/21 各期</td>
+</tr>
+<tr>
+<td><strong>观察窗口</strong></td>
+<td>本期含<strong>下午盘 13:00-15:00</strong>；13:00-13:45 已走完，实况见下方「下午盘实盘跟踪」</td>
+</tr>
+</tbody>
+</table>
+<h4>v5 打分明细</h4>
+<ul>
+<li><strong>买卖点因子（0）</strong>：60F 三卖@3891.48（conf 0.75，形成于 9/15）被现价 <strong>站上 45.43 点</strong>，按既有口径（现价决定性越过则效力被否定）记 0；15F/5F 无信号；日线一卖与周线一卖属大级别、按 v5「日线/周线买卖点不进方向分」不计分（但进压力位序列）→ <strong>0</strong></li>
+<li><strong>DRAGON BALL模型 定调（0，缺失）</strong>：本窗口 3 条<strong>全为缠论问答与情绪表达，无任何市场定调</strong>（见第一块·九）。<strong>必须如实标注这是「信息缺失」而非「中性判断」</strong>——4 因子本期只有 3 个生效</li>
+<li><strong>BOLL 变盘概率（+1）</strong>：60F 涨 <strong>72%</strong>/跌 28%、日线涨 <strong>72%</strong>/跌 28%（13:45 复核读数；13:20 定稿时 60F 为 82%/18%），<strong>双双越 15pct 阈值且方向一致偏多</strong>；按 v5「取 60F/日线、为单位分 ±1」口径合记 <strong>+1</strong></li>
+<li><strong>MACD DIF 拐头（+1）</strong>：日线 DIF <strong>0.20</strong>（前值 -1.53，<strong>向上</strong>，且已<strong>上穿零轴</strong>，9 月以来首次转正）；按「主级别（日线）主导」口径取 <strong>+1</strong>。（60F DIF 12.54 较前值向下、15F/30F 处空头区 DIF 向下——短端与长端背离，但不改变日线主判）</li>
+<li><strong>总分：0 + 0 + 1 + 1 = +2</strong> → 已越「≥2 偏多」阈值，<strong>但 15F 带宽 0.71%（复核）/ 0.83%（定稿）&lt; 1%</strong>，按规则第二节「15F 带宽 &lt; 1% → 变盘在即」这一<strong>独立于总分的第二个触发条件</strong>，按 <strong>OR 语义</strong>生效 → <strong>方向不明</strong>（先例：<code>2026-09-08-morning</code> 总分 -5 仍因带宽 0.63% 触发方向不明）</li>
+</ul>
+<blockquote>
+<p>⚠️ <strong>附注一（四因子不均衡，须明示）</strong>：偏多侧 2 项、偏空侧 0 项、缺失 1 项。<strong>「方向不明」在本期不等于「多空均衡」</strong>——这与 9/18~9/21 三期（两侧证据强度接近的<strong>真无信息</strong>）有本质区别，故<strong>不给方向注但保留偏多倾向的表述</strong>。</p>
+<p>⚠️ <strong>附注二（OBS-2 变盘倾向分试算）</strong>：本期为方案提出后<strong>第一期「变盘倾向分」可非零计分样本</strong>。按审视方案试算：短端背离（15F/30F 双空头区且长端偏多）= <strong>+1</strong>、量能前兆（成交额环比 -18.75%，缩量而非放量）= <strong>0</strong>、带宽收口（15F 0.71% &lt; 1%）= <strong>+1</strong> → <strong>变盘倾向分 = 2</strong> → 剧本概率映射为 <strong>A35% / B37% / C28%</strong>（对照现行 A40/B35/C25）。<strong>该试算仅为观察记录，不构成本期预判；方案是否实装待用户拍板。</strong></p>
+</blockquote>
+<h4>剧本概率与触发条件</h4>
+<table>
+<thead>
+<tr>
+<th>剧本</th>
+<th>概率</th>
+<th>触发条件</th>
+<th>路径</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A 夺回 3948.72 后上攻</strong></td>
+<td><strong>40%</strong></td>
+<td>放量收回 5F MA55 与 15F MA20 密集带并收盘站稳 → 上攻 3967.68。佐证：日线 DIF 转正 + BOLL 长端双多</td>
+<td>3936 → 3948.72 → 日线一卖位</td>
+</tr>
+<tr>
+<td><strong>B 带内高位震荡</strong></td>
+<td><strong>35%</strong></td>
+<td>3936.55 与 3948.72 之间反复，量能维持 1.8 万亿附近。佐证：15F 收口待变 + 节前缩量</td>
+<td>3936-3952 带内拉锯</td>
+</tr>
+<tr>
+<td><strong>C 失守 3936.55 回踩</strong></td>
+<td><strong>25%</strong></td>
+<td>收盘跌破 15F MA55 且不收回 → 测试 3917.67 → 日线 MA55。佐证：15F 看空 81% + 短端空头区</td>
+<td>3936.55 → 3917.67 → 3907.09</td>
+</tr>
+</tbody>
+</table>
+<h4>纪律与观察</h4>
+<p><strong>关键操作纪律（4 条）</strong></p>
+<ol>
+<li><strong>3948.72 = 下午唯一决策位</strong>——5F MA55 与 15F MA20 几乎完全重合（差 0.17 点），且今日半日高点紧贴其上。<strong>须「放量 + 收盘站稳」双条件</strong>方视为有效夺回（沿用 8/31 实装的「压力位突破确认」规则）；<strong>仅收盘站稳而量能不足者，按上期 9/21 的同类情形处理：不追多</strong>。</li>
+<li><strong>3936.55 = 下午多空线</strong>——15F MA55，现价正下方最近的 55 线，且今日盘中已在此处获得过一次支撑（半日最低仅低于该位 0.65 点）。<strong>收盘失守则 C 剧本激活</strong>。</li>
+<li><strong>日线一卖位 = 天花板，不预期一次通过</strong>——日线一卖（conf 0.8）+ 9/22 高点 + 60F 中枢上沿三重身份叠加。<strong>若无显著放量，触及即为减仓窗口而非突破窗口</strong>。</li>
+<li><strong>节前缩量是硬约束</strong>——成交额环比 -18.75%、预计全日 1.8 万亿；<strong>方向不明 + 缩量组合下，本档不建议重仓单边</strong>。轻仓过节（游资口径）与技术面箱体判断一致。</li>
+</ol>
+<p><strong>下午盘实盘跟踪（13:00-13:45 已走完）</strong></p>
+<ul>
+<li><strong>小幅跌破上午低点</strong>：13:45 读数显示盘中最低下探至 <strong>3936.54</strong>，低于上午低点 3937.20 约 0.66 点——<strong>紧贴 15F MA55 下方运行</strong>，纪律第 2 条的观察位正在被测试。</li>
+<li><strong>量能未改善</strong>：延续上午缩量特征，<strong>C 剧本（25%）与 B 剧本（35%）合计 60% 的概率分布与实况相符</strong>。</li>
+<li><strong>半导体相对强势延续</strong>：与隔夜美股半导体领涨的传导一致。</li>
+<li>⚠️ <strong>口径提醒</strong>：13:45 的 15F 带宽已收窄至 0.71%（定稿时 0.83%），<strong>收口在深化，变盘窗口比定稿时更近</strong>。</li>
+</ul>
+<h4>关键位相对现价（现价 3938.08，9/23 上午收盘）</h4>
+<table>
+<thead>
+<tr>
+<th>关键位</th>
+<th>价格</th>
+<th>相对现价</th>
+<th>属性</th>
+<th>依据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>120F BOLL 上轨</td>
+<td>3970.16</td>
+<td>+0.81%</td>
+<td>压力</td>
+<td>120F 上轨</td>
+</tr>
+<tr>
+<td>日线 BOLL 上轨</td>
+<td>3995.77</td>
+<td>+1.47%</td>
+<td>压力（远端）</td>
+<td>与周线一卖 3995.18 同位</td>
+</tr>
+<tr>
+<td><strong>日线一卖 / 9/22 高 / 60F 中枢上沿</strong></td>
+<td><strong>3967.68</strong></td>
+<td><strong>+0.75%</strong></td>
+<td><strong>压力（主压力·天花板）</strong></td>
+<td>三重共振，见第三块</td>
+</tr>
+<tr>
+<td>60F BOLL 上轨</td>
+<td>3980.65</td>
+<td>+1.08%</td>
+<td>压力</td>
+<td>60F 上轨</td>
+</tr>
+<tr>
+<td>15F BOLL 上轨</td>
+<td>3960.55</td>
+<td>+0.57%</td>
+<td>压力</td>
+<td>15F 上轨</td>
+</tr>
+<tr>
+<td>今日半日高点</td>
+<td>3951.52</td>
+<td>+0.34%</td>
+<td>压力</td>
+<td>紧贴决策位上方</td>
+</tr>
+<tr>
+<td><strong>5F MA55 / 15F MA20 密集带</strong></td>
+<td><strong>3948.72</strong></td>
+<td><strong>+0.27%</strong></td>
+<td><strong>压力（决策位）</strong></td>
+<td>两线仅差 0.17 点，下午第一道</td>
+</tr>
+<tr>
+<td>15F BOLL 中轨</td>
+<td>3946.55</td>
+<td>+0.21%</td>
+<td>压力</td>
+<td>中轨压制（距 -9.28）</td>
+</tr>
+<tr>
+<td><strong>现价</strong></td>
+<td><strong>3938.08</strong></td>
+<td><strong>0.00%</strong></td>
+<td><strong>现价（分界）</strong></td>
+<td>9/23 上午收盘，本行上下即压力/支撑分界</td>
+</tr>
+<tr>
+<td>今日半日低点</td>
+<td>3937.20</td>
+<td>-0.02%</td>
+<td>支撑</td>
+<td>下午已小幅跌破</td>
+</tr>
+<tr>
+<td><strong>15F MA55</strong></td>
+<td><strong>3936.55</strong></td>
+<td><strong>-0.04%</strong></td>
+<td><strong>支撑（多空线）</strong></td>
+<td>下午主线，见纪律第 2 条</td>
+</tr>
+<tr>
+<td>日线 MA20 / BOLL 中轨</td>
+<td>3930.31</td>
+<td>-0.20%</td>
+<td>支撑</td>
+<td>日线中轨</td>
+</tr>
+<tr>
+<td>120F MA55</td>
+<td>3924.69</td>
+<td>-0.34%</td>
+<td>支撑</td>
+<td>中级别 55 线</td>
+</tr>
+<tr>
+<td>60F MA55 / BOLL 中轨</td>
+<td>3922.11</td>
+<td>-0.41%</td>
+<td>支撑</td>
+<td>中级别 55 线</td>
+</tr>
+<tr>
+<td>9/21 低点</td>
+<td>3918.13</td>
+<td>-0.51%</td>
+<td>支撑</td>
+<td>前一日低点</td>
+</tr>
+<tr>
+<td><strong>60F MA55（与 9/21 低点重合带）</strong></td>
+<td><strong>3917.67</strong></td>
+<td><strong>-0.52%</strong></td>
+<td><strong>支撑（结构）</strong></td>
+<td>与 3918.13 重合，C 剧本目标</td>
+</tr>
+<tr>
+<td>日线 MA55</td>
+<td>3907.09</td>
+<td>-0.79%</td>
+<td>支撑</td>
+<td>本轮上行结构趋势线</td>
+</tr>
+<tr>
+<td>日线 BOLL 下轨</td>
+<td>3864.61</td>
+<td>-1.86%</td>
+<td>支撑</td>
+<td>日线下轨</td>
+</tr>
+<tr>
+<td><strong>前低 / 日线中枢下沿</strong></td>
+<td><strong>3842.72</strong></td>
+<td><strong>-2.42%</strong></td>
+<td><strong>支撑（主支撑）</strong></td>
+<td>前低 9/16 与日线中枢下沿完全重合（双重共振）</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>主支撑余量为零的提示</strong>：原「日线一买@3842.72」本期<strong>已不在信号集内</strong>（本轮上行已使该买点被消耗），日线 BOLL 下轨亦由 3853.62 上移至 3864.61、不再贴合。<strong>故主支撑仍是「两重共振」但余量为零——若日线中枢下沿随结构演化上移，该支撑将退化为单一来源。</strong></li>
+<li>远端参考：<strong>3741</strong>（-5.00%，属尾部情景，本期不计入常规支撑序列）。</li>
+</ul>
+<hr />
+<h2>附录 A 抓取通道信息</h2>
+<p><strong>抓取窗口</strong>：2026-09-23 08:00 ~ 12:54（<code>noon</code> 窗口，环境变量 <code>ZSXQ_WIN_START/END</code>）</p>
+<table>
+<thead>
+<tr>
+<th>通道</th>
+<th>工具</th>
+<th>星球</th>
+<th>本期条数</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>通道 A（Skill）</td>
+<td><code>zsxq-cli</code></td>
+<td>⭕ 基业长青+</td>
+<td><strong>16</strong></td>
+<td>本期最大来源：11 份投行研报附件全文（大摩/摩根大通/瑞银/野村/伯恩斯坦/高盛）+ 产业专家纪要</td>
+</tr>
+<tr>
+<td>通道 A</td>
+<td><code>zsxq-cli</code></td>
+<td>卫斯李的投研笔记</td>
+<td><strong>5</strong></td>
+<td>隔夜大类资产 0923、瑞银欧洲经济展望、汇丰两条 AI 算力链、花旗中期选举、德银布雷顿森林 II</td>
+</tr>
+<tr>
+<td>通道 A</td>
+<td><code>zsxq-cli</code></td>
+<td>DRAGON BALL模型</td>
+<td><strong>3</strong></td>
+<td><strong>全为缠论问答与情绪表达，无市场定调</strong>；本档按午间档 SOP 不做原文归档</td>
+</tr>
+<tr>
+<td>通道 B（Cookie 直连）</td>
+<td><code>api.zsxq.com</code></td>
+<td>180K Research</td>
+<td><strong>2</strong></td>
+<td>本土开盘前小结（GS 中国开盘中英双语）+ 本土午间（GS 中国午间，含行情表与资金流）</td>
+</tr>
+<tr>
+<td>通道 B</td>
+<td><code>api.zsxq.com</code></td>
+<td>AI 产业链地图·Serenity速报</td>
+<td><strong>1</strong></td>
+<td>高盛·纬颖 8 月营收超预期解读</td>
+</tr>
+<tr>
+<td>通道 B</td>
+<td><code>api.zsxq.com</code></td>
+<td>大鹏鸟笔记</td>
+<td><strong>1</strong></td>
+<td>9/23 午间总结（游资观点）</td>
+</tr>
+<tr>
+<td>通道 B</td>
+<td><code>api.zsxq.com</code></td>
+<td>⭕ 短评&amp;信息</td>
+<td>0</td>
+<td>窗口内无更新（非鉴权失败）</td>
+</tr>
+<tr>
+<td><strong>合计</strong></td>
+<td></td>
+<td></td>
+<td><strong>28</strong></td>
+<td><strong>附件 11 个（已读 11 / 未读 0）/ 图片 19 张（已读 18 / 未读 1）</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>本期未覆盖（非故障，属既定覆盖范围之外）</strong>：星球⑧ 信息平权、⑨ 投行圈子、⑩ 口罩哥——三者 Cookie 直连通道<strong>未配置</strong>（凭证仅覆盖上述 4 个 Cookie 星球），故本期<strong>未抓取、无条数</strong>。附录 B 仍列出全部 10 个星球以保持代号表完整，读者请以本表为准。</p>
+<p><strong>数据完整性说明</strong>：</p>
+<ul>
+<li>✅ <strong>两条通道均正常</strong>：<code>degraded</code> 为空（无降级），<code>unparsed_ct</code> 为 0；Skill 通道三球共 24 条、Cookie 通道三球共 4 条。</li>
+<li>✅ <strong>整改项④已落地（附件正文入库）</strong>：本期 11 个附件 PDF <strong>全部抽取正文入库</strong>（<code>zsxq_files/2026-09-23/&lt;file_id&gt;.txt</code>），<strong>已读 11 / 未读 0 / 失败 0</strong>，单份最长 36.2 万字（伯恩斯坦半导体周期，77 页）。抓取侧含<strong>退避重试</strong>（应对接口 <code>succeeded=false</code> 的软限流）与 <strong>PDF 魔数校验</strong>；抽取侧含<strong>内容单元判据</strong>（<code>chars ≥ 50</code> 且 <code>tokens ≥ 30</code>），防止「仅有水印/页眉的扫描版被误判为已读」。</li>
+<li>✅ <strong>整改项⑤已落地（行业覆盖审计）</strong>：<code>audit_coverage.py</code> 对窗口内 28 条做<strong>申万一级 31 行业逐一遍历</strong>。结果——<strong>真盲区 5 个：农林牧渔、纺织服饰、煤炭、环保、美容护理</strong>；<strong>仅附件命中 1 个：机械设备</strong>（正文零提及但挂了该行业研报附件 → 附件正文必须读，否则该行业必漏）。审计以 exit 1 收尾并已附入本附录。⚠️ <strong>需人工确认的读感提示</strong>：5 个盲区中<strong>美容护理在 9/21 为当日第 3 强行业（+2.98%）</strong>，本期窗口内容对其零覆盖——属「窗口内确实无信息」，非抓取故障。</li>
+<li>✅ <strong>整改项⑥已落地（读图留痕）</strong>：<code>_image_ocr_2026-09-23.json</code> 已落盘，19 张图逐张记录识别结果与来源帖子，<strong>可被机器核验</strong>。<strong>唯一未读</strong>：<code>82258254252211442_1.jpg</code>（3.2MB，压缩后仍超读取上限）——已按 <code>unread</code> 如实记录，未谎报。</li>
+<li>⚠️ <strong>一处需留意的抽取质量</strong>：<code>隔夜大类资产评论0923.pdf</code>（41 页）仅抽出 4,016 字——该 PDF 为<strong>图表型版式</strong>，文字层只有各页标题骨架（如「油价仍存短期扰动，但大概率已经见顶」），<strong>图内数据未取得</strong>。本期该线的实质信息以标题骨架 + 帖子正文摘要为准。</li>
+<li>凭证文件路径 <code>.workbuddy/zsxq_cookie.txt</code>（不入 git，<strong>严禁跨机拷贝</strong>）。</li>
+</ul>
+<hr />
+<h2>附录 B 星球代号对照表</h2>
+<blockquote>
+<p>正文直接表达观点，不出现星球代号；本附录仅供回溯</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>代号</th>
+<th>星球</th>
+<th>内容侧重</th>
+<th>抓取通道</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>星球 ①</td>
+<td>卫斯李的投研笔记</td>
+<td>海外投行研报、宏观、地缘、大类资产</td>
+<td>A (zsxq-cli)</td>
+</tr>
+<tr>
+<td>星球 ②</td>
+<td>⭕ 基业长青+</td>
+<td>卖方研报、产业链专家、基金经理调查</td>
+<td>A (zsxq-cli)</td>
+</tr>
+<tr>
+<td>星球 ③</td>
+<td>DRAGON BALL模型</td>
+<td>缠论复盘、级别判定、游击战思路</td>
+<td>A (zsxq-cli)</td>
+</tr>
+<tr>
+<td>星球 ④</td>
+<td>大鹏鸟笔记</td>
+<td>盘前热榜、游资观点、午间总结</td>
+<td>B (Cookie)</td>
+</tr>
+<tr>
+<td>星球 ⑤</td>
+<td>⭕ 短评&amp;信息</td>
+<td>短评、突发信息</td>
+<td>B (Cookie)</td>
+</tr>
+<tr>
+<td>星球 ⑥</td>
+<td>180K Research</td>
+<td>外资研报、科技周报、算力专题</td>
+<td>B (Cookie)</td>
+</tr>
+<tr>
+<td>星球 ⑦</td>
+<td>AI 产业链地图·Serenity 速报</td>
+<td>海外算力链、产业链速报</td>
+<td>B (Cookie)</td>
+</tr>
+<tr>
+<td>星球 ⑧</td>
+<td>信息平权</td>
+<td>资讯平权</td>
+<td>B (Cookie)</td>
+</tr>
+<tr>
+<td>星球 ⑨</td>
+<td>投行圈子</td>
+<td>投行视角</td>
+<td>B (Cookie)</td>
+</tr>
+<tr>
+<td>星球 ⑩</td>
+<td>口罩哥</td>
+<td>口罩哥专享</td>
+<td>B (Cookie)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>产物清单</h2>
+<table>
+<thead>
+<tr>
+<th>路径</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>outputs/作战报告_午间_2026-09-23.md</code></td>
+<td>Markdown 报告</td>
+<td>本文件（四块齐全 + 附录 A/B + 产物清单）</td>
+</tr>
+<tr>
+<td><code>outputs/000001_forecast_2026-09-23.svg</code></td>
+<td>SVG 走势图</td>
+<td>9/23 下午预判条件触发决策路径图</td>
+</tr>
+<tr>
+<td><code>.workbuddy/zsxq_fetch_raw.json</code></td>
+<td>原始数据</td>
+<td>28 条窗口内星球内容</td>
+</tr>
+<tr>
+<td><code>.workbuddy/zsxq_files/2026-09-23/</code></td>
+<td>附件正文</td>
+<td>11 个研报 PDF + 抽取正文 + <code>_files_manifest.json</code></td>
+</tr>
+<tr>
+<td><code>.workbuddy/zsxq_images/_image_ocr_2026-09-23.json</code></td>
+<td>读图留痕</td>
+<td>19 张图识别结果（整改项⑥）</td>
+</tr>
+<tr>
+<td><code>.workbuddy/_coverage_2026-09-23_noon.md</code></td>
+<td>覆盖审计</td>
+<td>申万一级 31 行业命中表（整改项⑤）</td>
+</tr>
+<tr>
+<td><code>.workbuddy/forecast_chain.json</code></td>
+<td>预判链</td>
+<td>54 条（53 verified + 1 pending：9/23-noon）</td>
+</tr>
+<tr>
+<td><code>.workbuddy/consensus_chain.json</code></td>
+<td>共识链</td>
+<td>23 条（22 verified + 1 pending：9/23-noon）</td>
+</tr>
+<tr>
+<td><code>.workbuddy/_bias_2026-09-23_noon.json</code></td>
+<td>偏差统计</td>
+<td>53 期四维偏差数据（程序化导出）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>本期待办（交接给 9/23 收盘档）</strong>：</p>
+<ol>
+<li><strong>本期（<code>2026-09-23-noon</code>）四维复盘</strong>——target 为 9/23 全天，收盘档须一并判定<strong>方向（+2 却判方向不明的样本）</strong>、<strong>区间（3936-3952）</strong>、<strong>支撑（3936.55）</strong>、<strong>压力（3948.72）</strong>，并关注 15F 收口是否在收盘前完成变盘。</li>
+<li><strong>OBS-2 第 6 期样本补记</strong>——本期是「变盘倾向分」可非零计分的第一期（试算值 2，映射 A35/B37/C28），收盘档须补记该样本并核对实际主导剧本，为方案是否实装提供对照。</li>
+<li><strong>OBS-3 样本 2 的持续跟踪</strong>——15F 看空 81% vs 日线看多 72% 的短长端分歧，本期是否再次印证极短长端分歧的指示意义。</li>
+<li><strong>扫描版 PDF 的 OCR 能力缺口</strong>——<code>隔夜大类资产评论0923.pdf</code> 41 页仅出标题骨架，需补 OCR 能力方可读取图表型研报（本期已如实标注为「抽取质量受限」，非「已读」的等价表述）。</li>
+<li><strong>用户拍板项</strong>：① OBS-2「同标的日合并计数」口径确认；② OBS-2 变盘倾向分是否实装。</li>
+</ol>
+</body>
+</html>

@@ -58,6 +58,10 @@ SKIP_FILES = {
     'display_names.py',
     'forecast_chain.json', 'consensus_chain.json', 'zsxq_fetch_raw.json',
     'check_display_name.py', '_rename_tj_0918.py', '_scan_tj_residual.py',
+    # test_display_name_guard.py —— 它是**测这个守卫本身**的测试，样本必须含真实原名，
+    # 否则无法验证「守卫真的会红」。白名单只对该文件生效，不影响对外产物扫描。
+    # 2026-09-23 补：它此前每期都制造 5 处噪声命中 —— 噪声久了闸门会被无视（见《脚本地图》教训 3）。
+    'test_display_name_guard.py',
 }
 SKIP_FILE_PREFIX = ('payload_', 'zsxq_fetch_raw')
 # 路径片段排除

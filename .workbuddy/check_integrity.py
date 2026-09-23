@@ -52,9 +52,43 @@
 只做单向断言（链有记录 → 报告先有）；反方向需要交易日历，刻意不做。
 `ARTIFACT_SINCE` 之前的缺口归历史命名例外（旧报告名不同/已归档），聚合一条 INFO。
 
+2026-09-23 修【1】口径错配 + 【2】已知缺口留痕
+------------------------------------------------
+改前问题（【1】——**校验器的判定口径与 SOP 不一致**）：
+  本工具无条件要求「每个交易日都有 DRAGON BALL模型 归档」，
+  但《报告生成流程》§三档总览与 §抓取白纸黑字写着归档**仅晨报档产出**
+  （午间/收盘/盘中档一律不做）。
+  → 后果：只要某天**只跑了午间档**，就必然误报一条 ERROR。
+    9/23 正是如此（链上只有 `2026-09-23-noon`），而被报成"缺归档"。
+  这与 2026-09-17/09-18 两次加固清掉的「永久噪声」是**同一类失效换了位置复发**：
+  闸门报的东西不是操作者能改的东西，久而久之就被无视。
+
+改后（【1】）：
+  - 只有**该日跑过晨报档**（id 以 `-morning` / `-morning-v2` 结尾）才要求归档；
+  - 该日**无晨报档记录** → 归档按设计不产出，归 INFO（并打印天数，不静默）；
+  - `KNOWN_TJ_GAPS` 语义不变（跑过晨报档但归档缺失的历史例外）。
+
+改前问题（【2】——真缺口被"要么噪声要么放水"二选一）：
+  9/22（周二，交易日）整条流水线**零产物**：无预判记录、无报告、无抓取目录、无归档
+  —— 当天根本没有任何档位被触发（4 档自动化均为 PAUSED，改手动触发模式）。
+  这种日子既不能"处理"（当天没做的预判**无法追溯补做**），也不能默默放过。
+
+  为什么**不补录**：补一条当时并不存在的预判记录进 forecast_chain，
+  等于往偏差统计（当时 52 期）里**灌一条伪造样本** —— 统计口径会被污染，
+  且事后无人能分辨哪条是补的。宁可留一个可见的洞，也不要一条假绿的记录。
+
+改后（【2】）：
+  - 新增 `KNOWN_FC_GAPS` 白名单承载「已确认的真缺口」+ 原因，归已知缺口（不计 ERROR，
+    但**随汇总行打印条数**，白名单长大了看得见）；
+  - 白名单**不做预防性登记**：只登记已实际发生的日子，不为未来的日子预先开洞；
+  - 新增**白名单腐烂检测**：若白名单里的日期其实有记录（即该洞已被填上/日期写错），
+    报 WARN 提示清理 —— 白名单必须能自己缩小；
+  - 新增 `--strict`：忽略全部白名单重新判定，用于**定期复核白名单是否还成立**
+    （白名单是唯一能让闸门"放过"东西的机制，必须可审计）。
+
 用法
 ----
-    python check_integrity.py [--from YYYY-MM-DD] [--verbose]
+    python check_integrity.py [--from YYYY-MM-DD] [--verbose] [--strict]
 
 默认检查 2026-08-21（forecast_chain 首条）至今。
 交易日判定：周一~周五，排除 HOLIDAYS 集合（需按实际节假日维护）。
@@ -78,12 +112,33 @@ HOLIDAYS = set()  # 例：{'2026-10-01', '2026-10-02', ...}
 DEFAULT_FROM = '2026-08-21'
 
 # 已知例外：DRAGON BALL模型 归档缺口（早于归档机制建立，不硬补，见脚本地图 §五）
+# 语义（2026-09-23 收紧）：**仅对「该日跑过晨报档」成立** —— 归档仅晨报档产出，
+# 没跑晨报档的日子本就不该有归档，那不叫例外，叫设计使然（代码里另归 INFO）。
 KNOWN_TJ_GAPS = {
     '2026-08-24': '早于 DRAGON BALL模型 归档机制建立（历史已知）',
     '2026-08-28': '早于 DRAGON BALL模型 归档机制建立（历史已知）',
     '2026-08-31': '早于 DRAGON BALL模型 归档机制建立（历史已知）',
     '2026-09-01': '早于 DRAGON BALL模型 归档机制建立（历史已知）',
 }
+
+# 已知缺口：当日**整条流水线未触发**（有交易日但链上零记录），不可追溯补做。
+#
+# 为什么不补录（2026-09-23 决策，重要）：
+#   把自己的记录补成完整，代价是污染偏差统计 —— forecast_chain 是偏差率的唯一数据源
+#   （当时 52 期），插入一条"事后编的预判"会让方向/区间/支撑/压力四项命中率全部失真，
+#   且事后无人能分辨哪条是补的。**留一个可见的洞，好过一条假绿的记录。**
+#
+# 登记规则：
+#   · 只登记**已实际发生**的日子，不为未来日期预先开洞；
+#   · 每条必须带原因（代码断言非空）——空原因的条目 = 无声放水；
+#   · 若该日期后来有了记录（洞被填上）或日期写错，代码报 WARN 要求清理（白名单要能缩小）。
+KNOWN_FC_GAPS = {
+    '2026-09-22': '当日未触发任何档位（4 档自动化均 PAUSED，改手动触发模式）——无数据可核，不可追溯补录',
+}
+
+# 归档只在「跑过晨报档」的日子产出（依据《报告生成流程》§三档总览 / §抓取）。
+# 后缀来源见下方 TIER_BY_SUFFIX：`-morning` 与同日重生成的旧命名 `-morning-v2` 同属晨报档。
+MORNING_SUFFIXES = ('-morning', '-morning-v2')
 
 # 已知例外：review.actual 为「散文格式」而非结构化 O/H/L/C（早于结构化规范，历史已知）。
 # 归 INFO 不报 WARN 是刻意的：这两条永远无法补齐，若报 WARN 就等于每期固定刷两条，
@@ -146,12 +201,47 @@ def trading_days(start, end):
     return days
 
 
+def ran_morning(rec_ids):
+    """该日是否跑过晨报档 —— 决定「该不该有 DRAGON BALL模型 归档」。
+
+    为什么要这个判定（2026-09-23 修口径错配）：
+      归档**仅晨报档产出**（《报告生成流程》§三档总览第 72-73 行、
+      §抓取第 115 行「仅晨报做」）。改前本工具无条件要求每个交易日都有归档，
+      于是"只跑午间档"的日子必然误报 ERROR —— 报的是操作者无法改变的事，
+      正是本文件 2026-09-17 刚清掉的那类永久噪声。
+    """
+    return any(str(r).endswith(MORNING_SUFFIXES) for r in rec_ids)
+
+
+def audit_gap_whitelist(name, whitelist, days, has_record):
+    """白名单自检：条目必须有原因、且必须真的是缺口。
+
+    白名单是本工具**唯一能让闸门放过东西**的机制，所以它自己必须被检查：
+      · 空原因 → 无声放水（登记了却不说为什么，等于没登记）；
+      · 日期其实有记录 → 洞已被填上或日期写错 → 该条目已失效，提示清理。
+
+    返回 (stale, empty) 两个列表，由调用方决定报 WARN 还是直接判错。
+    刻意**不**自动删除失效条目：删除是不可逆动作，交给人来改文件。
+    """
+    stale, empty = [], []
+    dset = set(days)
+    for d, reason in whitelist.items():
+        if not str(reason).strip():
+            empty.append(d)
+        if d in dset and has_record(d):
+            stale.append(d)
+    return stale, empty
+
+
 def main():
     argv = sys.argv
     start = DEFAULT_FROM
     if '--from' in argv:
         start = argv[argv.index('--from') + 1]
     verbose = '--verbose' in argv or '-v' in argv
+    # --strict：忽略全部白名单重新判定。白名单是唯一能让闸门放过东西的机制，
+    # 必须能事后复核它是否还成立（定期跑一次，或怀疑"洞被悄悄填进白名单"时跑）。
+    strict = '--strict' in argv
     today = datetime.date.today().isoformat()
 
     # 已有 DRAGON BALL模型 归档的日期
@@ -162,16 +252,30 @@ def main():
                 tj_dates.add(fn.replace('DRAGON_BALL_原始记录_', '').replace('.md', ''))
 
     # forecast_chain 的日期分布
-    with open(FORECAST, encoding='utf-8') as f:
-        fchain = json.load(f)
+    # 读不动链文件时必须**有意报错**（2026-09-23 加固）：原先裸 open 会抛
+    # FileNotFoundError，退出码同样是 1，但那是「脚本崩了」，与「查到 ERROR」
+    # 不可区分，且输出里没有一句 [FAIL] 诊断——调用方只会看到一坨栈。
+    try:
+        with open(FORECAST, encoding='utf-8') as f:
+            fchain = json.load(f)
+        with open(CONSENSUS, encoding='utf-8') as f:
+            cchain = json.load(f)
+    except FileNotFoundError as e:
+        print(f'[FAIL] 链文件不存在：{e.filename}', file=sys.stderr)
+        print('[FAIL] 缺链即无法核对日期分布与停更 —— **无法给出任何结论**（不是「通过」）',
+              file=sys.stderr)
+        return 1
+    except Exception as e:                                  # noqa: BLE001
+        print(f'[FAIL] 链文件读不动（{type(e).__name__}：{e}）', file=sys.stderr)
+        print('[FAIL] 链内容不可解析 —— **无法给出任何结论**（不是「通过」）', file=sys.stderr)
+        return 1
+
     fc_dates = {}
     for r in fchain:
         d = '-'.join(r['id'].split('-')[0:3])
         fc_dates.setdefault(d, []).append(r['id'])
 
     # consensus
-    with open(CONSENSUS, encoding='utf-8') as f:
-        cchain = json.load(f)
     cc_dates = sorted(r['id'][:10] for r in cchain if r.get('id'))
     cc_last = cc_dates[-1] if cc_dates else '无'
 
@@ -186,30 +290,79 @@ def main():
     infos = 0      # INFO：上下文与已知例外，不影响退出码
 
     # 1) DRAGON BALL模型 归档缺口
-    print('\n【1】DRAGON BALL模型 原文归档缺口（有交易日但无归档文件）')
-    tj_missing = [d for d in days if d not in tj_dates]
-    tj_real = [d for d in tj_missing if d not in KNOWN_TJ_GAPS]
-    tj_known = [d for d in tj_missing if d in KNOWN_TJ_GAPS]
+    #    口径（2026-09-23 修）：**该日跑过晨报档才要求归档**——归档仅晨报档产出。
+    #    没跑晨报档的日子本就不该有归档，那不是缺口而是设计使然 → INFO。
+    print('\n【1】DRAGON BALL模型 原文归档缺口（跑过晨报档的交易日，却无归档文件）')
+    tj_expected = [d for d in days if ran_morning(fc_dates.get(d, []))]
+    tj_missing = [d for d in tj_expected if d not in tj_dates]
+    tj_notreq = [d for d in days if not ran_morning(fc_dates.get(d, []))]
+    if strict:
+        tj_real, tj_known = list(tj_missing), []          # --strict：白名单不生效
+    else:
+        tj_real = [d for d in tj_missing if d not in KNOWN_TJ_GAPS]
+        tj_known = [d for d in tj_missing if d in KNOWN_TJ_GAPS]
     if tj_real:
         for d in tj_real:
-            print(f'  ⚠️ {d} 缺 DRAGON BALL模型 归档（需确认当天是否真的无 DRAGON BALL模型 新帖）')
+            print(f'  ⚠️ {d} 缺 DRAGON BALL模型 归档（该日跑过晨报档 → 应有归档，需确认抓取是否漏档）')
         errors += len(tj_real)
     else:
-        print('  ✅ 无新增缺口')
+        print('  ✅ 无缺口')
     if tj_known:
         print(f'  ℹ️ 已知例外 {len(tj_known)} 条（不计入问题）：'
               + '、'.join('%s→%s' % (d, KNOWN_TJ_GAPS[d]) for d in tj_known))
+        infos += 1
+    if tj_notreq:
+        # 不静默：明说有多少天"按设计不产出归档"，避免"没报就是没查"的错觉
+        print(f'  ℹ️ 另有 {len(tj_notreq)} 个交易日未跑晨报档 → 归档按设计不产出（非缺口）'
+              + ('：' + '、'.join(tj_notreq) if verbose else '；--verbose 展开'))
         infos += 1
 
     # 2) forecast_chain 档位缺口
     print('\n【2】forecast_chain 档位缺口（有交易日但无任何预判记录）')
     fc_missing = [d for d in days if d not in fc_dates]
-    if fc_missing:
-        for d in fc_missing:
+    if strict:
+        fc_real, fc_known = list(fc_missing), []
+    else:
+        fc_real = [d for d in fc_missing if d not in KNOWN_FC_GAPS]
+        fc_known = [d for d in fc_missing if d in KNOWN_FC_GAPS]
+    if fc_real:
+        for d in fc_real:
             print(f'  ⚠️ {d} 无预判记录')
-        errors += len(fc_missing)
+        errors += len(fc_real)
     else:
         print('  ✅ 无缺口')
+    if fc_known:
+        print(f'  ℹ️ 已知缺口 {len(fc_known)} 条（当日整条流水线未触发，不可追溯补录；'
+              f'不补录的理由见文件头）：'
+              + '、'.join('%s→%s' % (d, KNOWN_FC_GAPS[d]) for d in fc_known))
+        infos += 1
+
+    # 2b) 白名单自检（白名单是唯一能让闸门放过东西的机制，必须自查）
+    print('\n【2b】缺口白名单自检（条目必须有原因；且必须仍是真缺口）')
+    stale_n, empty_n = 0, 0
+    for wl_name, wl, has_rec in (('DRAGON BALL模型 归档', KNOWN_TJ_GAPS,
+                                  lambda d: d in tj_dates),
+                                 ('forecast_chain 档位', KNOWN_FC_GAPS,
+                                  lambda d: d in fc_dates)):
+        st, em = audit_gap_whitelist(wl_name, wl, days, has_rec)
+        if em:
+            print(f'  ⚠️ {wl_name}：白名单 {len(em)} 条**没有原因** → 无声放水'
+                  f'（请补原因或删除）：' + '、'.join(em))
+            errors += len(em)
+            empty_n += len(em)
+        if st:
+            print(f'  ⚠️ {wl_name}：白名单 {len(st)} 条**已不再成立**'
+                  f'（该日其实有记录/日期不在检查区间）→ 请清理，'
+                  f'白名单要能缩小：' + '、'.join(st))
+            warns += len(st)
+            stale_n += len(st)
+    if not stale_n and not empty_n:
+        total_wl = len(KNOWN_TJ_GAPS) + len(KNOWN_FC_GAPS)
+        # 措辞跟着实际状态走：--strict 下白名单本来就没参与判定，
+        # 此时再说"可用 --strict 忽略"就是自相矛盾的输出（输出与状态不符会磨损可信度）。
+        tail = ('；**本次为 --strict，白名单未参与判定，上方缺口即为原始视图**'
+                if strict else '；--strict 可忽略白名单复核')
+        print(f'  ✅ 无失效/无空原因条目（累计 {total_wl} 条{tail}）')
 
     # 3) 档位覆盖偏薄（INFO —— 近期既定节奏只跑晨报档，不是缺口）
     thin = [d for d in days if d in fc_dates and len(fc_dates[d]) == 1]
@@ -325,9 +478,11 @@ def main():
 
     # 汇总
     print('\n' + '=' * 70)
-    print(f'汇总：DRAGON BALL模型 新增缺口 {len(tj_real)}（另有已知例外 {len(tj_known)}）· '
-          f'档位缺口 {len(fc_missing)} · 产物缺口 {len(art_gap)} · '
-          f'ERROR {errors} · WARN {warns} · INFO {infos}')
+    print(f'汇总：DRAGON BALL模型 归档缺口 {len(tj_real)}（另有已知例外 {len(tj_known)}、'
+          f'未跑晨报档按设计不产出 {len(tj_notreq)}）· '
+          f'档位缺口 {len(fc_real)}（另有已知缺口 {len(fc_known)}）· '
+          f'产物缺口 {len(art_gap)} · '
+          f'ERROR {errors} · WARN {warns} · INFO {infos}' + ('  [--strict]' if strict else ''))
     if errors:
         print('❌ 存在 ERROR：必须处理（见上方 ⚠️ 行）。')
     elif warns:

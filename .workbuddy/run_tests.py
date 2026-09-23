@@ -41,14 +41,26 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description='聚合测试入口（只读，不改任何文件）')
     ap.add_argument('--only', default=None, metavar='SUBSTR',
                     help='只跑文件名包含该子串的测试')
+    ap.add_argument('--files', default=None, metavar='LIST',
+                    help='只跑指定的测试文件名，逗号分隔（供 gate.py fast 级用；'
+                         '与 --only 的区别是**精确指定**而非子串匹配）')
     ap.add_argument('-v', '--verbose', action='store_true', help='失败时多打尾部输出')
     a = ap.parse_args(argv)
 
     tests = sorted(os.path.basename(p) for p in glob.glob(os.path.join(HERE, 'test_*.py')))
-    if a.only:
+    if a.files:
+        want = [x.strip() for x in a.files.split(',') if x.strip()]
+        missing = [w for w in want if w not in tests]
+        if missing:
+            # 拼错文件名会导致"跑了 0 个但报通过"—— 必须有意报错
+            sys.stderr.write('[FAIL] --files 里有不存在的测试：%s\n' % '、'.join(missing))
+            return 1
+        tests = [t for t in tests if t in want]
+    elif a.only:
         tests = [t for t in tests if a.only in t]
     if not tests:
-        sys.stderr.write('[FAIL] 没有匹配的测试（--only %r）\n' % a.only)
+        sys.stderr.write('[FAIL] 没有匹配的测试（--only %r / --files %r）\n'
+                         % (a.only, a.files))
         return 1
 
     print('=' * 62)

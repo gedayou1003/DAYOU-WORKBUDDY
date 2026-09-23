@@ -91,16 +91,26 @@ def normalize(raw):
 
 
 def read_clipboard():
-    """Windows 剪贴板取文本"""
+    """Windows 剪贴板取文本。返回 (文本, 失败原因)；成功时原因为 None。
+
+    2026-09-23：旧实现只回 stdout，异常分支 print 一句就 `return ""` ——
+    「剪贴板真的空」与「powershell 起不来 / 执行报错」都塌缩成同一个空串，
+    调用方随即打「（剪贴板为空？）」，**把系统级故障说成用户没复制东西**。
+    现在 rc≠0 / 异常都把原因带回给调用方打印。
+    另补 `errors="replace"`：剪贴板里有非法 UTF-8 字节时，旧写法会在 decode 处抛异常
+    并被下面的 except 吞掉，同样只表现为「剪贴板为空」。
+    """
     try:
         r = subprocess.run(
             ["powershell", "-NoProfile", "-NonInteractive", "-Command",
              "[Console]::OutputEncoding=[Text.Encoding]::UTF8; Get-Clipboard -Raw"],
-            capture_output=True, text=True, encoding="utf-8", timeout=30)
-        return (r.stdout or "").strip()
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
     except Exception as e:
-        print("[warn] 读取剪贴板失败：%r" % (e,))
-        return ""
+        return "", "powershell 调用失败：%r" % (e,)
+    if r.returncode != 0:
+        return (r.stdout or "").strip(), "powershell 退出码 %d：%s" % (
+            r.returncode, ((r.stderr or "").strip() or "(无 stderr)")[:200])
+    return (r.stdout or "").strip(), None
 
 
 def write_cookie(value):
@@ -204,9 +214,13 @@ def main():
         print("[warn] 文件不存在，将创建：%s" % COOKIE_FILE)
 
     if a.value is not None or a.from_clipboard:
-        raw = a.value if a.value is not None else read_clipboard()
+        if a.value is not None:
+            raw, why = a.value, None
+        else:
+            raw, why = read_clipboard()
         if not raw:
-            print("[FAIL] 未取到内容（剪贴板为空？）")
+            # 把「为什么没取到」如实打出来：系统故障不再伪装成「剪贴板为空」
+            print("[FAIL] 未取到内容%s" % ("：" + why if why else "（剪贴板为空？）"))
             return 1
         newv = normalize(raw)
         print("输入原文: %s" % mask(raw.strip()))

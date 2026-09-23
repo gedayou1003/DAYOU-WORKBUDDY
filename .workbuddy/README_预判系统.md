@@ -85,6 +85,10 @@ python forecast_analyze.py 000300
 2. **【严重】`fetch_zsxq.py` 的 `norm_topic` 图片/附件提取 bug**：Skill 通道（zsxq-cli `topics_brief`）结构里 `images`/`files` 在**顶层**（`talk` 字段为 None），但代码只从 `body=t['talk']` 里取，导致 **Skill 通道星球（基业长青+、卫斯李、DRAGON BALL模型）的图片正文全部丢失**。已加顶层兜底：`body` 取不到时从顶层 `t` 取。验证：Skill 通道 7 张图可正确提取。Cookie 通道（嵌套 talk）不受影响（body 已取到则不触发兜底）。
 3. **【中等】`run_000001_chansignal.py` HTML 面板日期硬编码 `'2026-08-14'`**：信号面板副标题写死日期，已改为动态 `{TODAY}`。
 4. **【中等】`anonymize_report.py` 硬编码 8/19 路径**：无法复用，已参数化（`python anonymize_report.py [YYYY-MM-DD]`，默认今天）。
+   2026-09-23 再补：加 `--src/--out`（可重定向，供冒烟/测试用）与退出码语义 ——
+   **正文仍有真名残留 = 脱敏没做成 → 退 1 且不写产物**（此前只打一句 print 就退 0，
+   等于「交付了一份泄漏真名的匿名版却报成功」）；真名只落在必须逐字保留的文件路径里 → 退 2。
+   用法：`-h` 看完整说明。
 
 已废弃脚本（不再被定时任务调用，硬编码日期不影响运行）：`backtest_*.py`、旧 `run_000001.py`（单级别版）。
 

@@ -20,7 +20,15 @@
   3. **声明式阶段清单**：加/改一环只改 `build_stages()`，不新写脚本。
   4. **「期望退出码」写在声明里**：如 `gen_tj_archive` 空窗口退 2 是**设计**而非故障、
      `md_to_html` 无参退 1 是**守卫**而非崩溃。不写清楚就只能靠人肉记忆，等于没有判据。
+  4b. **崩栈即失败**（2026-09-23 加固）：退出码合格还不够 —— 输出里出现 traceback
+     一律判 FAIL。原因：一半阶段的期望集合含 1/2，光看退出码，「有意报错」与
+     「未捕获异常」完全同形（实测：修复前的 `check_integrity` 缺链文件时
+     rc=1 + Traceback + 无 `[FAIL]`，冒烟照样判 [OK]）。白名单 `ALLOW_TB`
+     默认空，加条目必须写理由。
   5. 串行执行（项目约定：并发 >2 会触发沙箱拦截）。`--only` 可只跑子集。
+  6. ⚠️ **跑冒烟期间不要编辑仓库文件**：受保护文件在开跑时取快照、跑完按 md5 核对，
+     不一致就**回滚**（这是防「脚本乱写」的护栏）。2026-09-23 实测踩坑：
+     在冒烟运行中改了 3 个脚本 → 冒烟把改动全部回滚，修复白做且结果作废。
 
 用法：
     $PY .workbuddy/smoke_pipeline.py                 # 全量
@@ -57,6 +65,18 @@ TIMEOUT = 480          # 单个阶段墙钟上限（秒）
 DEFAULT_TMP = os.path.join(HERE, '_smoke_tmp')
 CLEANUP_MAX_FILES = 40  # 临时目录超过这么多文件就不自动删（见 _cleanup 的说明）
 
+# ── 崩栈即失败（2026-09-23 加固）──
+# 阶段判定原先只看退出码（`ok = rc in expect`），而多数阶段的期望集合含 1/2，
+# 于是「有意报错」与「未捕获异常崩栈」在退出码上完全同形 —— 实测过：
+# 修复前的 check_integrity 缺链文件时是 rc=1 + Traceback + 无 [FAIL]，
+# 冒烟照样判 [OK]。轨迹是：脚本坏了 → 退出码落进期望集合 → 闸门报绿。
+# 现在把「输出里有 traceback」独立成一条硬失败，与退出码无关。
+TB_MARK = 'Traceback (most recent call last)'
+# 允许崩栈的阶段白名单：**每加一条都必须写清理由**，否则等于把闸门拆掉。
+# 当前为空 —— 31 个阶段没有任何一个应当以未捕获异常收场（失败路径一律
+# 打印 [FAIL] 并 sys.exit(非零)，见脚本地图 §〇·补11）。
+ALLOW_TB = set()
+
 # ── 受保护：冒烟**不允许**被改动。改了就是最严重的 BUG（说明有脚本在乱写）──
 PROTECTED_GLOBS = [
     '.workbuddy/forecast_chain.json',
@@ -64,6 +84,11 @@ PROTECTED_GLOBS = [
     'outputs/*.md',
     'outputs/*.html',
     'outputs/*.svg',
+    # outputs/*.json 原先**不在受保护范围**（2026-09-23 发现）：引擎数据包
+    # `000001_四周期联动_<日期>.json` 每天一份，冒烟跑 D2 会直接覆盖当天那份，
+    # 而 md5 核对看不见它 → 「冒烟改动了交付物却不报」的盲区。
+    # 配套改动：D2 现在带 `--out {TMP}/...`，不再往真实 outputs/ 写。
+    'outputs/*.json',
     '.workbuddy/*.md',
     '.workbuddy/*.py',
 ]
@@ -217,6 +242,31 @@ def _seed_guard_probe(tmp):
     return p
 
 
+ANON_SRC = '_anon_src_probe.md'
+ANON_DST = '_anon_dst_probe.md'
+
+
+def _seed_anon_probe(tmp):
+    """给 H5b 造一份「含真名」的假晨报，用来验证匿名化的**正向职责**。
+
+    为什么必须造这份输入（2026-09-23）：H5 原先是不带参数跑的 —— 当天晨报没生成时
+    它会崩栈（已修），可当天晨报**存在**时它会真去写 `outputs/..._匿名版.md`，
+    等于冒烟往交付目录里塞产物。冒烟「需落盘的产物一律写临时目录」的原则
+    在这里靠 `--src/--out` 才能真正做到。
+
+    文件名带 `_` 前缀是本项目「按天中间产物」约定，`check_display_name.py`（G3）
+    会跳过它们 —— 否则这份**故意含真名**的探针会在下一轮冒烟里被 G3 报成泄漏。
+    """
+    p = os.path.join(tmp, ANON_SRC)
+    with open(p, 'w', encoding='utf-8') as f:
+        f.write('# 知识星球晨报 · 匿名化冒烟探针（冒烟自建，不是交付物）\n\n'
+                '## 卫斯李的投研笔记\n- 大鹏鸟 转述：流沙河 今日减仓\n\n'
+                '## 短评&信息（可接ai）\n- 好运哥：…\n\n'
+                '## 180K Research\n- AI 产业链 走强；浑水调研 / xxpq 亦提及\n\n'
+                '关联报告：`outputs/知识星球晨报_2026-09-23.md`\n')
+    return p
+
+
 def build_stages(tmp):
     """返回 (stages, meta)。stage = (名称, 分类, argv, 期望rc集合, 联网, 慢)"""
     rep_abs = newest_by_mtime('outputs/作战报告_*.md')
@@ -252,7 +302,7 @@ def build_stages(tmp):
     add('C2 抓取摘要 digest_zsxq', 'fetch',
         ['{PY}', '{WB}/digest_zsxq.py', '--out', '{TMP}/digest.txt', '--limit', '5'], (0,), False, False)
     # C3 走 --out 写到临时目录：既验证归档生成能跑，又完全不碰当天交付物。
-    add('C3 T&J 原文归档（写临时路径）', 'fetch',
+    add('C3 DRAGON BALL模型 原文归档（写临时路径）', 'fetch',
         ['{PY}', '{WB}/gen_tj_archive.py', '--out', '{TMP}/tj_archive.md'], (0, 2), False, False)
     # C4 人工精修守卫：哨兵文件**故意不带生成戳**，脚本必须拒绝覆盖并退 2。
     #    这是 2026-09-21 那次 P0（机械版静默覆盖人工精修版）的回归闸门。
@@ -261,10 +311,18 @@ def build_stages(tmp):
         ['{PY}', '{WB}/gen_tj_archive.py', '--out', '{TMP}/guard_probe.md'], (2,), False, False)
 
     # ---- D. 引擎层 ----
+    # D1 退出码 1（行情未取到）/ 2（引擎降级）都是**数据侧信号**，不是脚本坏：
+    #   行情真断了，同轮的 B2（日线 OHLC，期望 0）会先红；引擎真坏了，D2/D3 会先红。
+    #   故此处三个码都收，避免同一次环境抖动把 D1 也报成 FAIL（与 F2/F3/G1/G2 同口径）。
     add('D1 一键预判数据包 forecast_analyze', 'engine',
-        ['{PY}', '{WB}/forecast_analyze.py', '000001'], (0,), True, True)
+        ['{PY}', '{WB}/forecast_analyze.py', '000001'], (0, 1, 2), True, True)
+    # D2 带 --out 写临时目录（2026-09-23 加）：原先它写死 outputs/000001_四周期联动_<日期>.json，
+    #   冒烟每跑一次就往交付目录落一份「冒烟数据」，还会覆盖当天真实数据包。
+    #   期望码含 1：新增的数据充足性守卫在行情不足时退 1 且**不写数据包**（数据侧信号，
+    #   与 D1 同口径；真崩了由「崩栈即失败」那条硬判据兜住）。
     add('D2 四周期联动 analyze_000001_multi', 'engine',
-        ['{PY}', '{WB}/analyze_000001_multi.py'], (0,), True, True)
+        ['{PY}', '{WB}/analyze_000001_multi.py', '--out', '{TMP}/multi_000001.json'],
+        (0, 1), True, True)
     add('D3 申万行业缠论 run_sw_chansignal', 'engine',
         ['{PY}', '{WB}/run_sw_chansignal.py', '--code', '801080'], (0,), True, True)
     add('D4 引擎有效性复盘 engine_effectiveness', 'engine',
@@ -307,10 +365,33 @@ def build_stages(tmp):
     add('H3 md_to_html 不存在文件守卫', 'output',
         ['{PY}', '{WB}/md_to_html_report.py', '{TMP}/nosuch.md'], (1,), False, False)
     if rep:
-        add('H4 md_to_html 正常路径', 'output',
-            ['{PY}', '{WB}/md_to_html_report.py', rep], (0,), False, False)
-    add('H5 匿名化 anonymize_report', 'output',
-        ['{PY}', '{WB}/anonymize_report.py'], (0, 1, 2), False, False)
+        # 2026-09-23：改前这里不带 --out，而该脚本当时把输出路径写死为「与输入同目录同名 .html」
+        # → **每次都往真实交付目录 outputs/ 落一个 HTML**，与冒烟「零副作用」的自述冲突
+        # （实测被 `受保护范围新增文件 1 个：outputs/作战报告_午间_2026-09-23.html` 抓到）。
+        # 已给脚本加 --out，本阶段随之重定向到临时目录。
+        add('H4 md_to_html 正常路径（重定向到临时路径）', 'output',
+            ['{PY}', '{WB}/md_to_html_report.py', rep, '--out', '{TMP}/report.html'],
+            (0,), False, False)
+        # H4b：--out 指向不存在的目录必须**有意报错**（rc=1 + [FAIL]），不许静默落到别处
+        add('H4b md_to_html --out 目录不存在守卫', 'output',
+            ['{PY}', '{WB}/md_to_html_report.py', rep, '--out', '{TMP}/nodir/x.html'],
+            (1,), False, False)
+    # H5 失败路径：输入不存在时必须**有意报错**（rc=1 + [FAIL]），而不是 traceback。
+    #   2026-09-23 之前它不带参数跑，当天晨报没生成时就是 FileNotFoundError 崩栈 ——
+    #   期望集合含 1，所以旧冒烟判 [OK]；「崩栈即失败」那条硬判据一上就抓出来了。
+    #   现在显式给一个**一定不存在**的 --src：判据不再依赖「今天有没有生成晨报」。
+    #   「失败时不产出产物」这一条由 test_degrade_exitcodes §9 断言（阶段模型只管退出码）。
+    add('H5 匿名化 缺输入必须有意报错', 'output',
+        ['{PY}', '{WB}/anonymize_report.py',
+         '--src', '{TMP}/_anon_nosuch.md', '--out', '{TMP}/_anon_must_not_exist.md'],
+        (1,), False, False)
+    # H5b 正向路径：真跑一遍匿名化（输入/输出都在临时目录），验证映射表真的能脱敏。
+    #   为什么不直接用当天晨报：那会往 outputs/ 落一份 `_匿名版.md`，冒烟就有了副作用。
+    _seed_anon_probe(tmp)
+    add('H5b 匿名化 正向（真名→代号）', 'output',
+        ['{PY}', '{WB}/anonymize_report.py',
+         '--src', '{TMP}/' + ANON_SRC, '--out', '{TMP}/' + ANON_DST],
+        (0,), False, False)
 
     meta = {'report': rep, 'payload': pay}
     return s, meta
@@ -374,11 +455,14 @@ def main(argv=None):
         except subprocess.TimeoutExpired as e:
             rc, out, err, to = 124, (e.stdout or '') if isinstance(e.stdout, str) else '', '', True
         dt = time.time() - t0
-        ok = rc in expect
+        blob = out + err
+        tb = TB_MARK in blob and name not in ALLOW_TB
+        ok = (rc in expect) and not tb
         results.append({'name': name, 'cat': cat, 'rc': rc, 'expect': expect, 'ok': ok,
-                        'to': to, 'dt': dt, 'out': out, 'err': err})
-        W('  [%s] %-42s rc=%-4s %6.1fs' % (
-            'OK  ' if ok else ('TIME' if to else 'FAIL'), name, rc, dt))
+                        'tb': tb, 'to': to, 'dt': dt, 'out': out, 'err': err})
+        W('  [%s] %-42s rc=%-4s %6.1fs%s' % (
+            'OK  ' if ok else ('TIME' if to else 'FAIL'), name, rc, dt,
+            '  ← 崩栈（有 traceback，退出码合格也不算过）' if tb else ''))
 
     # ── 跑后核对：受保护文件 ──
     # 口径：MAY_CHANGE 优先。命中 MAY_CHANGE 的文件不参与「受保护」判定，
@@ -417,12 +501,18 @@ def main(argv=None):
     fail = [r for r in results if not r['ok']]
     if fail:
         for r in fail:
-            W('  [FAIL] %s  rc=%s（期望 %s）' % (r['name'], r['rc'], '/'.join(map(str, r['expect']))))
+            why = []
+            if r['rc'] not in r['expect']:
+                why.append('退出码 %s 不在期望 %s 内'
+                           % (r['rc'], '/'.join(map(str, r['expect']))))
+            if r.get('tb'):
+                why.append('输出含 traceback（未捕获异常，崩栈不是失败路径）')
+            W('  [FAIL] %s  rc=%s —— %s' % (r['name'], r['rc'], '；'.join(why) or '?'))
             tail = [x for x in (r['out'] + r['err']).splitlines() if x.strip()][-12:]
             for ln in tail:
                 W('         | %s' % ln[:150])
     else:
-        W('  全部 %d 个阶段退出码符合预期' % len(results))
+        W('  全部 %d 个阶段退出码符合预期，且无一阶段崩栈' % len(results))
     W('')
     W('② 副作用核对（冒烟不该改动交付物与链）')
     if changed:
@@ -458,8 +548,9 @@ def main(argv=None):
     rc = 1 if (fail or changed or missing) else (2 if (added_prot or new_files) else 0)
     W('')
     W('=' * 78)
-    W('汇总：阶段 %d · 通过 %d · 失败 %d · 受保护文件被改 %d · 新增文件 %d'
-      % (len(results), len(results) - len(fail), len(fail), len(changed), len(new_files)))
+    W('汇总：阶段 %d · 通过 %d · 失败 %d（其中崩栈 %d）· 受保护文件被改 %d · 新增文件 %d'
+      % (len(results), len(results) - len(fail), len(fail),
+         sum(1 for r in results if r.get('tb')), len(changed), len(new_files)))
     W('RESULT: %s' % ('ALL PASS' if rc == 0 else ('WARN' if rc == 2 else 'FAIL')))
     W('=' * 78)
 

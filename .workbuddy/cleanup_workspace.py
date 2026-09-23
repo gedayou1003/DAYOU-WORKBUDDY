@@ -291,6 +291,23 @@ ACTIONS = [
     ('.workbuddy/_bias_test_tmp2.json', 'oneoff_output', '同上（第二个）', None),
     ('.workbuddy/_cw_dry9.txt', 'audit_output', '本轮 cleanup_workspace dry-run 输出', None),
     ('.workbuddy/_cw_apply9.txt', 'audit_output', '本轮 cleanup_workspace --apply 输出（20 个文件）', None),
+
+    # ---------- 11. 第九轮（2026-09-23）：审计器盲区排查的取证件 ----------
+    ('.workbuddy/_probe_round9.py', 'oneoff_script',
+     '把审计器 §9/§1 的聚合数字逐处展开（含原文上下文）+ 时间腐烂/测试删除/冒烟名单扫描；'
+     '它查出的「代码区过滤失步」已固化为 test_audit_detector.py 的 §9 契约断言，'
+     '所以探针本身可以退休', None),
+    ('.workbuddy/_probe_round9b.py', 'oneoff_script',
+     'chainlib 自检失败路径探针（缺链/坏 JSON/正常三态）；结论已固化为 '
+     'test_degrade_exitcodes.py §5（含变异自证），探针退休', None),
+    ('.workbuddy/_probe_smoke_dir.py', 'oneoff_script',
+     '只读转储冒烟临时目录与阶段产物，用于定位「冒烟改了哪些文件」；一次性排查用', None),
+    ('.workbuddy/_probe_tj_mutant.py', 'oneoff_script',
+     'test_gen_tj_archive 沙箱漏项的变异自证（把 META 指到沙箱外 → §0 自检必须立即中止）；'
+     '结论已固化为该测试的 §0 致命自检，探针退休', None),
+    ('outputs/000001_四周期联动_2026-09-23.json', 'oneoff_output',
+     '冒烟测试期间由真实脚本产生（D2 当时不可重定向，直接写 outputs/），不是当档流程产物。'
+     'D2 已加 --out、冒烟改走临时目录，此类旁路产物不再产生；归档以免与真实数据包混淆', None),
 ]
 
 # 提升为正式工具（重命名/替代，不进 archive）

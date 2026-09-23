@@ -4,6 +4,16 @@
 上证综指 000001 · 四周期联动 + 区间套分析（15/60/120分钟 + 日线）
 每周期：chan-signal（趋势/中枢/买卖点）+ MA55（位置/斜率）
 区间套：相邻两周期（大周期中枢位置 + 小周期买卖点）共振判定
+
+用法：
+    $PY .workbuddy/analyze_000001_multi.py                 # 写 outputs/000001_四周期联动_<日期>.json
+    $PY .workbuddy/analyze_000001_multi.py --out X.json    # 写到指定路径（冒烟/测试用）
+
+退出码（2026-09-23 起有语义）：
+    0 = 正常生成数据包
+    1 = 行情不足/含 NaN（**不写数据包**）、或数据包写盘失败
+    说明：原先无论如何都退 0，且数据不足时会打印一片 nan 并把裸 NaN 写进 JSON
+    （不是合法 JSON），产出「看着成功」的废数据包 —— 与 D1（forecast_analyze）同族。
 """
 import sys, os, json, urllib.request
 import pandas as pd
@@ -132,20 +142,61 @@ def assess_pair(big, small):
 
 
 def main():
-    periods = [
-        ('日线', fetch_day(), False),
-        ('120分钟', fetch_mk('m120'), True),
-        ('60分钟', fetch_mk('m60'), True),
-        ('15分钟', fetch_mk('m15'), True),
-    ]
-    results = {}
+    # --out PATH：写到指定路径（冒烟/测试用）。默认仍是 outputs/000001_四周期联动_<日期>.json。
+    # 2026-09-23 加：冒烟原先只能让它写**真实 outputs/**，每天跑一次冒烟就在交付目录里
+    # 留一份冒烟数据包（冒烟自己的原则是「需落盘的产物一律写临时目录」，这处是漏网）。
+    out_override = None
+    if '--out' in sys.argv:
+        i = sys.argv.index('--out')
+        if i + 1 >= len(sys.argv):
+            print('[FAIL] --out 后面要跟路径', file=sys.stderr)
+            return 1
+        out_override = sys.argv[i + 1]
+
+    # 取数失败要**有意报错**，不能让它抛 traceback（2026-09-23 加固，与 D1 同口径）：
+    # 崩栈与「有意报错」在退出码上同形（都是 1），但前者没有一句诊断。
+    try:
+        periods = [
+            ('日线', fetch_day(), False),
+            ('120分钟', fetch_mk('m120'), True),
+            ('60分钟', fetch_mk('m60'), True),
+            ('15分钟', fetch_mk('m15'), True),
+        ]
+    except Exception as e:                                  # noqa: BLE001
+        print('[FAIL] 行情取不到（%s：%s）—— 未生成数据包'
+              % (type(e).__name__, e), file=sys.stderr)
+        return 1
+
+    # 数据充足性守卫（2026-09-23 加），**必须在 analyze() 之前**：
+    #   · 不足 55 根时 ma.iloc[-1] 是 NaN → 打印一片 nan、JSON 里写进裸 NaN
+    #     （不是合法 JSON），而退出码仍是 0 —— 一份看着「生成成功」的废数据包；
+    #   · 0 根时 ma.iloc[-1] 直接 IndexError **崩栈** —— 那是脚本坏了的样子，不是失败路径。
+    # 两种情况都改为有意报错：退 1、不写数据包，让上游一眼看见。
+    frames, thin = [], []
     for tag, rows, minute in periods:
         df = to_df(rows, minute)
+        if len(df) < 60:
+            thin.append('%s(%d 根)' % (tag, len(df)))
+        frames.append((tag, df, minute))
+    if thin:
+        print('[FAIL] 行情数据不足（MA55 需 ≥60 根）：%s —— 未生成数据包'
+              % '、'.join(thin), file=sys.stderr)
+        return 1
+
+    results = {}
+    for tag, df, minute in frames:
         results[tag] = analyze(df, tag)
         r = results[tag]
         sig = r['latest_signal']
         sig_str = f"{sig['name']}@{sig['price']}({sig['date']})" if sig else '无'
         print(f"[{tag}] 价{r['price']} 趋势{r['trend']} {r['pzs']} | MA55={r['ma55']}({r['ma_pos']},{r['ma_slope']},{r['ma_dist_pct']:+.2f}%) | 最新信号:{sig_str}")
+
+    # 兜底：根数够但算出来是 NaN（数据源给了空值）同样不产出数据包
+    nan_dim = [t for t, v in results.items()
+               if v['ma55'] != v['ma55'] or v['price'] != v['price']]
+    if nan_dim:
+        print('[FAIL] 行情含 NaN（%s），未生成数据包' % '、'.join(nan_dim), file=sys.stderr)
+        return 1
 
     print('\n== 区间套判定（相邻周期）==')
     pairs = [
@@ -158,12 +209,19 @@ def main():
         print(f"[{p['pair']}] 大周期价格在中枢{pos}位置 → {p['conclusion']}{'('+p['strength']+')' if p['strength'] else ''}")
 
     date_str = datetime.now().strftime('%Y-%m-%d')
-    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'outputs', f'000001_四周期联动_{date_str}.json')
+    out = out_override or os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                       '..', 'outputs', f'000001_四周期联动_{date_str}.json')
     out = os.path.normpath(out)
     payload = {'periods': {k: v for k, v in results.items()}, 'taoquan': pairs}
-    json.dump(payload, open(out, 'w', encoding='utf-8'), ensure_ascii=False, indent=1, default=str)
+    try:
+        with open(out, 'w', encoding='utf-8') as f:
+            json.dump(payload, f, ensure_ascii=False, indent=1, default=str)
+    except OSError as e:
+        print('[FAIL] 数据包写盘失败：%s' % e, file=sys.stderr)
+        return 1
     print(f'\nJSON 已保存: {out}')
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

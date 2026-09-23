@@ -18,6 +18,12 @@
   "review": {...} or null,                  # 上期 pending 预判的机械复盘
   "prev_forecast": {...} or null            # 上期预判内容
 }
+
+退出码（2026-09-23 起，与 check_layout / fetch_zsxq 统一口径）:
+    0 = 通过（数据包完整）
+    1 = ERROR：行情未取到，数据包不可用于预判（ohlc.error 非空）
+    2 = WARN：降级但可用（如引擎未取到 → data 里有 engine_error）
+调用方（AI / 脚本）看退出码即可分辨「包是完整的」与「包缺核心输入」。
 """
 import sys, os, json, subprocess, datetime, urllib.request
 
@@ -34,17 +40,35 @@ import qt_api      # 腾讯接口多域名 failover（2026-09-18：web.ifzq.gtim
 
 
 def run_py(script, *args):
-    """运行 python 脚本并返回 stdout"""
-    r = subprocess.run([PY, script] + list(args), capture_output=True, text=True, encoding='utf-8')
-    return r.stdout.strip()
+    """运行 python 脚本，返回 (stdout, 退出码, stderr 尾巴)。
+
+    2026-09-23：旧实现只返回 stdout —— 子脚本失败时退出码与被 capture 的 stderr
+    全被丢掉，调用方只能拿到一个空字符串，**「脚本崩了」与「本来就没输出」不可区分**
+    （第五原则：失败模式必须出声）。
+    """
+    r = subprocess.run([PY, script] + list(args), capture_output=True, text=True,
+                       encoding='utf-8', errors='replace')
+    err = ((r.stderr or '').strip() or (r.stdout or '').strip())[-300:]
+    return (r.stdout or '').strip(), r.returncode, err
 
 
 def fetch_ohlc(code):
-    out = run_py(os.path.join(HERE, 'get_daily_ohlc.py'), code, '1')
+    """取日线行情。失败时返回 {"error": 原因}，原因里带退出码与 stderr。
+
+    2026-09-23：旧实现把 stdout 原样塞进 error 字段 —— 子脚本 rc≠0 且没往 stdout
+    写东西时，error 是空串，数据包里只剩 `"ohlc": {"error": ""}`，看不出任何原因。
+    """
+    out, rc, err = run_py(os.path.join(HERE, 'get_daily_ohlc.py'), code, '1')
+    if rc != 0 and not out:
+        return {"error": "get_daily_ohlc.py 退出码 %d：%s" % (rc, err or '(无输出)')}
     try:
-        return json.loads(out)
-    except Exception:
-        return {"error": out}
+        d = json.loads(out)
+    except Exception as e:
+        return {"error": "行情输出不是 JSON（%r）：%s" % (e, (err or out)[:200])}
+    if rc != 0 and isinstance(d, dict) and 'error' not in d:
+        # rc≠0 却给了看似正常的行情：不静默采信，就地标注（下同 error 判定口径）
+        d['error'] = "get_daily_ohlc.py 退出码 %d（数据可能不完整）：%s" % (rc, err[:160])
+    return d
 
 
 def _normalize_direction(d):
@@ -366,6 +390,20 @@ def main():
 
     print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
 
+    # 退出码语义（2026-09-23 新增；与 check_layout / fetch_zsxq 统一口径：
+    #   0=通过 · 1=ERROR（核心输入缺失）· 2=WARN（降级但仍可用））
+    # 旧实现 main() 没有返回值 → 行情取不到时照样打印数据包并退出 0，
+    # 「整包没有行情」与「一切正常」在退出码上完全一样（第一原则·无退出码语义）。
+    # 注意口径：本脚本是「一键数据包」，行情缺失=包不可用 → 1；
+    # 引擎缺失（engine_error）时行情/链/复盘仍在 → 只算降级 → 2。
+    if isinstance(result.get('ohlc'), dict) and 'error' in result['ohlc']:
+        print('[FAIL] 行情未取到，数据包不可用于预判：%s'
+              % result['ohlc']['error'], file=sys.stderr)
+        return 1
+    if result.get('engine_error'):
+        return 2
+    return 0
+
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

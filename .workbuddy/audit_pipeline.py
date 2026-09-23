@@ -21,7 +21,8 @@
   6. 运行件：.workbuddy 下非 .py/.md 文件是否被 gitignore 覆盖（用 git check-ignore 实测）
   7. 校验器体检：check_*/test_* 的退出码取值分布
   8. 测试覆盖：非 test_ 脚本是否有对应 test_<名字>.py；单列「在役链路缺口」（2026-09-21 新增）
-  9. subprocess 调用点是否校验退出码（其后 6 行内无 returncode/check=）（2026-09-21 新增）
+  9. subprocess 调用点是否校验退出码（判据：所在函数体里有没有 returncode/check=，
+     或 rc 是否被 sys.exit/return 直接传给上游）（2026-09-21 新增，2026-09-23 收紧）
 
 ⚠️ 【8】【9】是**信息项**，不参与退出码判定：8 的缺口是长期存量（51 个），
    若让它长期报红会变成永久噪声、导致闸门被无视；9 的命中多数是「失败也无所谓」的调用。
@@ -33,6 +34,12 @@
    「已声明豁免」并逐条打印原因，不计入阈值 —— 于是**未声明项数 = 真待办数**。
    原因过短或写在别的行一律不算声明：声明要能被人复核，不是用来把闸门关掉的开关。
 
+同一约定自 2026-09-23 起覆盖【3】硬编码：
+   测试里刻意构造的样本路径（如造 `C:/Users/alice/…` 验证扫描器本身）不是真硬编码，
+   在**命中那一行**行尾写 `# silent-ok: <原因>` 即进【3】的「已声明豁免」。
+   没有这个出口时，这 2 处会永久把闸门顶在 WARN 上，**真新增一条硬编码时
+   没人看得出「2 变成 3」**（温水煮青蛙 —— 与永久噪声同源）。
+
 设计约束：只读、不改任何文件；结果可复现（同一输入两次运行一致）。
 """
 import argparse
@@ -42,6 +49,7 @@ import os
 import re
 import subprocess
 import sys
+import tokenize
 
 for _s in (sys.stdout, sys.stderr):
     try:
@@ -122,12 +130,36 @@ def scan_exit_codes(src):
 # 刻意豁免的写法：在 except 行尾写 `# silent-ok: <原因>`。
 #   · 原因少于 4 个字视为**未声明**（防止用空声明把闸门蒙混过关，与「声明了不存在的目录照样算问题」同口径）
 #   · 已声明项**逐条打印原因**，但不计入阈值 —— 降噪不等于静默，否则就是偷偷把闸门调松
+#   · 必须是**真注释**（tokenize 的 COMMENT 记号），字符串里长的像声明的文本不算 ——
+#     否则改一行测试数据就能伪造声明把闸门关掉（2026-09-23 实测过，见 comment_text_lines）
 SILENT_OK = re.compile(r'#\s*silent-ok\s*[:：]\s*(\S.{3,})')
 SILENT_LABEL = {'BARE': '裸 except（无异常类型）', 'PASS': 'body 只有 pass/continue',
                 'RETURN': '静默 return None', 'RETVAL': '静默返回字面量（参数回退）',
                 'ASSIGN': '危险默认值（读不动就回退到写死的字面量）'}
 # 写死日期兜底：原先混在 §2 的三条正则里各扫一遍，现改到 code_only_lines 的代码区上扫
 DEAD_DATE = re.compile(r"""\bor\s+['"]20\d\d[-/][0-9]{2}['"]""")
+
+
+def comment_text_lines(s):
+    """返回 {行号: 该行的**真实注释**文本}（用 tokenize 取 COMMENT 记号）。
+
+    为什么不能直接在原始行上跑 SILENT_OK 正则：**字符串内容里的
+    `# silent-ok: …` 会伪造声明**。2026-09-23 实测：测试样本串里的
+    `# silent-ok: 短`（原因只有 1 个字，靠串尾的 `\\n'` 凑够长度）被当成
+    正式声明，把一处真硬编码放行了 —— 改一行测试数据就能悄悄关掉闸门。
+    声明必须是**人写的那一行注释**，不是被引号包起来的一段文本。
+
+    取不到词法（语法不完整）时返回空表：**宁可多报，也不放过**。
+    """
+    out = {}
+    try:
+        toks = list(tokenize.generate_tokens(io.StringIO(s).readline))
+    except Exception:  # silent-ok: 词法不可得即视为「无任何声明」，判定只会更严不会更松
+        return out
+    for t in toks:
+        if t.type == tokenize.COMMENT:
+            out.setdefault(t.start[0], []).append(t.string)
+    return {k: ' '.join(v) for k, v in out.items()}
 
 
 def scan_silent(src):
@@ -140,12 +172,12 @@ def scan_silent(src):
             # 解析不了就不能假装「这里没问题」—— 如实报成待办
             undecl.append((f, 0, 'PARSE   语法不可解析，静默失败扫描跳过（%s）' % str(e)[:40]))
             continue
-        lines = s.split('\n')
+        head_comments = comment_text_lines(s)
 
         def _note(node, kind):
             ln = node.lineno
-            head = lines[ln - 1] if 0 < ln <= len(lines) else ''
-            m = SILENT_OK.search(head)
+            # 只在**真注释**里找声明（不是原始行）：字符串内容不得伪造声明
+            m = SILENT_OK.search(head_comments.get(ln, ''))
             body = '%-7s %s' % (kind, SILENT_LABEL[kind])
             if m:
                 declared.append((f, ln, '%s（silent-ok：%s）' % (body, m.group(1))))
@@ -192,46 +224,104 @@ def scan_silent(src):
 
 
 # ---------------- 3. 硬编码 ----------------
+# 三引号字符串（含带前缀的 f/r/b）—— 只有这类才整段剔除
+TRIPLE_STR = re.compile(r'^[A-Za-z]{0,3}("""|\'\'\')')
+_FS_START = getattr(tokenize, 'FSTRING_START', None)
+_FS_END = getattr(tokenize, 'FSTRING_END', None)
+_FS_MID = getattr(tokenize, 'FSTRING_MIDDLE', None)
+
+
 def code_only_lines(s):
-    """返回 [(行号, 仅在「代码区」的行内容)]，剔除注释与三引号字符串。
+    """返回 [(行号, 仅在「代码区」的行内容)]，剔除注释与**三引号**字符串。
 
     必要性：本项目大量「已修复」的记录写在 docstring 里（如「- 删掉写死的绝对路径」），
     若不剔除，扫描器会把**修好之后留下的说明**当成命中 —— 那就是自造噪声，
     而噪声会让闸门被无视（见 MEMORY「校验器体检」）。
+
+    2026-09-23 重写（原为手写三引号状态机，见下）。
+    旧实现**会与源码失步**：实测 `gen_tj_archive.py` 只保留 139/356 行，
+    失步点之后整段（含 `__main__` 与 `sys.exit(main())`）被吞掉 ——
+    后果是 §1 把它误报成「有入口但无失败退出码」，而 §1/§3/§9 此后对
+    **该文件后半部分永久失明**（看着干净，其实没扫到）。
+    失步诱因：docstring 正文里带引号、多行 f-string 模板、行内 `#` 在字符串里，
+    手写状态机无从区分。新实现改用标准库 `tokenize`（真词法分析）：
+      · COMMENT 与**三引号** STRING 的字符区间清空（多行字符串的中间行整行清空）；
+      · 单引号字符串**照旧保留** —— §3 硬编码路径检测恰恰依赖看见字符串里的路径，
+        全清会把闸门顺手关掉（第六原则：降噪不能变成悄悄放宽）；
+      · 三引号 f-string（py3.12+ 拆成 FSTRING_START/MIDDLE/END）整段清空；
+      · tokenize 抛错（语法不完整）就**退回整行原样返回** —— 宁可多看也不漏看。
     """
-    res, tri = [], None
-    for i, ln in enumerate(s.split('\n'), 1):
-        if tri:
-            if tri in ln:
-                ln = ln.split(tri, 1)[1]
-                tri = None
-            else:
-                continue
-        ln = ln.split('#')[0]
-        for q in ('"""', "'''"):
-            while True:
-                idx = ln.find(q)
-                if idx == -1:
-                    break
-                rest = ln[idx + 3:]
-                if q in rest:
-                    ln = ln[:idx] + rest.split(q, 1)[1]
-                else:
-                    tri = q
-                    ln = ln[:idx]
-                    break
-        res.append((i, ln))
-    return res
+    lines = s.split('\n')
+    try:
+        toks = list(tokenize.generate_tokens(io.StringIO(s).readline))
+    except Exception:
+        return [(i, ln) for i, ln in enumerate(lines, 1)]
+    cut = {}          # 行号 -> [(起列, 止列)]，止列为 None 表示「到行尾」
+    depth = 0         # 三引号 f-string 嵌套层数
+
+    def blank(ln_no, a, b):
+        cut.setdefault(ln_no, []).append((a, b))
+
+    for t in toks:
+        if _FS_START is not None and t.type == _FS_START:
+            if TRIPLE_STR.match(t.string):
+                depth += 1
+                blank(t.start[0], t.start[1], None)
+            continue
+        if _FS_END is not None and t.type == _FS_END:
+            if depth:
+                depth -= 1
+                blank(t.start[0], 0, t.end[1])
+            continue
+        if depth:
+            # 三引号 f-string 内部（字面量或插值表达式）：整段清空，避免模板正文被当代码
+            for ln_no in range(t.start[0], t.end[0] + 1):
+                blank(ln_no, 0, None)
+            continue
+        if t.type == tokenize.COMMENT:
+            blank(t.start[0], t.start[1], t.end[1])
+        elif t.type == tokenize.STRING and TRIPLE_STR.match(t.string):
+            for ln_no in range(t.start[0], t.end[0] + 1):
+                blank(ln_no, t.start[1] if ln_no == t.start[0] else 0,
+                      t.end[1] if ln_no == t.end[0] else None)
+
+    out = []
+    for i, ln in enumerate(lines, 1):
+        if i in cut:
+            ch = list(ln)
+            for a, b in cut[i]:
+                hi = len(ch) if b is None else b
+                for k in range(max(0, a), max(0, min(len(ch), hi))):
+                    ch[k] = ' '
+            ln = ''.join(ch)
+        out.append((i, ln))
+    return out
 
 
 def scan_hardcode(src):
-    hits = []
+    """硬编码绝对路径扫描。返回 (hits, declared)。
+
+    声明出口（2026-09-23 加，与 §2 的 `# silent-ok: <原因>` 同一约定）：
+    在**命中那一行**行尾写真实注释 `# silent-ok: <原因>` 即视为刻意豁免，进 declared 单列。
+
+    为什么必须有它：测试里故意构造的样本路径（`C:/Users/alice/…`）会永久计成
+    2 处硬编码 → 闸门长期停在「硬编码 2」这个 WARN 上，**真新增一条硬编码时
+    没人看得出「2 变成 3」**（温水煮青蛙）。降噪不等于静默：declared 逐条打印。
+
+    ⚠️ 归属判定用 `comment_text_lines`（真注释），不是原始行 —— 否则字符串里的
+    `# silent-ok: …` 能伪造声明（实测踩过）。
+    """
+    hits, declared = [], []
     for f, s in src.items():
+        cmts = comment_text_lines(s)
         for ln, code in code_only_lines(s):
             for m in re.finditer(r'[Cc]:[\\/]{1,2}Users[\\/]{1,2}(\w+)|/c/Users/(\w+)', code):
                 user = m.group(1) or m.group(2)
-                hits.append((f, ln, '硬编码绝对路径（用户名 %s）' % user))
-    return hits
+                why = '硬编码绝对路径（用户名 %s）' % user
+                d = SILENT_OK.search(cmts.get(ln, ''))
+                (declared if d else hits).append(
+                    (f, ln, why + ('（silent-ok：%s）' % d.group(1) if d else '')))
+    return hits, declared
 
 
 # ---------------- 4. 文档对账 ----------------
@@ -469,23 +559,66 @@ def scan_coverage(src):
 SPAWN = re.compile(r'\bsubprocess\.(run|Popen|call|check_output)\s*\(|\bos\.system\s*\(')
 
 
+def _block_after(lines, j, cap=40):
+    """调用点之后「还要看多远」= 至多 cap 行，且遇到**缩进小于所在 def** 的行就停。
+
+    旧版固定看 6 行，太窄：退出码校验写在第 9 行（`fetch_zsxq.py`）或第 5 行但格式较长
+    （`test_arg_guard.py` 顶层脚本形态）都会被误报。这里改成「所在函数的范围」：
+      · 调用点在某个 def 内 → 看到该 def 结束（出现缩进更小的行）为止；
+      · 顶层脚本代码（没有 enclosing def）→ 看满 cap 行
+        （顶层语句彼此平级，用「缩进更小」无法划界）。
+    有界很重要：无上限地看下去，会把**别的函数**里的 `returncode` 当成「这行已校验」。
+    """
+    code = lines[j][1]
+    indent = len(code) - len(code.lstrip())
+    base = None
+    for k in range(j, -1, -1):                     # 向上找最近的、缩进更小的 def
+        c = lines[k][1]
+        if not c.strip():
+            continue
+        ind = len(c) - len(c.lstrip())
+        if ind < indent and re.match(r'\s*def\b', c):
+            base = ind
+            break
+    out = []
+    for _, c in lines[j + 1:j + 1 + cap]:
+        if base is not None and c.strip() and (len(c) - len(c.lstrip())) < base:
+            break                                  # 函数结束
+        out.append(c)
+    return '\n'.join(out)
+
+
+# 退出码直接向上游传递的写法：rc 由调用栈上游接住，本行无需再校验
+PASS_THROUGH = re.compile(r'(?:sys\.exit|return)\s*\(?\s*subprocess\.')
+
+
 def scan_subprocess(src):
-    """subprocess 调用点之后 **6 行内**未出现 returncode / check= 。
+    """subprocess 调用点的退出码**是否有人接住**（块级判据，不再用固定 6 行）。
 
     不代表一定是 BUG：可能由调用方在别处校验，或本身就是「失败也无所谓」的辅助命令
     （如读剪贴板失败返回空串后仍有 warn）。列出来是为了逐个低成本确认，
     比出事后再回溯便宜。2026-09-21 首次盘出 5 处。
+
+    2026-09-23 收紧（旧版 6 行窗口的 6 处命中**全部**是误报，长期挂着会让闸门被无视）：
+      · 窗口改为「所在 def 的函数体 / 顶层看满 40 行」（`_block_after`）——
+        `fetch_zsxq.py` 的 `r.returncode` 写在调用点后第 9 行，旧版看不到；
+      · 新增「直接传递」判据：`sys.exit(subprocess.call(...))` / `return subprocess.run(...)`
+        的 rc 由上游接住（`run.py` 与各测试 helper 就是这个形态）；
+      · 判据同时看**调用行本身**（`check=True` 常与调用同行，旧版从下一行看起 → 误报）。
     """
     hits = []
     for f, s in src.items():
         lines = code_only_lines(s)
         for j, (ln, code) in enumerate(lines):
-            if not SPAWN.search(code):
+            mm = SPAWN.search(code)
+            if not mm:
                 continue
-            nxt = '\n'.join(c for _, c in lines[j + 1:j + 7])
-            if 'returncode' in nxt or 'check=' in nxt:
+            if PASS_THROUGH.search(code):
                 continue
-            hits.append((f, ln, SPAWN.search(code).group(1) or 'system'))
+            scope = code + '\n' + _block_after(lines, j)
+            if 'returncode' in scope or 'check=' in scope:
+                continue
+            hits.append((f, ln, mm.group(1) or 'system'))
     return hits
 
 
@@ -508,7 +641,7 @@ def main(argv=None):
 
     no_code, risky = scan_exit_codes(src)
     silent, silent_ok = scan_silent(src)
-    hard = scan_hardcode(src)
+    hard, hard_ok = scan_hardcode(src)
     docs, mentions, stale, missing, explained, external, undoc = scan_docs(src)
     pairs, shared = scan_dups(src)
     other, not_ignored, rt_err = scan_runtime()
@@ -538,8 +671,15 @@ def main(argv=None):
     if len(silent_ok) > 12 and not a.full:
         W('      … 其余 %d 处（--full 展开）' % (len(silent_ok) - 12))
 
-    W('\n【3】硬编码：绝对路径 %d 处' % len(hard))
+    W('\n【3】硬编码：绝对路径 %d 处未声明' % len(hard))
     for f, ln, why in (hard if a.full else hard[:8]):
+        W('      %-34s :%-4s %s' % (f, ln, why))
+    if len(hard) > 8 and not a.full:
+        W('      … 其余 %d 处（--full 展开）' % (len(hard) - 8))
+    # 已声明豁免同样逐条打印（不计入阈值 ≠ 不打印）
+    W('  ── 以下不计入：命中行尾声明了 `# silent-ok: 原因` 的刻意豁免 ──')
+    W('  已声明豁免：%d 处' % len(hard_ok))
+    for f, ln, why in (hard_ok if a.full else hard_ok[:12]):
         W('      %-34s :%-4s %s' % (f, ln, why))
 
     W('\n【4】文档对账（%d 份）' % len(docs))
@@ -605,7 +745,7 @@ def main(argv=None):
         W('      %-34s :%-4s subprocess.%s' % (f, ln, kind))
 
     W('\n' + '=' * 72)
-    W('汇总：P0（失败退出码缺失·高危）%d · 静默失败 %d（未声明） · 硬编码 %d · 文档腐烂 %d · 未记录脚本 %d'
+    W('汇总：P0（失败退出码缺失·高危）%d · 静默失败 %d（未声明） · 硬编码 %d（未声明） · 文档腐烂 %d · 未记录脚本 %d'
       % (len(risky), len(silent), len(hard), len(stale) + len(missing), len(undoc)))
     W('      · 在役链路缺测试 %d · subprocess 未校验 %d' % (len(crit_gap), len(spawn)))
     W('      文档腐烂只计「未交代归档 / 未解析到技能目录」的引用；'
@@ -613,6 +753,8 @@ def main(argv=None):
       % (len(explained) + len(external), len(explained), len(external)))
     W('      静默失败只计「未声明」的；另有已声明豁免 %d 处'
       '（except 行尾 `# silent-ok: 原因`，逐条见【2】）' % len(silent_ok))
+    W('      硬编码只计「未声明」的；另有已声明豁免 %d 处'
+      '（命中行尾 `# silent-ok: 原因`，逐条见【3】）' % len(hard_ok))
     W('=' * 72)
 
     blob = '\n'.join(L)

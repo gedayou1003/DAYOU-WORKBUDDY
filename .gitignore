@@ -21,6 +21,11 @@ automations/
 # ===== 图片与报告产物 =====
 # zsxq_images/ 仍不入库（图片体积大，可由星球原文重拉）
 zsxq_images/
+# zsxq_files/ 同理不入库（2026-09-23 新增）：附件 PDF 单期约 30MB，
+# 且为付费研报原件，版权上不适合入仓；抽取出的正文可由 fetch_zsxq_files.py 重建。
+# 需长期留存的是**报告正文里的结论**与 _files_manifest.json 的已读/未读凭据，
+# 前者随 outputs/ 入库，后者本机留痕即可。
+zsxq_files/
 # outputs/ 自 2026-09-23 起**纳入版本控制**（用户拍板）—— 交付物此前无版本兜底：
 # 2026-09-21 的 P0 数据丢失（gen_tj_archive.py 静默覆盖人工精修归档）能救回纯属
 # 冒烟工具恰好备份，outputs/ 本身并不在 git 跟踪内，无第二道兜底。

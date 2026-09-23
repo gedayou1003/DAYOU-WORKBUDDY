@@ -1,7 +1,18 @@
 # -*- coding: utf-8 -*-
 """把作战报告 md 渲染成 Editorial 风 HTML（内嵌预判走势图 SVG，解决 md 预览图不显示 + 排版拥挤）。
 
-用法：$PY .workbuddy/md_to_html_report.py <md路径>
+用法：$PY .workbuddy/md_to_html_report.py <md路径> [--out <html路径>]
+
+2026-09-23 加 `--out`（冒烟副作用收口）
+--------------------------------------
+改前：输出路径写死为「与输入同目录同名 .html」，**无法重定向**。
+  后果：全链路冒烟的 H4 阶段只能拿真实报告跑正常路径 → **每次都往真实交付目录
+  `outputs/` 落一个 HTML**。而冒烟的自述是「零副作用：产物写临时目录」——
+  实测被 `受保护范围新增文件 1 个：outputs/作战报告_午间_2026-09-23.html` 抓到（WARN）。
+  **自检工具自身不干净，它的「干净」结论就没人敢信。**
+  这与 2026-09-18 给 `anonymize_report.py` 加 `--src/--out` 是同一类修复。
+改后：多一个可选 `--out`；不传时行为**完全不变**（同目录同名 .html）。
+  目录不可写 → `[FAIL]` + 退 1，不静默。
 
 2026-09-17 加固（消除危险默认值 + 静默缺图）
 -------------------------------------------
@@ -20,15 +31,42 @@ import sys
 
 import markdown
 
-USAGE = '用法: python .workbuddy/md_to_html_report.py <报告.md路径>\n' \
-        '  例: python .workbuddy/md_to_html_report.py outputs/作战报告_晨报_2026-09-17.md'
+USAGE = '用法: python .workbuddy/md_to_html_report.py <报告.md路径> [--out <html路径>]\n' \
+        '  例: python .workbuddy/md_to_html_report.py outputs/作战报告_晨报_2026-09-17.md\n' \
+        '      python .workbuddy/md_to_html_report.py outputs/x.md --out /tmp/x.html'
 
-if len(sys.argv) < 2 or sys.argv[1] in ('-h', '--help'):
+
+def _parse_args(argv):
+    """返回 (md路径, out路径|None)；缺参数返回 (None, None)。
+
+    手写解析（不用 argparse）：本脚本是**顶层代码**风格，且必须保住
+    「无参数 → 退 1 + 打印用法」这条既有守卫的**输出形态**（冒烟 H2 阶段钉着它）。
+    """
+    md = out = None
+    rest = list(argv)
+    while rest:
+        a = rest.pop(0)
+        if a == '--out':
+            if not rest:
+                sys.stderr.write('[FAIL] --out 后面缺路径\n' + USAGE + '\n')
+                return None, None
+            out = rest.pop(0)
+        elif a in ('-h', '--help'):
+            return None, None
+        elif md is None:
+            md = a
+        else:
+            sys.stderr.write('[FAIL] 多了一个位置参数：%s\n%s\n' % (a, USAGE))
+            return None, None
+    return md, out
+
+
+MD, OUT_ARG = _parse_args(sys.argv[1:])
+if MD is None:
     # 旧行为：无参数静默渲染 2026-08-27 演示版并覆盖其 .html（危险默认值），已移除。
     sys.stderr.write(USAGE + '\n')
     sys.exit(1)
 
-MD = sys.argv[1]
 if not os.path.exists(MD):
     sys.stderr.write('[FAIL] 报告不存在：%s\n%s\n' % (MD, USAGE))
     sys.exit(1)
@@ -36,7 +74,11 @@ if not MD.endswith('.md'):
     sys.stderr.write('[FAIL] 输入需为 .md 文件：%s\n' % MD)
     sys.exit(1)
 
-OUT = MD[:-3] + '.html'
+# 默认仍是「同目录同名 .html」（不改默认行为）；--out 可显式重定向。
+OUT = OUT_ARG if OUT_ARG else MD[:-3] + '.html'
+if not os.path.isdir(os.path.dirname(os.path.abspath(OUT))):
+    sys.stderr.write('[FAIL] --out 所在目录不存在：%s\n' % os.path.dirname(os.path.abspath(OUT)))
+    sys.exit(1)
 
 # 2026-09-18：显示层脱敏。报告 md 与本脚本内嵌的走势图 SVG 都可能残留旧称呼
 # （SVG 的标签源自链数据原文），对外 HTML 一律统一改写。见 display_names.py。

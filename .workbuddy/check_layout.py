@@ -819,17 +819,40 @@ def main():
     if not files:
         files = _latest_reports()
     n_err = n_warn = n_info = 0
+    checked = 0          # 真正跑过检查的份数
+    missing = []         # 候选存在但文件不在
     for f in files:
         if not os.path.exists(f):
             print('跳过（不存在）：%s' % f)
+            missing.append(f)
             continue
         res = check(f)
         print(render(res))
         print()
+        checked += 1
         n_err += len(res['errors'])
         n_warn += len(res['warns'])
         n_info += len(res.get('infos', []))
-    print('汇总：%d 份，ERROR %d，WARN %d，INFO %d' % (len(files), n_err, n_warn, n_info))
+
+    # 空检查集必须**有意报错**，不能报「通过」（2026-09-23 加固）：
+    # 原实现直接 `sys.exit(1 if n_err else …)`，候选报告全不存在时
+    # 会打出「汇总：2 份，ERROR 0，WARN 0」并以 0 退出 —— 一份都没查却报绿。
+    if checked == 0:
+        print('汇总：0 份被检查（候选 %d 份全部不存在）—— **不是通过**' % len(files))
+        print('[FAIL] 没有可检查的报告：%d 个候选全部不存在，本次**未做任何检查**'
+              % len(files), file=sys.stderr)
+        for f in missing:
+            print('       缺失：%s' % f, file=sys.stderr)
+        sys.exit(1)
+
+    if missing:
+        print('汇总：%d 份被检查（候选 %d，跳过 %d 份不存在），ERROR %d，WARN %d，INFO %d'
+              % (checked, len(files), len(missing), n_err, n_warn, n_info))
+        print('[WARN] %d 份候选报告不存在，未被检查：%s'
+              % (len(missing), '、'.join(missing)), file=sys.stderr)
+        sys.exit(2 if not n_err else 1)
+
+    print('汇总：%d 份被检查，ERROR %d，WARN %d，INFO %d' % (checked, n_err, n_warn, n_info))
     sys.exit(1 if n_err else (2 if n_warn else 0))
 
 
