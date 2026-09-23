@@ -80,7 +80,13 @@
 ### 10. git 同步（家里↔公司）
 - 远程 `https://github.com/gedayou1003/DAYOU-WORKBUDDY.git`（私有）分支 main；仓库根=项目目录
 - 代理：优先直连 GitHub；不通时 Clash 7890/7897；认证 PAT 存 ~/.git-credentials
-- .gitignore：zsxq_cookie.txt / zsxq_fetch_raw.json / forecast_chain.json / consensus_chain.json / zsxq_images/ / outputs/ / automations/ / memory/20*.md / __pycache__/
+- .gitignore：zsxq_cookie.txt / zsxq_fetch_raw.json / forecast_chain.json / consensus_chain.json / zsxq_images/ / automations/ / memory/20*.md / __pycache__/ （**注意：`outputs/` 已于 2026-09-23 解除忽略，见下条**）
+- **`outputs/` 自 2026-09-23 起纳入版本控制**（用户拍板，提交 `9474152`，293 文件 / +160753 行）：
+  - **动因**：交付物此前**完全没有版本兜底** —— 9/21 的 P0 数据丢失（gen_tj_archive.py 静默覆盖人工精修归档）能救回，纯属冒烟工具恰好做了备份；outputs/ 本身不在 git 跟踪内，没有第二道安全网。
+  - **已知代价（用户已确认接受，仓库为私有）**：292 个文件中 **121 个含真实星球名 / 「Cookie 直连」·「Skill 通道」通道信息**；星球 gid **1 处**（`DRAGON_BALL_原始记录_2026-08-21.md` 的 `gid=88512145458842`）。体检脚本与报告见 `archive/hygiene_20260923/`。
+  - ⚠️ **若日后仓库转公开，必须先执行脱敏**（真名→代号、抹 gid 与通道行）——已写在 `.gitignore` 注释里，勿删该注释。
+  - ⚠️ **遗留不一致（待决策）**：`forecast_chain.json` 仍被忽略 → **链数据不跨机同步**；而 `dims_hitrate_data.json` / `range_band_data.json` 是**入 git** 的 → 公司电脑会拿到「新派生统计 + 缺 actual 的旧源链」这种互相矛盾的组合。要么把链也入库，要么把这两份派生数据也改为忽略。
+  - 入库前体检流程已固化为技能 `repo-ingest-privacy-audit`（六类扫描 + 决策依据生成，脚本 `scripts/scan_sensitive.py`）。
 - 公司电脑已知 bug：PortableGit 2.55.0 3 层 ref 不落盘（不影响 pull/push）；补齐命令 `mkdir -p .git/refs/remotes/origin && git ls-remote origin main | awk '{print $1}' > .git/refs/remotes/origin/main`；已关闭 maintenance/gc auto
 - ⚠️ 事故教训（已 4 次，2026-08-27 第 4 次）：**绝对禁止 `git rm`（中英文路径都会触发）和 `git stash`**（本 Windows Git Bash 环境会误删整个工作区文件，甚至 .git 目录）。第 4 次事故：`git rm .workbuddy/gen_report_demo.py` 触发，误删 .workbuddy 下全部文件（含 forecast_chain/consensus_chain/cookie/memory 日志，均不入 git）。**恢复靠回收站**：被删目录进了 `C:\$Recycle.Bin\...\$RH1ITOQ.workbuddy`，`cp -rf` 恢复成功。**删文件正确做法**：用文件系统 `rm` 或让 git 自然检测，`git add -A` 记录删除；重要未提交文件先 commit 或 cp 备份
 - 公司电脑首次接入话术（含改晨报第五块，2026-08-25 定稿）：
