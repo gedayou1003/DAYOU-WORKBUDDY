@@ -83,11 +83,64 @@ AFFECTS = {
     # 审计自身
     'audit_pipeline.py':      ['audit'],
     'smoke_pipeline.py':      ['degrade'],
+    # 变盘倾向分：**它的自检不是 test_*.py 文件**（是脚本自带的 --selftest），
+    # 所以这里显式指过去 —— 否则改了它只会跑到两个无关的通用守卫，
+    # 58 条断言一条都不会被执行（2026-08-14 分级闸门首轮实测发现的洞）。
+    'calc_turn_score.py':     [],      # 走 SELFTESTS（非 test_*.py）
+    'gate.py':                [],
     # 报告内容类（不影响逻辑）
     '报告生成流程.md':         [],
     '预判规则_v5.md':          [],
     '脚本地图.md':             [],
 }
+
+# --- 非 test_*.py 的自检入口 ------------------------------------------------
+# 有些脚本的自检是**内置**的（`--selftest`），不被 run_tests.py 的 glob 收进来。
+# 分级闸门必须知道它们，否则「改了这个脚本 → 跑两个无关守卫」= 假验证。
+#
+# ⚠️ 路径一律用**只含文件名**的形式，由下面拼 HERE —— 不要写 `.workbuddy/x.py`
+# 再 lstrip('./')：那样会把 `.workbuddy` 的开头那个点也剥掉，变成 `workbuddy/x.py`
+# （2026-09-23 首跑就这么错了一次，直接 No such file）。
+SELFTESTS = {
+    'calc_turn_score.py': ['--selftest'],
+}
+
+
+# --- 昂贵测试（变异/meta 类）-------------------------------------------------
+# 这类测试**内部会跑别的 test_*.py**：每注入一处变异就重跑一遍正本测试。
+# 设计上它们价值极高（证明断言真的会红），但 **天然昂贵且与改动无关**：
+# 改的是 A 脚本，它们证的是 B 断言的有效性 —— 不该每次陪跑。
+#
+# 实测（2026-09-23）：test_gen_forecast_svg_neg 113.8s + test_audit_docrot_neg 75.0s
+# = 188.8s，占全套 392.3s 的 **48%**。只做「后台慢速集」，std 级默认跳过。
+SLOW_MUTATION = {
+    'test_gen_forecast_svg_neg.py':  ['gen_forecast_svg', 'svg'],   # 只在这两处被碰时才跑
+    'test_audit_docrot_neg.py':      ['audit_pipeline', 'audit'],   # 同上
+}
+
+
+def _split_slow(tests, changed):
+    """把测试分成 (常规, 昂贵的变异测试)。
+
+    昂贵测试仅当**它保护的脚本真的被改动**时才纳入 —— 否则它们只是在
+    重复证明「上周已经证过的断言仍然有效」。改动信息不可得（changed 为空）
+    时**保守纳入**（宁可慢，不可漏）。
+    """
+    # 改动可能来自 --changed（文件名列表），也可能是"复核"场景（无改动）
+    blob = ' '.join(changed)
+    fast_tests, slow_tests = [], []
+    for t in tests:
+        pats = SLOW_MUTATION.get(t)
+        if not pats:
+            fast_tests.append(t)
+            continue
+        if not changed:
+            slow_tests.append(t)          # 无改动信息 → 保守纳入
+        elif any(p in blob for p in pats):
+            fast_tests.append(t)          # 它保护的东西被改了 → 必须跑
+        else:
+            slow_tests.append(t)          # 无关 → 归慢速集
+    return fast_tests, slow_tests
 
 
 def _run(cmd, cwd=None, timeout=600, env_extra=None):
@@ -142,7 +195,11 @@ def auto_level(changed):
     if changed is None:
         return 'full', '无法读取 git 改动（上浮到 full，宁可多跑）'
     if not changed:
-        return 'fast', '无改动'
+        # 工作区干净 ⇒ 这是"复核"场景（如交付前），而不是"改完即刻自检"。
+        # ⚠️ 改前这里返回 fast → 只跑语法编译（2.5s），等于**什么实质都没验**。
+        # 干净树往往出现在"要交付了"的时刻，恰恰是最需要真验证的时候，
+        # 所以宁可多花 3 分钟也要上 std。
+        return 'std', '工作区无改动 → 复核场景，跑 std（不做 fast：干净树+fast 等于没验）'
     # 只改了文档 → fast
     doc_only = all(f.endswith('.md') or f.endswith('.txt') for f in changed)
     if doc_only:
@@ -167,6 +224,8 @@ def main(argv=None):
     ap.add_argument('--changed', default=None,
                     help='逗号分隔的改动文件名（省去 git 探测；auto 级别用）')
     ap.add_argument('--dry-run', action='store_true', help='只打印计划，不执行')
+    ap.add_argument('--with-slow', action='store_true',
+                    help='std 级也纳入昂贵变异测试（默认跳过；full 级本来就全跑）')
     a = ap.parse_args(argv)
 
     t_all = time.time()
@@ -194,7 +253,12 @@ def main(argv=None):
         plan.append(('静态审计 audit_pipeline', [PY, os.path.join(HERE, 'audit_pipeline.py')], 300, True))
 
     # 受影响测试
-    tests = []
+    tests, deferred_slow = [], []
+    # 内置自检（非 test_*.py）：改动了对应脚本就必须跑，否则 fast 级形同虚设
+    for f in changed:
+        if f in SELFTESTS:
+            plan.append(('内置自检 %s' % f,
+                         [PY, os.path.join(HERE, f)] + SELFTESTS[f], 120, True))
     if level == 'fast':
         # fast：只跑与改动直接相关的测试文件（**不是**跑全套）
         pats = []
@@ -203,15 +267,25 @@ def main(argv=None):
         if changed and not pats:
             pats = ['arg_guard', 'display_name']    # 纯文档改动 → 只跑最快守卫
         tests = pick_tests(pats) if pats else []
+        tests, deferred_slow = _split_slow(tests, changed)
         if tests:
             plan.append(('相关单测（%d 个）' % len(tests),
                          [PY, os.path.join(HERE, 'run_tests.py'),
                           '--files', ','.join(tests)], 300, True))
     else:
-        tests = pick_tests('*')                     # std/full 跑全部单测
+        all_tests = pick_tests('*')
+        if level == 'full':
+            tests, deferred_slow = all_tests, []    # full 一律全跑，不省
+        else:
+            # std：跳过与本轮改动无关的昂贵变异测试（省下的时间见 deferred 提示）
+            tests, deferred_slow = _split_slow(all_tests, changed)
+            if a.with_slow and deferred_slow:
+                tests = tests + deferred_slow       # 显式要求纳入
+                deferred_slow = []
         if tests:
-            plan.append(('聚合单测 run_tests（全部 %d 个）' % len(tests),
-                         [PY, os.path.join(HERE, 'run_tests.py')], 600, True))
+            plan.append(('聚合单测（%d 个）' % len(tests),
+                         [PY, os.path.join(HERE, 'run_tests.py'),
+                          '--files', ','.join(tests)], 600, True))
 
     if level == 'full':
         plan.append(('全链路冒烟 smoke_pipeline', [PY, os.path.join(HERE, 'smoke_pipeline.py')], 1200, True))
@@ -236,10 +310,14 @@ def main(argv=None):
                    '未被改动触碰的单测']
     elif level == 'std':
         skipped = ['全链路冒烟 smoke_pipeline（含真实网络调用）']
+    if deferred_slow:
+        skipped.append('昂贵变异测试 %d 个（拆开时排除了它们）' % len(deferred_slow))
     if skipped:
         print('⚠️ 本级别**未**验证：')
         for s in skipped:
             print('     - %s' % s)
+        if deferred_slow:
+            print('       （变异测试补跑方式：gate.py std --with-slow，或跑 gate.py full）')
         print('   这些缺口由更高级别覆盖。交付前必须跑 full。')
         print()
 
