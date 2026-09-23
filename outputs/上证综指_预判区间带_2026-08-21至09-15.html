@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>上证综指 · 预判核心带上下轨 vs 实际走势</title>
+<style>
+:root{--paper:#f5f0e6;--panel:#fbf8f0;--card:#fffdf7;--forest:#1e4d3a;--clay:#c4703a;
+  --ink:#3a3a36;--sub:#8a8577;--grid:#e5ddcc;--up:#c0392b;--down:#2e8b57}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);
+  font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  padding:34px 40px 50px;line-height:1.6}
+.wrap{max-width:1280px;margin:0 auto}
+h1{font-size:22px;font-weight:700;letter-spacing:.5px;color:var(--forest)}
+.sub{font-size:13px;color:var(--sub);margin-top:6px}
+.legend{display:flex;flex-wrap:wrap;gap:22px;margin:18px 0 10px;font-size:13px;color:var(--ink)}
+.legend .it{display:flex;align-items:center;gap:7px}
+.sw{width:20px;height:3px;border-radius:2px;display:inline-block}
+.sw.fill{width:16px;height:12px;border-radius:3px;background:rgba(196,112,58,.18);border:1px solid var(--clay)}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:20px 0}
+.stat{background:var(--card);border:1px solid var(--grid);border-radius:10px;padding:14px 16px}
+.stat .k{font-size:12px;color:var(--sub)}
+.stat .v{font-size:26px;font-weight:700;color:var(--forest);margin-top:2px}
+.stat .v.clay{color:var(--clay)}
+.stat .d{font-size:11px;color:var(--sub);margin-top:4px}
+.note{font-size:13px;color:var(--sub);margin-top:16px;border-left:3px solid var(--clay);
+  padding-left:12px;max-width:860px}
+.note b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>上证综指 · 预判核心带上下轨 vs 实际走势</h1>
+  <div class="sub">000001 日线 · 2026-08-21 至 2026-09-15（18 个交易日）· 预判链 47 条按目标日聚合取中位核心带</div>
+
+  <div class="legend">
+    <div class="it"><span class="sw fill"></span> 预判核心带（上轨 / 下轨通道）</div>
+    <div class="it"><span class="sw" style="background:var(--clay)"></span> 核心带上轨 / 下轨</div>
+    <div class="it"><span class="sw" style="background:var(--forest)"></span> 实际收盘走势</div>
+    <div class="it"><span class="sw" style="background:var(--up)"></span> 当日收涨（红）</div>
+    <div class="it"><span class="sw" style="background:var(--down)"></span> 当日收跌（绿）</div>
+    <div class="it"><span class="dot" style="background:var(--forest);outline:2px solid var(--clay);outline-offset:1px"></span> 收盘落在核心带外</div>
+  </div>
+
+<svg viewBox="0 0 1240 700" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;height:auto;background:#fbf8f0;border-radius:10px">
+<line x1="78" y1="568.0" x2="1212" y2="568.0" stroke="#eae3d4" stroke-width="1"/>
+<text x="68" y="568.0" text-anchor="end" dominant-baseline="middle" font-size="11" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">3830</text>
+<line x1="78" y1="516.8" x2="1212" y2="516.8" stroke="#eae3d4" stroke-width="1"/>
+<text x="68" y="516.8" text-anchor="end" dominant-baseline="middle" font-size="11" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">3850</text>
+<line x1="78" y1="465.6" x2="1212" y2="465.6" stroke="#eae3d4" stroke-width="1"/>
+<text x="68" y="465.6" text-anchor="end" dominant-baseline="middle" font-size="11" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">3870</text>
+<line x1="78" y1="414.4" x2="1212" y2="414.4" stroke="#eae3d4" stroke-width="1"/>
+<text x="68" y="414.4" text-anchor="end" dominant-baseline="middle" font-size="11" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">3890</text>
+<line x1="78" y1="363.2" x2="1212" y2="363.2" stroke="#eae3d4" stroke-width="1"/>
+<text x="68" y="363.2" text-anchor="end" dominant-baseline="middle" font-size="11" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">3910</text>
+<line x1="78" y1="312.0" x2="1212" y2="312.0" stroke="#eae3d4" stroke-width="1"/>
+<text x="68" y="312.0" text-anchor="end" dominant-baseline="middle" font-size="11" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">3930</text>
+<line x1="78" y1="260.8" x2="1212" y2="260.8" stroke="#eae3d4" stroke-width="1"/>
+<text x="68" y="260.8" text-anchor="end" dominant-baseline="middle" font-size="11" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">3950</text>
+<line x1="78" y1="209.6" x2="1212" y2="209.6" stroke="#eae3d4" stroke-width="1"/>
+<text x="68" y="209.6" text-anchor="end" dominant-baseline="middle" font-size="11" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">3970</text>
+<line x1="78" y1="158.4" x2="1212" y2="158.4" stroke="#eae3d4" stroke-width="1"/>
+<text x="68" y="158.4" text-anchor="end" dominant-baseline="middle" font-size="11" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">3990</text>
+<line x1="78" y1="107.2" x2="1212" y2="107.2" stroke="#eae3d4" stroke-width="1"/>
+<text x="68" y="107.2" text-anchor="end" dominant-baseline="middle" font-size="11" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">4010</text>
+<line x1="78" y1="56.0" x2="1212" y2="56.0" stroke="#eae3d4" stroke-width="1"/>
+<text x="68" y="56.0" text-anchor="end" dominant-baseline="middle" font-size="11" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">4030</text>
+<polygon points="78.0,318.4 144.7,312.0 211.4,388.8 278.1,355.5 344.8,312.0 411.5,214.7 478.2,214.7 544.9,102.1 611.6,164.8 678.4,214.7 745.1,235.2 811.8,240.3 878.5,273.6 945.2,268.5 1011.9,237.8 1078.6,291.5 1145.3,358.1 1212.0,376.0 1212.0,473.3 1145.3,470.7 1078.6,314.6 1011.9,299.2 945.2,296.6 878.5,350.4 811.8,312.0 745.1,280.0 678.4,260.8 611.6,309.4 544.9,309.4 478.2,319.7 411.5,319.7 344.8,437.4 278.1,516.8 211.4,504.0 144.7,429.8 78.0,429.8" fill="rgba(196,112,58,0.13)"/>
+<polyline points="78.0,318.4 144.7,312.0 211.4,388.8 278.1,355.5 344.8,312.0 411.5,214.7 478.2,214.7 544.9,102.1 611.6,164.8 678.4,214.7 745.1,235.2 811.8,240.3 878.5,273.6 945.2,268.5 1011.9,237.8 1078.6,291.5 1145.3,358.1 1212.0,376.0" fill="none" stroke="#c4703a" stroke-width="2" stroke-dasharray="5,4"/>
+<polyline points="78.0,429.8 144.7,429.8 211.4,504.0 278.1,516.8 344.8,437.4 411.5,319.7 478.2,319.7 544.9,309.4 611.6,309.4 678.4,260.8 745.1,280.0 811.8,312.0 878.5,350.4 945.2,296.6 1011.9,299.2 1078.6,314.6 1145.3,470.7 1212.0,473.3" fill="none" stroke="#c4703a" stroke-width="2" stroke-dasharray="5,4"/>
+<line x1="71.0" y1="318.4" x2="85.0" y2="318.4" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="71.0" y1="429.8" x2="85.0" y2="429.8" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="137.7" y1="312.0" x2="151.7" y2="312.0" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="137.7" y1="429.8" x2="151.7" y2="429.8" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="204.4" y1="388.8" x2="218.4" y2="388.8" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="204.4" y1="504.0" x2="218.4" y2="504.0" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="271.1" y1="355.5" x2="285.1" y2="355.5" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="271.1" y1="516.8" x2="285.1" y2="516.8" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="337.8" y1="312.0" x2="351.8" y2="312.0" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="337.8" y1="437.4" x2="351.8" y2="437.4" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="404.5" y1="214.7" x2="418.5" y2="214.7" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="404.5" y1="319.7" x2="418.5" y2="319.7" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="471.2" y1="214.7" x2="485.2" y2="214.7" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="471.2" y1="319.7" x2="485.2" y2="319.7" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="537.9" y1="102.1" x2="551.9" y2="102.1" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="537.9" y1="309.4" x2="551.9" y2="309.4" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="604.6" y1="164.8" x2="618.6" y2="164.8" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="604.6" y1="309.4" x2="618.6" y2="309.4" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="671.4" y1="214.7" x2="685.4" y2="214.7" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="671.4" y1="260.8" x2="685.4" y2="260.8" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="738.1" y1="235.2" x2="752.1" y2="235.2" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="738.1" y1="280.0" x2="752.1" y2="280.0" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="804.8" y1="240.3" x2="818.8" y2="240.3" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="804.8" y1="312.0" x2="818.8" y2="312.0" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="871.5" y1="273.6" x2="885.5" y2="273.6" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="871.5" y1="350.4" x2="885.5" y2="350.4" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="938.2" y1="268.5" x2="952.2" y2="268.5" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="938.2" y1="296.6" x2="952.2" y2="296.6" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="1004.9" y1="237.8" x2="1018.9" y2="237.8" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="1004.9" y1="299.2" x2="1018.9" y2="299.2" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="1071.6" y1="291.5" x2="1085.6" y2="291.5" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="1071.6" y1="314.6" x2="1085.6" y2="314.6" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="1138.3" y1="358.1" x2="1152.3" y2="358.1" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="1138.3" y1="470.7" x2="1152.3" y2="470.7" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="1205.0" y1="376.0" x2="1219.0" y2="376.0" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="1205.0" y1="473.3" x2="1219.0" y2="473.3" stroke="#c4703a" stroke-width="1.6"/>
+<line x1="78.0" y1="357.7" x2="78.0" y2="430.3" stroke="#c0392b" stroke-width="1.4"/>
+<line x1="73.0" y1="357.7" x2="83.0" y2="357.7" stroke="#c0392b" stroke-width="2"/>
+<line x1="73.0" y1="430.3" x2="83.0" y2="430.3" stroke="#c0392b" stroke-width="2"/>
+<line x1="144.7" y1="362.6" x2="144.7" y2="503.1" stroke="#2e8b57" stroke-width="1.4"/>
+<line x1="139.7" y1="362.6" x2="149.7" y2="362.6" stroke="#2e8b57" stroke-width="2"/>
+<line x1="139.7" y1="503.1" x2="149.7" y2="503.1" stroke="#2e8b57" stroke-width="2"/>
+<line x1="211.4" y1="398.5" x2="211.4" y2="514.6" stroke="#c0392b" stroke-width="1.4"/>
+<line x1="206.4" y1="398.5" x2="216.4" y2="398.5" stroke="#c0392b" stroke-width="2"/>
+<line x1="206.4" y1="514.6" x2="216.4" y2="514.6" stroke="#c0392b" stroke-width="2"/>
+<line x1="278.1" y1="321.1" x2="278.1" y2="435.5" stroke="#c0392b" stroke-width="1.4"/>
+<line x1="273.1" y1="321.1" x2="283.1" y2="321.1" stroke="#c0392b" stroke-width="2"/>
+<line x1="273.1" y1="435.5" x2="283.1" y2="435.5" stroke="#c0392b" stroke-width="2"/>
+<line x1="344.8" y1="240.2" x2="344.8" y2="365.0" stroke="#c0392b" stroke-width="1.4"/>
+<line x1="339.8" y1="240.2" x2="349.8" y2="240.2" stroke="#c0392b" stroke-width="2"/>
+<line x1="339.8" y1="365.0" x2="349.8" y2="365.0" stroke="#c0392b" stroke-width="2"/>
+<line x1="411.5" y1="208.8" x2="411.5" y2="266.4" stroke="#2e8b57" stroke-width="1.4"/>
+<line x1="406.5" y1="208.8" x2="416.5" y2="208.8" stroke="#2e8b57" stroke-width="2"/>
+<line x1="406.5" y1="266.4" x2="416.5" y2="266.4" stroke="#2e8b57" stroke-width="2"/>
+<line x1="478.2" y1="167.9" x2="478.2" y2="321.0" stroke="#c0392b" stroke-width="1.4"/>
+<line x1="473.2" y1="167.9" x2="483.2" y2="167.9" stroke="#c0392b" stroke-width="2"/>
+<line x1="473.2" y1="321.0" x2="483.2" y2="321.0" stroke="#c0392b" stroke-width="2"/>
+<line x1="544.9" y1="145.1" x2="544.9" y2="193.0" stroke="#2e8b57" stroke-width="1.4"/>
+<line x1="539.9" y1="145.1" x2="549.9" y2="145.1" stroke="#2e8b57" stroke-width="2"/>
+<line x1="539.9" y1="193.0" x2="549.9" y2="193.0" stroke="#2e8b57" stroke-width="2"/>
+<line x1="611.6" y1="220.3" x2="611.6" y2="306.2" stroke="#2e8b57" stroke-width="1.4"/>
+<line x1="606.6" y1="220.3" x2="616.6" y2="220.3" stroke="#2e8b57" stroke-width="2"/>
+<line x1="606.6" y1="306.2" x2="616.6" y2="306.2" stroke="#2e8b57" stroke-width="2"/>
+<line x1="678.4" y1="214.4" x2="678.4" y2="310.8" stroke="#c0392b" stroke-width="1.4"/>
+<line x1="673.4" y1="214.4" x2="683.4" y2="214.4" stroke="#c0392b" stroke-width="2"/>
+<line x1="673.4" y1="310.8" x2="683.4" y2="310.8" stroke="#c0392b" stroke-width="2"/>
+<line x1="745.1" y1="183.5" x2="745.1" y2="349.8" stroke="#2e8b57" stroke-width="1.4"/>
+<line x1="740.1" y1="183.5" x2="750.1" y2="183.5" stroke="#2e8b57" stroke-width="2"/>
+<line x1="740.1" y1="349.8" x2="750.1" y2="349.8" stroke="#2e8b57" stroke-width="2"/>
+<line x1="811.8" y1="264.8" x2="811.8" y2="346.6" stroke="#c0392b" stroke-width="1.4"/>
+<line x1="806.8" y1="264.8" x2="816.8" y2="264.8" stroke="#c0392b" stroke-width="2"/>
+<line x1="806.8" y1="346.6" x2="816.8" y2="346.6" stroke="#c0392b" stroke-width="2"/>
+<line x1="878.5" y1="257.4" x2="878.5" y2="323.0" stroke="#c0392b" stroke-width="1.4"/>
+<line x1="873.5" y1="257.4" x2="883.5" y2="257.4" stroke="#c0392b" stroke-width="2"/>
+<line x1="873.5" y1="323.0" x2="883.5" y2="323.0" stroke="#c0392b" stroke-width="2"/>
+<line x1="945.2" y1="240.0" x2="945.2" y2="303.1" stroke="#c0392b" stroke-width="1.4"/>
+<line x1="940.2" y1="240.0" x2="950.2" y2="240.0" stroke="#c0392b" stroke-width="2"/>
+<line x1="940.2" y1="303.1" x2="950.2" y2="303.1" stroke="#c0392b" stroke-width="2"/>
+<line x1="1011.9" y1="262.7" x2="1011.9" y2="318.8" stroke="#2e8b57" stroke-width="1.4"/>
+<line x1="1006.9" y1="262.7" x2="1016.9" y2="262.7" stroke="#2e8b57" stroke-width="2"/>
+<line x1="1006.9" y1="318.8" x2="1016.9" y2="318.8" stroke="#2e8b57" stroke-width="2"/>
+<line x1="1078.6" y1="357.3" x2="1078.6" y2="511.6" stroke="#2e8b57" stroke-width="1.4"/>
+<line x1="1073.6" y1="357.3" x2="1083.6" y2="357.3" stroke="#2e8b57" stroke-width="2"/>
+<line x1="1073.6" y1="511.6" x2="1083.6" y2="511.6" stroke="#2e8b57" stroke-width="2"/>
+<line x1="1145.3" y1="400.3" x2="1145.3" y2="473.2" stroke="#2e8b57" stroke-width="1.4"/>
+<line x1="1140.3" y1="400.3" x2="1150.3" y2="400.3" stroke="#2e8b57" stroke-width="2"/>
+<line x1="1140.3" y1="473.2" x2="1150.3" y2="473.2" stroke="#2e8b57" stroke-width="2"/>
+<line x1="1212.0" y1="414.5" x2="1212.0" y2="464.5" stroke="#c0392b" stroke-width="1.4"/>
+<line x1="1207.0" y1="414.5" x2="1217.0" y2="414.5" stroke="#c0392b" stroke-width="2"/>
+<line x1="1207.0" y1="464.5" x2="1217.0" y2="464.5" stroke="#c0392b" stroke-width="2"/>
+<polyline points="78.0,375.5 144.7,434.9 211.4,415.8 278.1,356.7 344.8,244.0 411.5,255.2 478.2,167.9 544.9,184.3 611.6,282.8 678.4,281.0 745.1,311.7 811.8,305.1 878.5,285.0 945.2,256.9 1011.9,300.7 1078.6,419.2 1145.3,426.4 1212.0,414.7" fill="none" stroke="#1e4d3a" stroke-width="2.6"/>
+<circle cx="78.0" cy="375.5" r="4.2" fill="#1e4d3a"><title>2026-08-21（预判 4 条）&#10;核心带 3884.0 ~ 3927.5&#10;实际 O/H/L/C 3891.18/3912.13/3883.79/3905.2（+0.00%）&#10;收盘在带内</title></circle>
+<circle cx="144.7" cy="434.9" r="5.5" fill="#fbf8f0" stroke="#c4703a" stroke-width="2.4"><title>2026-08-24（预判 9 条）&#10;核心带 3884.0 ~ 3930.0&#10;实际 O/H/L/C 3902.7/3910.24/3855.35/3882.01（-0.59%）&#10;收盘出带外</title></circle>
+<circle cx="211.4" cy="415.8" r="4.2" fill="#1e4d3a"><title>2026-08-25（预判 5 条）&#10;核心带 3855.0 ~ 3900.0&#10;实际 O/H/L/C 3863.37/3896.21/3850.86/3889.44（+0.19%）&#10;收盘在带内</title></circle>
+<circle cx="278.1" cy="356.7" r="4.2" fill="#1e4d3a"><title>2026-08-26（预判 4 条）&#10;核心带 3850.0 ~ 3913.0&#10;实际 O/H/L/C 3881.74/3926.44/3881.74/3912.52（+0.59%）&#10;收盘在带内</title></circle>
+<circle cx="344.8" cy="244.0" r="5.5" fill="#fbf8f0" stroke="#c4703a" stroke-width="2.4"><title>2026-08-27（预判 2 条）&#10;核心带 3881.0 ~ 3930.0&#10;实际 O/H/L/C 3911.89/3958.03/3909.31/3956.57（+1.13%）&#10;收盘出带外</title></circle>
+<circle cx="411.5" cy="255.2" r="4.2" fill="#1e4d3a"><title>2026-08-28（预判 2 条）&#10;核心带 3927.0 ~ 3968.0&#10;实际 O/H/L/C 3950.24/3970.31/3947.8/3952.18（-0.11%）&#10;收盘在带内</title></circle>
+<circle cx="478.2" cy="167.9" r="5.5" fill="#fbf8f0" stroke="#c4703a" stroke-width="2.4"><title>2026-08-31（预判 2 条）&#10;核心带 3927.0 ~ 3968.0&#10;实际 O/H/L/C 3926.53/3986.3/3926.5/3986.3（+0.86%）&#10;收盘出带外</title></circle>
+<circle cx="544.9" cy="184.3" r="4.2" fill="#1e4d3a"><title>2026-09-01（预判 3 条）&#10;核心带 3931.0 ~ 4012.0&#10;实际 O/H/L/C 3979.88/3995.18/3976.47/3979.89（-0.16%）&#10;收盘在带内</title></circle>
+<circle cx="611.6" cy="282.8" r="4.2" fill="#1e4d3a"><title>2026-09-02（预判 2 条）&#10;核心带 3931.0 ~ 3987.5&#10;实际 O/H/L/C 3963.07/3965.81/3932.25/3941.39（-0.97%）&#10;收盘在带内</title></circle>
+<circle cx="678.4" cy="281.0" r="5.5" fill="#fbf8f0" stroke="#c4703a" stroke-width="2.4"><title>2026-09-03（预判 3 条）&#10;核心带 3950.0 ~ 3968.0&#10;实际 O/H/L/C 3952.79/3968.11/3930.45/3942.09（+0.02%）&#10;收盘出带外</title></circle>
+<circle cx="745.1" cy="311.7" r="5.5" fill="#fbf8f0" stroke="#c4703a" stroke-width="2.4"><title>2026-09-04（预判 2 条）&#10;核心带 3942.5 ~ 3960.0&#10;实际 O/H/L/C 3955.55/3980.2/3915.22/3930.12（-0.30%）&#10;收盘出带外</title></circle>
+<circle cx="811.8" cy="305.1" r="4.2" fill="#1e4d3a"><title>2026-09-07（预判 1 条）&#10;核心带 3930.0 ~ 3958.0&#10;实际 O/H/L/C 3942.51/3948.42/3916.49/3932.7（+0.07%）&#10;收盘在带内</title></circle>
+<circle cx="878.5" cy="285.0" r="4.2" fill="#1e4d3a"><title>2026-09-08（预判 3 条）&#10;核心带 3915.0 ~ 3945.0&#10;实际 O/H/L/C 3935.55/3951.32/3925.72/3940.55（+0.20%）&#10;收盘在带内</title></circle>
+<circle cx="945.2" cy="256.9" r="5.5" fill="#fbf8f0" stroke="#c4703a" stroke-width="2.4"><title>2026-09-09（预判 1 条）&#10;核心带 3936.0 ~ 3947.0&#10;实际 O/H/L/C 3943.92/3958.12/3933.47/3951.51（+0.28%）&#10;收盘出带外</title></circle>
+<circle cx="1011.9" cy="300.7" r="5.5" fill="#fbf8f0" stroke="#c4703a" stroke-width="2.4"><title>2026-09-10（预判 1 条）&#10;核心带 3935.0 ~ 3959.0&#10;实际 O/H/L/C 3939.09/3949.25/3927.35/3934.4（-0.43%）&#10;收盘出带外</title></circle>
+<circle cx="1078.6" cy="419.2" r="5.5" fill="#fbf8f0" stroke="#c4703a" stroke-width="2.4"><title>2026-09-11（预判 1 条）&#10;核心带 3929.0 ~ 3938.0&#10;实际 O/H/L/C 3910.92/3912.32/3852.03/3888.11（-1.18%）&#10;收盘出带外</title></circle>
+<circle cx="1145.3" cy="426.4" r="4.2" fill="#1e4d3a"><title>2026-09-14（预判 1 条）&#10;核心带 3868.0 ~ 3912.0&#10;实际 O/H/L/C 3867.02/3895.51/3867.02/3885.33（-0.07%）&#10;收盘在带内</title></circle>
+<circle cx="1212.0" cy="414.7" r="4.2" fill="#1e4d3a"><title>2026-09-15（预判 1 条）&#10;核心带 3867.0 ~ 3905.0&#10;实际 O/H/L/C 3879.73/3889.95/3870.42/3889.9（+0.12%）&#10;收盘在带内</title></circle>
+<text x="78.0" y="582" text-anchor="middle" font-size="10" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">08-21</text>
+<text x="211.4" y="582" text-anchor="middle" font-size="10" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">08-25</text>
+<text x="344.8" y="582" text-anchor="middle" font-size="10" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">08-27</text>
+<text x="478.2" y="582" text-anchor="middle" font-size="10" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">08-31</text>
+<text x="611.6" y="582" text-anchor="middle" font-size="10" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">09-02</text>
+<text x="745.1" y="582" text-anchor="middle" font-size="10" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">09-04</text>
+<text x="878.5" y="582" text-anchor="middle" font-size="10" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">09-08</text>
+<text x="1011.9" y="582" text-anchor="middle" font-size="10" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">09-10</text>
+<text x="1145.3" y="582" text-anchor="middle" font-size="10" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">09-14</text>
+<rect x="78.0" y="602" width="60.0" height="20" rx="3" fill="#2e8b57"><title>2026-08-21：收盘在带内</title></rect>
+<rect x="141.0" y="602" width="60.0" height="20" rx="3" fill="#c0392b"><title>2026-08-24：收盘出带外</title></rect>
+<rect x="204.0" y="602" width="60.0" height="20" rx="3" fill="#2e8b57"><title>2026-08-25：收盘在带内</title></rect>
+<rect x="267.0" y="602" width="60.0" height="20" rx="3" fill="#2e8b57"><title>2026-08-26：收盘在带内</title></rect>
+<rect x="330.0" y="602" width="60.0" height="20" rx="3" fill="#c0392b"><title>2026-08-27：收盘出带外</title></rect>
+<rect x="393.0" y="602" width="60.0" height="20" rx="3" fill="#2e8b57"><title>2026-08-28：收盘在带内</title></rect>
+<rect x="456.0" y="602" width="60.0" height="20" rx="3" fill="#c0392b"><title>2026-08-31：收盘出带外</title></rect>
+<rect x="519.0" y="602" width="60.0" height="20" rx="3" fill="#2e8b57"><title>2026-09-01：收盘在带内</title></rect>
+<rect x="582.0" y="602" width="60.0" height="20" rx="3" fill="#2e8b57"><title>2026-09-02：收盘在带内</title></rect>
+<rect x="645.0" y="602" width="60.0" height="20" rx="3" fill="#c0392b"><title>2026-09-03：收盘出带外</title></rect>
+<rect x="708.0" y="602" width="60.0" height="20" rx="3" fill="#c0392b"><title>2026-09-04：收盘出带外</title></rect>
+<rect x="771.0" y="602" width="60.0" height="20" rx="3" fill="#2e8b57"><title>2026-09-07：收盘在带内</title></rect>
+<rect x="834.0" y="602" width="60.0" height="20" rx="3" fill="#2e8b57"><title>2026-09-08：收盘在带内</title></rect>
+<rect x="897.0" y="602" width="60.0" height="20" rx="3" fill="#c0392b"><title>2026-09-09：收盘出带外</title></rect>
+<rect x="960.0" y="602" width="60.0" height="20" rx="3" fill="#c0392b"><title>2026-09-10：收盘出带外</title></rect>
+<rect x="1023.0" y="602" width="60.0" height="20" rx="3" fill="#c0392b"><title>2026-09-11：收盘出带外</title></rect>
+<rect x="1086.0" y="602" width="60.0" height="20" rx="3" fill="#2e8b57"><title>2026-09-14：收盘在带内</title></rect>
+<rect x="1149.0" y="602" width="60.0" height="20" rx="3" fill="#2e8b57"><title>2026-09-15：收盘在带内</title></rect>
+<text x="78" y="635" font-size="11" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">收盘命中核心带（绿=带内 / 红=带外）</text>
+</svg>
+
+  <div class="stats">
+<div class="stat"><div class="k">收盘落在核心带内</div><div class="v forest">10/18</div><div class="d">56%</div></div><div class="stat"><div class="k">高点未破上轨</div><div class="v forest">10/18</div><div class="d">56%</div></div><div class="stat"><div class="k">低点守住下轨</div><div class="v clay">7/18</div><div class="d">39%</div></div><div class="stat"><div class="k">高低全在带内</div><div class="v clay">3/18</div><div class="d">17%</div></div><div class="stat"><div class="k">核心带平均宽度</div><div class="v forest">38.1 点</div><div class="d">≈0.98%</div></div>
+  </div>
+  <div class="note"><b>读图要点</b> · 陶土橙通道是每交易日预判「核心震荡区间」聚合出的上/下轨，森林绿折线是实际收盘、红绿竖线是当日高低。鼠标悬停任意点位可看当日明细。<br>
+  <b>收盘命中 55.6%</b> 说明核心带更像「收盘锚定带」；<b>盘中高低全包住仅 16.7%</b>、<b>低点守住下轨仅 38.9%</b>，说明日内波动常刺破带边、尤其下轨——9/11 破位下杀（预判下轨 3929 → 实际最低 3852，击穿 77 点）最典型。</div>
+</div>
+</body>
+</html>

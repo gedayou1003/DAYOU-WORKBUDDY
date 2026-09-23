@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>上证综指 · 区间套过滤回测对比</title>
+<style>
+:root{--bg:#141518;--card:#1f2126;--text:#e8e8ea;--muted:#9a9ba3;--border:#2c2e33;--buy:#E24B4A;--sell:#1D9E75}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;padding:24px;line-height:1.6}
+h1{font-size:18px;font-weight:600}
+.sub{font-size:12px;color:var(--muted);margin:4px 0 20px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px}
+th,td{padding:9px 12px;text-align:center;border:1px solid var(--border)}
+th{color:var(--muted);font-weight:500;font-size:12px}
+td.num{font-variant-numeric:tabular-nums;font-weight:600}
+td.name{text-align:left;font-weight:600}
+.pos{color:var(--buy)}.neg{color:var(--sell)}
+.better{outline:2px solid #f0b90b;outline-offset:-2px}
+.rule{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+.rule h2{font-size:14px;margin-bottom:10px}
+.rule li{margin-bottom:8px;font-size:13px}
+.note{font-size:12px;color:var(--muted);margin-top:14px}
+</style>
+</head>
+<body>
+<h1>上证综指 · 区间套过滤回测对比（2022-01 ~ 2026-08）</h1>
+<div class="sub">初始 ¥100,000 · 单边成本万3 · 信号次日生效 · 区间套 = 日线信号 + 周线方向过滤（周线向下时日线买点×0.3）</div>
+
+<table>
+<thead>
+<tr><th style="text-align:left">模式</th><th>confidence档</th><th>总收益</th><th>年化</th><th>最大回撤</th><th>收益/回撤比</th><th>调仓</th></tr>
+</thead>
+<tbody>
+<tr><td class="name" rowspan="3">纯日线版</td><td>全部信号</td><td class="num pos better">+18.07%</td><td class="num">+5.57%</td><td class="num neg">−9.60%</td><td class="num">1.88</td><td class="num">80</td></tr>
+<tr><td>过滤弱信号(≥0.7)</td><td class="num neg">−2.01%</td><td class="num">−0.66%</td><td class="num neg">−9.34%</td><td class="num">−0.22</td><td class="num">24</td></tr>
+<tr><td>仅背驰确认(≥0.8)</td><td class="num pos">+12.82%</td><td class="num">+4.02%</td><td class="num neg">−11.30%</td><td class="num">1.13</td><td class="num">7</td></tr>
+<tr><td class="name" rowspan="3">区间套版</td><td>全部信号</td><td class="num pos">+6.21%</td><td class="num">+1.98%</td><td class="num neg better">−7.97%</td><td class="num">0.78</td><td class="num">56</td></tr>
+<tr><td>过滤弱信号(≥0.7)</td><td class="num neg">−3.26%</td><td class="num">−1.07%</td><td class="num neg">−8.95%</td><td class="num">−0.36</td><td class="num">18</td></tr>
+<tr><td>仅背驰确认(≥0.8)</td><td class="num pos">+0.50%</td><td class="num">+0.16%</td><td class="num neg better">−6.47%</td><td class="num">0.08</td><td class="num">4</td></tr>
+<tr style="border-top:2px solid var(--border)"><td class="name">基准</td><td>满仓持有</td><td class="num pos">+8.12%</td><td class="num">—</td><td class="num neg">约−20%</td><td class="num">—</td><td class="num">—</td></tr>
+</tbody>
+</table>
+
+<div class="rule">
+<h2>结论</h2>
+<li><b style="color:#E24B4A">区间套没提升收益，反而腰斩</b>：纯日线「全部信号」+18.07% → 区间套「全部信号」+6.21%，降了 12 个百分点。</li>
+<li><b style="color:#1D9E75">但回撤确实收窄</b>：−9.60% → −7.97%（全部信号档），−11.30% → −6.47%（仅背驰档）。</li>
+<li><b>性价比下降</b>：收益/回撤比（Calmar）从 1.88 掉到 0.78——回撤少得有限，收益却砍掉一大半，不划算。</li>
+<li><b>根因</b>：震荡市里，「周线向下时的日线反弹买点」正是低吸高抛的收益来源；周线过滤把它当成"逆势"砍掉了。周线定方向更适合趋势市（避免逆势接飞刀），在震荡市反而有害。</li>
+</div>
+<div class="note">以上为历史回测，仅供参考，不构成投资建议。股市有风险，投资需谨慎。</div>
+</body>
+</html>

@@ -18,9 +18,14 @@ automations/
 .workbuddy/forecast_chain.json
 .workbuddy/consensus_chain.json
 
-# ===== 图片与报告产物（大文件/各自生成）=====
+# ===== 图片与报告产物 =====
+# zsxq_images/ 仍不入库（图片体积大，可由星球原文重拉）
 zsxq_images/
-outputs/
+# outputs/ 自 2026-09-23 起**纳入版本控制**（用户拍板）—— 交付物此前无版本兜底：
+# 2026-09-21 的 P0 数据丢失（gen_tj_archive.py 静默覆盖人工精修归档）能救回纯属
+# 冒烟工具恰好备份，outputs/ 本身并不在 git 跟踪内，无第二道兜底。
+# ⚠️ 已知代价（用户已确认接受，仓库为私有）：292 个文件中 121 个含真实星球名、
+#    「Cookie 直连」/「Skill 通道」通道信息、星球 gid。**若日后仓库转公开，须先脱敏。**
 
 # ===== Python 缓存 =====
 __pycache__/

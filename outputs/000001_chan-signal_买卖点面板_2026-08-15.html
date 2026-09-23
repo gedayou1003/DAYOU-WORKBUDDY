@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>上证综指 chan-signal 买卖点</title>
+<style>
+:root{--bg:#141518;--card:#1f2126;--text:#e8e8ea;--muted:#9a9ba3;--border:#2c2e33;--buy:#E24B4A;--sell:#1D9E75}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;padding:24px;line-height:1.6}
+.head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px}
+.head h1{font-size:18px;font-weight:600}
+.head .sub{font-size:13px;color:var(--muted)}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-bottom:16px}
+.legend span{display:flex;align-items:center;gap:5px}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.period{font-size:12px;color:var(--muted);margin-bottom:8px}
+.trend{font-size:14px;font-weight:600;margin-bottom:4px}
+.zs{font-size:12px;color:var(--muted);margin-bottom:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;padding:3px 9px;border-radius:6px;color:#fff;font-weight:500}
+.none{font-size:12px;color:var(--muted)}
+.note{margin-top:16px;font-size:12px;color:var(--muted)}
+</style></head><body>
+<div class="head"><h1>上证综指 · chan-signal 缠论买卖点</h1><div class="sub">2026-08-14 · 五周期联动 · 最新价 3927.18</div></div>
+<div class="legend">
+<span><i class="dot" style="background:var(--buy)"></i>买点（看多）</span>
+<span><i class="dot" style="background:var(--sell)"></i>卖点（看空）</span>
+</div>
+<div class="grid"><div class="card"><div class="period">日线</div><div class="trend" style="color:#E24B4A">趋势向上</div><div class="zs">在中枢下方（中枢上沿:4175.35 下沿:4061.15）</div><div class="chips"><span class="chip" style="background:#1D9E75">一卖 3847.09</span><span class="chip" style="background:#1D9E75">三卖 3847.09</span></div></div><div class="card"><div class="period">周线</div><div class="trend" style="color:#1D9E75">趋势向下</div><div class="zs">在中枢下方（中枢上沿:4034.08 下沿:3927.85）</div><div class="chips"><span class="chip" style="background:#E24B4A">一买 3927.85</span></div></div><div class="card"><div class="period">60分钟</div><div class="trend" style="color:#1D9E75">趋势向下</div><div class="zs">在中枢下方（中枢上沿:4074.83 下沿:4019.21）</div><div class="none">无明确买卖点</div></div><div class="card"><div class="period">15分钟</div><div class="trend" style="color:#1D9E75">趋势向下</div><div class="zs">在中枢上方（中枢上沿:3841.49 下沿:3800.50）</div><div class="chips"><span class="chip" style="background:#E24B4A">三买 3959.39</span></div></div><div class="card"><div class="period">5分钟</div><div class="trend" style="color:#E24B4A">趋势向上</div><div class="chips"><span class="chip" style="background:#1D9E75">一卖 3927.43</span></div></div></div>
+<div class="note">区间套：周线/日线定方向，60/15/5分钟找精确买卖点。一买=下跌背驰反转（左侧建仓）、二买=回调不破前低（右侧建仓）、三买=突破中枢回踩（趋势确认）；一卖/二卖/三卖为对应减仓/止损点。以上分析基于缠论技术指标，仅供参考，不构成投资建议。</div>
+</body></html>

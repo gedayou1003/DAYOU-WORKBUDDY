@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>四维命中率 · 预判系统复盘</title>
+<style>
+:root{--paper:#f5f0e6;--panel:#fbf8f0;--card:#fffdf7;--forest:#1e4d3a;--clay:#c4703a;
+  --ink:#3a3a36;--sub:#8a8577;--grid:#e5ddcc}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);
+  font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  padding:34px 40px 50px;line-height:1.6}
+.wrap{max-width:1280px;margin:0 auto}
+h1{font-size:22px;font-weight:700;letter-spacing:.5px;color:var(--forest)}
+.sub{font-size:13px;color:var(--sub);margin-top:6px}
+.legend{display:flex;flex-wrap:wrap;gap:26px;margin:18px 0 10px;font-size:13.5px;color:var(--ink)}
+.legend .it{display:flex;align-items:center;gap:8px}
+.sw{width:22px;height:3px;border-radius:2px;display:inline-block}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:20px 0}
+.stat{background:var(--card);border:1px solid var(--grid);border-radius:10px;padding:14px 16px}
+.stat .k{font-size:12px;color:var(--sub)}
+.stat .v{font-size:28px;font-weight:700;margin-top:2px}
+.stat .d{font-size:11.5px;color:var(--sub);margin-top:5px}
+.sec{font-size:14px;font-weight:700;color:var(--forest);margin:24px 0 10px;letter-spacing:.5px}
+.st-row{display:flex;align-items:center;gap:12px;margin:8px 0}
+.st-name{width:44px;font-size:13px;color:var(--ink);font-weight:600;text-align:right}
+.st-bar{flex:1;height:22px;border-radius:5px;overflow:hidden;display:flex;background:#efe8d8}
+.st-seg{height:100%}
+.st-val{width:52px;font-size:13px;color:var(--forest);font-weight:700}
+.note{font-size:13px;color:var(--sub);margin-top:22px;border-left:3px solid var(--clay);
+  padding-left:12px;max-width:900px}
+.note b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>预判系统 · 四维命中率复盘</h1>
+  <div class="sub">方向 / 区间 / 支撑 / 压力 · 46 期滚动累计 · 口径：纯命中率 = ✅ ÷（✅+⚠️+❌）</div>
+
+  <div class="legend">
+<div class="it"><span class="sw" style="background:#1e4d3a"></span>方向 <b style="color:#1e4d3a">56.5%</b></div><div class="it"><span class="sw" style="background:#c4703a"></span>区间 <b style="color:#c4703a">39.1%</b></div><div class="it"><span class="sw" style="background:#4a7d8c"></span>支撑 <b style="color:#4a7d8c">66.7%</b></div><div class="it"><span class="sw" style="background:#a64b3c"></span>压力 <b style="color:#a64b3c">60.0%</b></div>
+  </div>
+
+<svg viewBox="0 0 1240 620" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;height:auto;background:#fbf8f0;border-radius:10px">
+<line x1="66" y1="548.0" x2="1200" y2="548.0" stroke="#eae3d4" stroke-width="1"/>
+<text x="56" y="548.0" text-anchor="end" dominant-baseline="middle" font-size="10.5" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">0%</text>
+<line x1="66" y1="497.2" x2="1200" y2="497.2" stroke="#eae3d4" stroke-width="1"/>
+<text x="56" y="497.2" text-anchor="end" dominant-baseline="middle" font-size="10.5" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">10%</text>
+<line x1="66" y1="446.4" x2="1200" y2="446.4" stroke="#eae3d4" stroke-width="1"/>
+<text x="56" y="446.4" text-anchor="end" dominant-baseline="middle" font-size="10.5" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">20%</text>
+<line x1="66" y1="395.6" x2="1200" y2="395.6" stroke="#eae3d4" stroke-width="1"/>
+<text x="56" y="395.6" text-anchor="end" dominant-baseline="middle" font-size="10.5" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">30%</text>
+<line x1="66" y1="344.8" x2="1200" y2="344.8" stroke="#eae3d4" stroke-width="1"/>
+<text x="56" y="344.8" text-anchor="end" dominant-baseline="middle" font-size="10.5" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">40%</text>
+<line x1="66" y1="294.0" x2="1200" y2="294.0" stroke="#c9bfa8" stroke-width="1" stroke-dasharray="4,4"/>
+<text x="56" y="294.0" text-anchor="end" dominant-baseline="middle" font-size="10.5" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">50%</text>
+<line x1="66" y1="243.2" x2="1200" y2="243.2" stroke="#eae3d4" stroke-width="1"/>
+<text x="56" y="243.2" text-anchor="end" dominant-baseline="middle" font-size="10.5" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">60%</text>
+<line x1="66" y1="192.4" x2="1200" y2="192.4" stroke="#eae3d4" stroke-width="1"/>
+<text x="56" y="192.4" text-anchor="end" dominant-baseline="middle" font-size="10.5" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">70%</text>
+<line x1="66" y1="141.6" x2="1200" y2="141.6" stroke="#eae3d4" stroke-width="1"/>
+<text x="56" y="141.6" text-anchor="end" dominant-baseline="middle" font-size="10.5" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">80%</text>
+<line x1="66" y1="90.8" x2="1200" y2="90.8" stroke="#eae3d4" stroke-width="1"/>
+<text x="56" y="90.8" text-anchor="end" dominant-baseline="middle" font-size="10.5" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">90%</text>
+<line x1="66" y1="40.0" x2="1200" y2="40.0" stroke="#eae3d4" stroke-width="1"/>
+<text x="56" y="40.0" text-anchor="end" dominant-baseline="middle" font-size="10.5" fill="#9a9484" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">100%</text>
+<text x="74" y="288.0" font-size="10" fill="#b0a78e" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">50% 基准</text>
+<polyline points="66.0,40.0 91.2,40.0 116.4,40.0 141.6,40.0 166.8,40.0 192.0,40.0 217.2,40.0 242.4,40.0 267.6,40.0 292.8,40.0 318.0,86.2 343.2,124.8 368.4,118.2 393.6,148.7 418.8,175.6 444.0,198.5 469.2,219.3 494.4,237.6 519.6,253.9 544.8,268.6 570.0,281.8 595.2,271.1 620.4,282.8 645.6,294.0 670.8,304.2 696.0,313.3 721.2,322.4 746.4,330.1 771.6,337.7 796.8,328.0 822.0,318.4 847.2,309.7 872.4,301.6 897.6,308.7 922.8,301.1 948.0,294.0 973.2,286.9 998.4,280.8 1023.6,274.7 1048.8,281.3 1074.0,275.2 1099.2,269.6 1124.4,264.5 1149.6,259.5 1174.8,254.4 1200.0,261.0" fill="none" stroke="#1e4d3a" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="1200.0" cy="261.0" r="4.4" fill="#1e4d3a" stroke="#fbf8f0" stroke-width="1.5"/>
+<polyline points="66.0,40.0 91.2,40.0 116.4,209.2 141.6,294.0 166.8,243.2 192.0,209.2 217.2,185.3 242.4,167.0 267.6,152.8 292.8,141.6 318.0,178.7 343.2,209.2 368.4,235.6 393.6,257.9 418.8,277.2 444.0,294.0 469.2,308.7 494.4,294.0 519.6,307.2 544.8,294.0 570.0,306.2 595.2,294.0 620.4,282.8 645.6,294.0 670.8,304.2 696.0,313.3 721.2,322.4 746.4,330.1 771.6,337.7 796.8,328.0 822.0,318.4 847.2,309.7 872.4,316.9 897.6,324.0 922.8,330.1 948.0,322.4 973.2,328.5 998.4,334.1 1023.6,339.7 1048.8,332.1 1074.0,337.2 1099.2,342.3 1124.4,347.3 1149.6,351.9 1174.8,356.0 1200.0,349.4" fill="none" stroke="#c4703a" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="1200.0" cy="349.4" r="4.4" fill="#c4703a" stroke="#fbf8f0" stroke-width="1.5"/>
+<polyline points="66.0,548.0 91.2,294.0 116.4,378.8 141.6,294.0 166.8,243.2 192.0,209.2 217.2,185.3 242.4,167.0 267.6,152.8 292.8,141.6 318.0,178.7 343.2,209.2 368.4,235.6 393.6,257.9 418.8,277.2 444.0,294.0 469.2,308.7 494.4,322.4 519.6,307.2 544.8,294.0 570.0,281.8 595.2,271.1 620.4,261.0 645.6,251.8 670.8,243.2 696.0,235.6 721.2,228.0 746.4,221.4 771.6,215.3 796.8,209.2 822.0,204.1 847.2,198.5 872.4,209.2 897.6,204.6 922.8,214.2 948.0,209.2 973.2,218.3 998.4,213.7 1023.6,209.2 1048.8,209.2 1074.0,205.1 1099.2,201.0 1124.4,197.5 1149.6,205.6 1174.8,213.2 1200.0,209.2" fill="none" stroke="#4a7d8c" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="1200.0" cy="209.2" r="4.4" fill="#4a7d8c" stroke="#fbf8f0" stroke-width="1.5"/>
+<polyline points="66.0,548.0 91.2,548.0 116.4,378.8 141.6,294.0 166.8,344.8 192.0,294.0 217.2,257.9 242.4,230.5 267.6,209.2 292.8,192.4 318.0,178.7 343.2,167.0 368.4,157.3 393.6,148.7 418.8,141.6 444.0,135.5 469.2,159.4 494.4,152.8 519.6,173.6 544.8,167.0 570.0,185.3 595.2,201.5 620.4,216.8 645.6,230.5 670.8,243.2 696.0,254.9 721.2,265.6 746.4,275.7 771.6,285.4 796.8,277.2 822.0,269.6 847.2,262.5 872.4,255.4 897.6,264.0 922.8,257.9 948.0,251.8 973.2,245.7 998.4,253.9 1023.6,248.3 1048.8,248.3 1074.0,255.9 1099.2,250.8 1124.4,257.9 1149.6,252.9 1174.8,247.8 1200.0,243.2" fill="none" stroke="#a64b3c" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="1200.0" cy="243.2" r="4.4" fill="#a64b3c" stroke="#fbf8f0" stroke-width="1.5"/>
+<text x="66.0" y="564" text-anchor="middle" font-size="10" fill="#8a8577" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">1期</text>
+<text x="192.0" y="564" text-anchor="middle" font-size="10" fill="#8a8577" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">6期</text>
+<text x="318.0" y="564" text-anchor="middle" font-size="10" fill="#8a8577" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">11期</text>
+<text x="444.0" y="564" text-anchor="middle" font-size="10" fill="#8a8577" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">16期</text>
+<text x="570.0" y="564" text-anchor="middle" font-size="10" fill="#8a8577" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">21期</text>
+<text x="696.0" y="564" text-anchor="middle" font-size="10" fill="#8a8577" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">26期</text>
+<text x="822.0" y="564" text-anchor="middle" font-size="10" fill="#8a8577" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">31期</text>
+<text x="948.0" y="564" text-anchor="middle" font-size="10" fill="#8a8577" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">36期</text>
+<text x="1074.0" y="564" text-anchor="middle" font-size="10" fill="#8a8577" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">41期</text>
+<text x="1200.0" y="564" text-anchor="middle" font-size="10" fill="#8a8577" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">46期</text>
+<text x="66" y="582" font-size="10.5" fill="#a09a8a" font-family="-apple-system,Segoe UI,PingFang SC,sans-serif">第 1 期（2026-08-21）→ 第 46 期（2026-09-15）· 每期滚动累计</text>
+</svg>
+
+  <div class="stats">
+<div class="stat"><div class="k">方向 · 纯命中率</div><div class="v" style="color:#1e4d3a">56.5%</div><div class="d"><span style="color:#2e8b57">✅26</span> <span style="color:#d9a441">⚠️17</span> <span style="color:#c0392b">❌3</span> · 共 46 期</div></div><div class="stat"><div class="k">区间 · 纯命中率</div><div class="v" style="color:#c4703a">39.1%</div><div class="d"><span style="color:#2e8b57">✅18</span> <span style="color:#d9a441">⚠️25</span> <span style="color:#c0392b">❌3</span> · 共 46 期</div></div><div class="stat"><div class="k">支撑 · 纯命中率</div><div class="v" style="color:#4a7d8c">66.7%</div><div class="d"><span style="color:#2e8b57">✅30</span> <span style="color:#d9a441">⚠️6</span> <span style="color:#c0392b">❌9</span> · 共 45 期</div></div><div class="stat"><div class="k">压力 · 纯命中率</div><div class="v" style="color:#a64b3c">60.0%</div><div class="d"><span style="color:#2e8b57">✅27</span> <span style="color:#d9a441">⚠️11</span> <span style="color:#c0392b">❌7</span> · 共 45 期</div></div>
+  </div>
+
+  <div class="sec">四维判定构成（命中 / 部分 / 失败）</div>
+<div class="st-row"><div class="st-name">方向</div><div class="st-bar"><div class="st-seg" style="width:56.52%;background:#2e8b57" title="命中 26"></div><div class="st-seg" style="width:36.96%;background:#d9a441" title="部分 17"></div><div class="st-seg" style="width:6.52%;background:#c0392b" title="失败 3"></div></div><div class="st-val">26/46</div></div><div class="st-row"><div class="st-name">区间</div><div class="st-bar"><div class="st-seg" style="width:39.13%;background:#2e8b57" title="命中 18"></div><div class="st-seg" style="width:54.35%;background:#d9a441" title="部分 25"></div><div class="st-seg" style="width:6.52%;background:#c0392b" title="失败 3"></div></div><div class="st-val">18/46</div></div><div class="st-row"><div class="st-name">支撑</div><div class="st-bar"><div class="st-seg" style="width:66.67%;background:#2e8b57" title="命中 30"></div><div class="st-seg" style="width:13.33%;background:#d9a441" title="部分 6"></div><div class="st-seg" style="width:20.00%;background:#c0392b" title="失败 9"></div></div><div class="st-val">30/45</div></div><div class="st-row"><div class="st-name">压力</div><div class="st-bar"><div class="st-seg" style="width:60.00%;background:#2e8b57" title="命中 27"></div><div class="st-seg" style="width:24.44%;background:#d9a441" title="部分 11"></div><div class="st-seg" style="width:15.56%;background:#c0392b" title="失败 7"></div></div><div class="st-val">27/45</div></div>
+
+  <div class="note"><b>读图要点</b> · 四条曲线是「纯命中率」随复盘期数的滚动累计，前 10 期样本少、波动大属正常，20 期后趋于稳定。<br>
+  <b>结构稳定：支撑（66.7%）＞ 压力（60.0%）＞ 方向（56.5%）＞ 区间（39.1%）</b>。区间长期垫底，但看构成条可发现其「⚠️ 部分」占比最高（25/46）——区间判定常是「方向对、幅度差一点」，纯口径下被记为未命中，若按「含部分 0.5」口径可达 66.3%。支撑/压力是预判系统最可靠的维度，也是实际操盘中「关键位」最值得信赖的部分。</div>
+</div>
+</body>
+</html>

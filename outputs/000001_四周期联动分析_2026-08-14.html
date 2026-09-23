@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>上证综指 · 四周期联动分析</title>
+<style>
+:root{--bg:#141518;--card:#1f2126;--text:#e8e8ea;--muted:#9a9ba3;--border:#2c2e33;--buy:#E24B4A;--sell:#1D9E75}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;padding:24px;line-height:1.6}
+h1{font-size:18px;font-weight:600}
+.sub{font-size:12px;color:var(--muted);margin:4px 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:20px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.card .p{font-size:12px;color:var(--muted);margin-bottom:6px}
+.card .price{font-size:20px;font-weight:700;margin-bottom:8px}
+.row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
+.row .k{color:var(--muted)}
+.row .v{font-weight:600}
+.up{color:var(--buy)}.down{color:var(--sell)}
+.sig{display:inline-block;font-size:12px;padding:2px 8px;border-radius:6px;margin-top:6px;font-weight:600}
+.sig.buy{background:var(--buy);color:#fff}
+.sig.sell{background:var(--sell);color:#fff}
+.sig.none{background:#33353b;color:var(--muted)}
+.sect{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+.sect h2{font-size:14px;margin-bottom:10px}
+.level{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.pill{flex:1;min-width:120px;border:1px solid var(--border);border-radius:8px;padding:8px 12px;text-align:center}
+.pill .t{font-size:11px;color:var(--muted)}
+.pill .n{font-size:16px;font-weight:700;margin-top:2px}
+.pill.res .n{color:var(--buy)}.pill.sup .n{color:var(--sell)}
+.flow{font-size:13px;color:var(--text)}
+.flow li{margin-bottom:6px;list-style:none}
+.flow li:before{content:"· ";color:var(--muted)}
+.note{font-size:12px;color:var(--muted);margin-top:12px}
+</style>
+</head>
+<body>
+<h1>上证综指 · 四周期联动分析（chan-signal + MA55）</h1>
+<div class="sub">最新价 3927.18 · 2026-08-14 收盘 · 周期：日线 / 120分钟 / 60分钟 / 15分钟</div>
+
+<div class="grid">
+<div class="card">
+<div class="p">日线</div><div class="price">3927.18</div>
+<div class="row"><span class="k">缠论趋势</span><span class="v up">向上</span></div>
+<div class="row"><span class="k">中枢位置</span><span class="v down">下方(4061~4175)</span></div>
+<div class="row"><span class="k">MA55</span><span class="v">3973.56</span></div>
+<div class="row"><span class="k">价vs MA55</span><span class="v down">下方 −1.17%</span></div>
+<div class="row"><span class="k">MA55方向</span><span class="v down">向下</span></div>
+<span class="sig sell">一卖 @3847 (7-31)</span>
+</div>
+
+<div class="card">
+<div class="p">120分钟</div><div class="price">3927.18</div>
+<div class="row"><span class="k">缠论趋势</span><span class="v up">向上</span></div>
+<div class="row"><span class="k">中枢位置</span><span class="v up">上方(3767~3858)</span></div>
+<div class="row"><span class="k">MA55</span><span class="v">3886.25</span></div>
+<div class="row"><span class="k">价vs MA55</span><span class="v up">上方 +1.05%</span></div>
+<div class="row"><span class="k">MA55方向</span><span class="v down">向下</span></div>
+<span class="sig sell">一卖 @3967 (8-10)</span>
+</div>
+
+<div class="card">
+<div class="p">60分钟</div><div class="price">3927.18</div>
+<div class="row"><span class="k">缠论趋势</span><span class="v down">向下</span></div>
+<div class="row"><span class="k">中枢位置</span><span class="v down">下方(4019~4074)</span></div>
+<div class="row"><span class="k">MA55</span><span class="v">3879.68</span></div>
+<div class="row"><span class="k">价vs MA55</span><span class="v up">上方 +1.22%</span></div>
+<div class="row"><span class="k">MA55方向</span><span class="v up">向上</span></div>
+<span class="sig none">无明确信号</span>
+</div>
+
+<div class="card">
+<div class="p">15分钟</div><div class="price">3927.18</div>
+<div class="row"><span class="k">缠论趋势</span><span class="v down">向下</span></div>
+<div class="row"><span class="k">中枢位置</span><span class="v up">上方(3800~3841)</span></div>
+<div class="row"><span class="k">MA55</span><span class="v">3940.88</span></div>
+<div class="row"><span class="k">价vs MA55</span><span class="v down">下方 −0.35%</span></div>
+<div class="row"><span class="k">MA55方向</span><span class="v down">向下</span></div>
+<span class="sig buy">三买 @3959 (8-13)</span>
+</div>
+</div>
+
+<div class="sect">
+<h2>关键点位（支撑 / 压力）</h2>
+<div class="level">
+<div class="pill res"><div class="t">压力1 · 日线MA55</div><div class="n">3973</div></div>
+<div class="pill res"><div class="t">压力2 · 60分钟中枢下沿</div><div class="n">4019</div></div>
+<div class="pill res"><div class="t">压力3 · 日线中枢下沿(关键)</div><div class="n">4061</div></div>
+</div>
+<div class="level">
+<div class="pill sup"><div class="t">支撑1 · 120分钟MA55</div><div class="n">3886</div></div>
+<div class="pill sup"><div class="t">支撑2 · 120分钟中枢上沿</div><div class="n">3858</div></div>
+<div class="pill sup"><div class="t">支撑3 · 15分钟中枢下沿</div><div class="n">3800</div></div>
+</div>
+</div>
+
+<div class="sect">
+<h2>联动结论</h2>
+<ul class="flow">
+<li><b style="color:#E24B4A">大周期（日线）</b>：趋势向上但价格在中枢下方、跌破 MA55 —— 大级别仍偏弱，尚未收复 4061 中枢下沿。</li>
+<li><b style="color:#E8A33D">中周期（120/60分钟）</b>：120分钟已突破中枢上沿 3858、60分钟站上 MA55 —— 中期反弹结构已展开，是当前最强的一环。</li>
+<li><b style="color:#1D9E75">短周期（15分钟）</b>：三买后回落、趋势转下、跌破 MA55 —— 短线冲高遇阻，进入回调。</li>
+<li>MA55 四周期多空：日线空 / 120多 / 60多 / 15空 —— 典型「反弹中继、短线回踩」格局。</li>
+</ul>
+</div>
+
+<div class="sect">
+<h2>区间套判定（相邻周期共振）</h2>
+<ul class="flow">
+<li><b>日线 → 120分钟</b>：日线价格跌破中枢下方(−117%)，120分钟出一卖@3967 → <b style="color:#1D9E75">卖点但大周期在支撑下方（弱）</b>。</li>
+<li><b>120分钟 → 60分钟</b>：120分钟价格突破中枢上方(+176%)，60分钟无信号。</li>
+<li><b>60分钟 → 15分钟</b>：60分钟价格跌破中枢下方(−166%)，15分钟出三买@3959 → <b style="color:#E24B4A">买点但大周期已跌破中枢（弱）</b>。</li>
+</ul>
+<div class="note">当前<b>无强区间套信号</b>：价格处于「日线中枢下方 + 60分钟中枢下方」的真空区，既不是大周期支撑位 + 小周期背驰的共振买点，也不是压力位 + 顶背驰的共振卖点。真正要等的强信号：日线回到 4061 中枢下沿附近 + 小周期出一买（背驰），才构成区间套买点。</div>
+</div>
+
+<div class="sect">
+<h2>后市预判（三种路径）</h2>
+<ul class="flow">
+<li><b>基准情形（概率最高）</b>：短线回踩 3886~3858（120分钟MA55/中枢上沿）获支撑，60分钟不破 MA55(3879)，反弹延续，向上挑战 3973 → 4019。</li>
+<li><b>偏强情形</b>：放量收复 3973（日线MA55），则确认日线反转，冲击 4061（日线中枢下沿，多空分水岭）。</li>
+<li><b>偏弱情形</b>：跌破 3858 且 60分钟 MA55 失守，反弹结束，下探 3800（15分钟中枢下沿）。</li>
+</ul>
+<div class="note">核心：中期反弹未破、短线转弱，处于 3860~3973 整理；多空分水岭上方看 3973、下方看 3858。</div>
+</div>
+
+<div class="note">以上基于缠论 + MA55 技术分析，仅供参考，不构成投资建议。股市有风险，投资需谨慎。</div>
+</body>
+</html>

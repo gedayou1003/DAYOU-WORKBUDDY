@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>作战报告 · 复盘 · 2026-09-15</title>
+<style>
+* { box-sizing: border-box; }
+body { background: #f6f2e9; color: #2b2b2b;
+  font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+  font-size: 15px; line-height: 1.85; max-width: 880px; margin: 0 auto; padding: 44px 36px 96px; }
+h1 { font-size: 26px; color: #1f3a3a; font-weight: 700; line-height: 1.35;
+  border-bottom: 3px solid #1f3a3a; padding-bottom: 14px; margin: 0 0 10px; }
+h2 { font-size: 20px; color: #1f3a3a; font-weight: 700; margin: 52px 0 18px;
+  padding-top: 18px; border-top: 1px solid #e0d8c8; }
+h3 { font-size: 16px; color: #b33a1f; font-weight: 600; margin: 30px 0 12px; }
+h4 { font-size: 15px; color: #1f3a3a; font-weight: 600; margin: 24px 0 8px; }
+p { margin: 12px 0; }
+blockquote { margin: 16px 0; padding: 12px 18px; background: #fffdf6;
+  border-left: 3px solid #b33a1f; color: #5a5a4f; font-size: 14px; line-height: 1.75;
+  border-radius: 0 6px 6px 0; }
+blockquote p { margin: 6px 0; }
+table { border-collapse: collapse; width: 100%; margin: 18px 0;
+  font-size: 13.5px; line-height: 1.65; background: #fffdf6; }
+th, td { border: 1px solid #e0d8c8; padding: 9px 13px; text-align: left; vertical-align: top; }
+th { background: #ece4d0; color: #1f3a3a; font-weight: 600; white-space: nowrap; }
+tr:nth-child(even) td { background: #fbf7ec; }
+ul, ol { margin: 10px 0; padding-left: 26px; }
+li { margin: 7px 0; }
+hr { border: none; border-top: 2px solid #e0d8c8; margin: 42px 0; }
+strong { color: #1f3a3a; font-weight: 600; }
+code { background: #ece4d0; padding: 1px 6px; border-radius: 4px;
+  font-family: 'SF Mono', Consolas, monospace; font-size: 12.5px; color: #b33a1f; }
+</style>
+</head>
+<body>
+<h1>作战报告 · 复盘 · 2026-09-15</h1>
+<blockquote>
+<p>上证综指 000001 ｜ 收盘 3864.28（-0.54%）｜ 平开 -0.14% ｜ 全天 3858.15-3891.62 ｜ 量能 4.41 亿手、环比 -3.9%（近期新低）
+档位：复盘（17:20）｜ 验证对象：9/15-morning 晨报预判 + 9/15-morning 共识
+⚠️ <strong>数据事故（连续第 3 期报告 · 跨 9/14、9/15 两个交易日）</strong>：Cookie 通道全部 HTTP 401，大鹏鸟 / 短评&amp;信息 / 180K / AI 产业链 四个星球零数据；Skill 通道正常（卫斯李 12 / 基业长青 26 / T&amp;J 1 = 39 条）。修复方式见附录 A。</p>
+</blockquote>
+<hr />
+<h2>盘面实际（9/15 全天）</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>数值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>开盘 / 最高 / 最低 / 收盘</td>
+<td>3879.73 / 3891.62 / 3858.15 / 3864.28</td>
+</tr>
+<tr>
+<td>涨跌幅 / 跳空</td>
+<td>-0.54% / 平开 -0.14%（-5.6 点）</td>
+</tr>
+<tr>
+<td>全天振幅</td>
+<td>33.47 点（0.86%）</td>
+</tr>
+<tr>
+<td>量能</td>
+<td>4.41 亿手，环比 -3.9%（9/8 以来新低）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>走势定性</strong>：平开 3879.73 后冲高 3891.62（盘中一度站上今日口径 15F55 3885.90 后失守），随后震荡回落探低 <strong>3858.15（精准止跌于日线 BOLL 下轨 3857.58，仅差 0.57 点）</strong>，尾盘收 3864.28。全天窄幅阴跌、无单边，量能进一步萎缩。</p>
+<p><strong>风格切换</strong>（申万 31 行业，9/15 收盘）：</p>
+<table>
+<thead>
+<tr>
+<th>方向</th>
+<th>行业</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>领涨（仅 2 个收涨）</td>
+<td>电子 <strong>+0.75%</strong>、建筑材料 +0.40%</td>
+</tr>
+<tr>
+<td>领跌（消费链崩塌）</td>
+<td>商贸零售 <strong>-2.95%</strong>、社会服务 -2.39%、综合 -1.71%、电力设备 -1.68%、轻工制造 -1.60%</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>昨日领涨全线反包（连续第 3 次）</strong>：医药生物 +2.22%→<strong>-1.05%</strong>、银行 +0.80%→<strong>-1.29%</strong>、汽车 +0.97%→<strong>-1.31%</strong>；而昨日弱势的电子今日领涨。
+<strong>科技内部继续分化</strong>：电子 +0.75% 领涨 vs 通信 -0.63%、计算机 -0.93%、传媒 -1.16% 下跌——<strong>硬件强于软件/内容</strong>。</p>
+</blockquote>
+<p><strong>盘面归因（星球侧证据）</strong>：</p>
+<ul>
+<li><strong>电子领涨 = AI 硬件反弹</strong>：高盛中国午盘（基业长青 13:22）「<strong>中国人工智能硬件板块今早出现反弹，其中 PCB 和半导体设备板块普遍上涨超过 2%</strong>……主要受到 <strong>MFC（质量流量控制器）短缺猜测</strong>的推动」；AIDC 电力相关股票亦获动能。</li>
+<li><strong>消费链崩塌 = 社零数据触发</strong>：高盛中国午盘「<strong>8 月零售销售同比增长 0.4%，低于预期的 0.8%</strong>……<strong>多只小盘旅游和零售股触及跌停</strong>，而大盘白酒和家电股相对抗跌」——直接对应商贸零售 -2.95%、社会服务 -2.39% 领跌。</li>
+<li><strong>缩量原因</strong>：GS CHINA OPEN（基业长青 09:06）「<strong>中国 A 股现金成交额，受节前交易意愿清淡以及人工智能发展相关担忧影响，跌至 2026 年第二低位</strong>」。</li>
+</ul>
+<p><strong>收盘技术状态</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>周期</th>
+<th>现价/均线</th>
+<th>MACD</th>
+<th>信号</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>日线</td>
+<td>收 3864.28，MA55=3919.21（失守）、MA20=3923.64（失守）</td>
+<td>DIF <strong>-6.65</strong> &lt; DEA 1.83 <strong>空头区</strong>，DIF 加速下行（-2.01→-6.65）</td>
+<td>死叉深度扩大（gap -8.48），比 9/14 更弱一档</td>
+</tr>
+<tr>
+<td>60F</td>
+<td>MA55=3935.28、MA20=3905.54（均失守）</td>
+<td>DIF -17.60 &lt; DEA -14.98 空头区，DIF 向下</td>
+<td>死叉延续</td>
+</tr>
+<tr>
+<td>15F</td>
+<td>MA55=3885.90、MA20=3878.35（均失守）</td>
+<td>DIF -5.89 &lt; DEA -4.29 空头区</td>
+<td>由「金叉」转「死叉」（前一交易日为金叉）</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>三周期全部空头区、全部收在均线下方、DIF 全部向下</strong>——大级别偏空结构进一步巩固。</p>
+</blockquote>
+<p><strong>引擎信号（9/15 收盘后重跑）</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>引擎</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>引擎 B（缠论五周期）</td>
+<td><strong>五周期趋势全部向下</strong>；日线一卖/三卖 @<strong>3847.09</strong>（conf 0.5/0.75）、周线一卖 @3995.18、<strong>60F 三卖 @3891.48（conf 0.75）</strong></td>
+</tr>
+<tr>
+<td>引擎 C（BOLL×缠论）</td>
+<td><strong>四级别全看空</strong>：15F 81% / 60F 90% / 120F 88% / 日线 81%；15F 带宽 0.86% 极度收口、60F/120F/日线均开口向下（趋势启动）</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>两个精准验证点</strong>：① 日线 BOLL 下轨 <strong>3857.58</strong> vs 今日最低 <strong>3858.15</strong>——差 0.57 点精准止跌；② 60F 三卖 <strong>3891.48</strong> vs 今日最高 <strong>3891.62</strong>——差 0.14 点精准压制。</p>
+</blockquote>
+<hr />
+<h2>预判复盘（9/15-morning）</h2>
+<h3>四维验证</h3>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>判定</th>
+<th>预判</th>
+<th>实际</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>方向</strong></td>
+<td>✅ 命中</td>
+<td>偏空（v5 总分 -3）</td>
+<td><strong>-0.54%</strong> 收跌</td>
+<td>方向标签与实际一致；盘中有效跌破 T&amp;J 关键位 3867、最低 3858.15 逼近前低，跌幅较 9/14 的 -0.07% 明显扩大，偏空强度兑现优于 9/14</td>
+</tr>
+<tr>
+<td><strong>区间</strong></td>
+<td>⚠️ 部分</td>
+<td>核心 3867-3905 / 扩展 3852-3923</td>
+<td>3858.15-3891.62</td>
+<td>收盘 3864.28 微破核心下沿 3867 仅 2.72 点（-0.07%）；最低 3858.15 破下沿 8.85 点但仍在扩展下沿 3852 上方 6.15 点；最高 3891.62 稳在带内——<strong>微向下偏移</strong></td>
+</tr>
+<tr>
+<td><strong>支撑</strong></td>
+<td>✅ 守住</td>
+<td>3852.03（前低·T&amp;J 争夺核心）</td>
+<td>low 3858.15</td>
+<td>未触及，差 6.12 点（+0.16%）——3852 支撑有效，与 T&amp;J「围绕 3852 争夺」一致，但今日连触及动作都没有</td>
+</tr>
+<tr>
+<td><strong>压力</strong></td>
+<td>✅ 守住</td>
+<td>3905.26（15F55·T&amp;J「压力山大」）</td>
+<td>high 3891.62</td>
+<td>未触及，差 13.64 点（-0.35%）——压力有效；佐证：60F 三卖 3891.48 与今日最高 3891.62 几乎精准重合（差 0.14 点）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>结构复述</strong>：<strong>方向 + 支撑 + 压力三维守住、区间微偏</strong>——与 9/14 复盘结构完全一致（连续第 2 期「三维守、区间微偏」）。</p>
+<p><strong>可预料性判定</strong>：<strong>完全可预料</strong>。T&amp;J 9/14 22:07 的三项定调全部命中（详见下方共识验证第 1 条），且 15F 均线「主动下行」的机制被精确兑现。</p>
+<h3>共识逐条验证（9/15-morning → verified）</h3>
+<table>
+<thead>
+<tr>
+<th>共识主题</th>
+<th>判定</th>
+<th>验证说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>震荡阴跌周期确立（7-10 个交易日）</td>
+<td>✅ <strong>兑现（首日形态完全吻合）</strong></td>
+<td>①「很难快速上涨和快速下跌」——振幅仅 33.47 点（0.86%），最高未及 15F55、最低未破前低；②「15F55 压力山大、等其下行后再挑战」——最高 3891.62 距 15F55 差 13.64 点，且 <strong>15F MA55 由 9/14 的 3905.26 主动下行至 9/15 的 3885.90（下移 19.36 点）</strong>，「等均线下行」精确兑现；③缩量进一步强化（4.41 亿手创 9/8 以来新低）</td>
+</tr>
+<tr>
+<td>油价二次冲击 + FOMC 决议前谨慎（宏观双线）</td>
+<td>⚠️ <strong>部分兑现（谨慎情绪✅ / 能源链传导❌）</strong></td>
+<td>谨慎情绪兑现：31 行业<strong>仅 2 个收涨</strong>、缩量至近期新低、风险偏好受压。但<strong>地缘能源冲击未在 A 股能源链兑现</strong>——石油石化 -0.82%、煤炭 -0.15%、有色金属 -0.76%，油价飙升与霍尔木兹危机未带动能源股走强。作用形式为「整体风险偏好收缩」而非「能源结构性机会」</td>
+</tr>
+<tr>
+<td>AI 资本开支争议升级（多机构正面对撞）</td>
+<td>✅ <strong>兑现（产业端占优，硬件逆势）</strong></td>
+<td><strong>电子 +0.75% 全场领涨</strong>（唯二收涨之一），「安全流程之争 ≠ 削减算力」的产业侧定性获资金认可；科技内部硬件强于软件（通信 -0.63%、计算机 -0.93%、传媒 -1.16%）。与晨报判断「逻辑不构成上涨理由、价格需突破关键均线证明」一致——<strong>结构性机会 ≠ 指数机会</strong>（电子涨而指数仍跌 0.54%）</td>
+</tr>
+<tr>
+<td>缩量极值下的资金再配置（确定性 &gt; 弹性）</td>
+<td>❌ <strong>未兑现（一日游反包）</strong></td>
+<td>「确定性抱团」仅维持一日：医药生物 +2.22%→<strong>-1.05%</strong>、银行 +0.80%→<strong>-1.29%</strong>、汽车 +0.97%→-1.31% 全线反包；领涨的反而是昨日弱势的<strong>电子（弹性/科技）</strong>。<strong>连续第 3 次</strong>「领涨板块次日反包」（9/11 通信→9/14、9/14 医药→9/15），缩量环境下风格延续性判断应大幅打折</td>
+</tr>
+</tbody>
+</table>
+<h3>opposite 三剧本</h3>
+<table>
+<thead>
+<tr>
+<th>剧本</th>
+<th>预判概率</th>
+<th>兑现</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A 反抽挑战 15F55 失败后阴跌</td>
+<td>40%</td>
+<td>⚠️ <strong>部分</strong>（反抽 3891.62 受阻于 15F55 下方、收 -0.54% 收跌成立；但「阴跌」幅度不足——未有效跌破 3867、最低 3858.15 未逼 3852.03）</td>
+</tr>
+<tr>
+<td><strong>B 3867-3905 窄幅震荡磨底</strong></td>
+<td><strong>40%</strong></td>
+<td>✅ <strong>主导兑现</strong>（3858.15-3891.62，振幅 0.86%，最高最低均未突破前一日极值区间）</td>
+</tr>
+<tr>
+<td>C 放量突破 15F55 反抽</td>
+<td>20%</td>
+<td>❌ 未兑现（量能反而萎缩至 4.41 亿手创新低，未突破）</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>B（横）连续第 2 个交易日主导兑现</strong>——「缩量到极致时跌先被横替代」的方法论再次得到实证。</p>
+</blockquote>
+<hr />
+<h2>偏差统计（47 期，程序化重算）</h2>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>✅ 命中</th>
+<th>⚠️ 部分</th>
+<th>❌ 失效</th>
+<th>纯命中率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>方向</td>
+<td>27</td>
+<td>17</td>
+<td>3</td>
+<td><strong>57.4%</strong></td>
+</tr>
+<tr>
+<td>区间</td>
+<td>18</td>
+<td>26</td>
+<td>3</td>
+<td>38.3%</td>
+</tr>
+<tr>
+<td>支撑</td>
+<td>31</td>
+<td>6</td>
+<td>9</td>
+<td><strong>67.4%</strong>（n=46）</td>
+</tr>
+<tr>
+<td>压力</td>
+<td>28</td>
+<td>11</td>
+<td>7</td>
+<td>60.9%（n=46）</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>对比上期（46 期）：方向 56.5%→<strong>57.4%</strong>（↑0.9）、区间 39.1%→<strong>38.3%</strong>（↓0.8）、支撑 66.7%→<strong>67.4%</strong>（↑0.7）、压力 60.0%→<strong>60.9%</strong>（↑0.9）。
+结构未变：<strong>支撑最可靠（67.4%）＞ 压力（60.9%）＞ 方向（57.4%）＞ 区间（38.3% 最弱，连续垫底）</strong>。</p>
+</blockquote>
+<hr />
+<h2>关键认知</h2>
+<ol>
+<li>
+<p><strong>T&amp;J「等均线下行」是缩量僵持环境的有效压力消化机制</strong>：15F MA55 由 9/14 的 3905.26 主动下行至 9/15 的 3885.90（下移 19.36 点），价格原地窄幅波动而压力位自己「走下来」——<strong>压力不是被价格突破的，而是被均线追赶的</strong>。此前的预判框架未显式建模「均线主动下移」路径，本期首次清晰识别。</p>
+</li>
+<li>
+<p><strong>引擎关键位连续两期高精度，是当前最可靠的短线锚</strong>：9/14 是 BOLL 下轨/前低守住，9/15 是 <strong>日线 BOLL 下轨 3857.58 精准止跌（差 0.57 点）+ 60F 三卖 3891.48 精准压制（差 0.14 点）</strong>。结论：<strong>「BOLL 轨道 + 缠论卖点」作为日内极值锚点可靠性高</strong>，可直接用于次日关键位设置。</p>
+</li>
+<li>
+<p><strong>「横」连续 2 日替代「跌」——缩量极值的方法论第二次实证</strong>：振幅 0.86%、量能 4.41 亿手创近期新低，买卖双方同步衰竭。主剧本 A（阴跌）连续 2 期只兑现「受阻」不兑现「跌」，B（横盘）连续 2 期主导。<strong>该观察已积累 2 个样本，但仍不自动改规则</strong>。</p>
+</li>
+<li>
+<p><strong>隔夜美股映射失效——硬件/软件的轮动方向在 A 股完全相反</strong>：GS CHINA OPEN 明确预期「隔夜美股资金从 AI 硬件流出、轮动至软件（网络安全 +10%），<strong>预期今日国内市场将复刻这一交易走势</strong>」；但实际 A 股<strong>电子（硬件）+0.75% 领涨</strong>、通信/计算机/传媒（软件/内容）全跌。<strong>教训：跨市场隔夜映射不可直接套用，A 股的产业景气定价（PCB/半导体设备/MFC）与美股的估值轮动逻辑不同步</strong>。</p>
+</li>
+<li>
+<p><strong>消费链崩塌的触发是宏观数据而非产业变化</strong>：8 月社零同比 +0.4%（预期 0.8%）成为导火索，商贸零售 -2.95%、社会服务 -2.39% 领跌、多只小盘旅游零售股跌停。而大盘白酒/家电相对抗跌——<strong>数据利空的杀伤集中在高弹性小票，防御性大盘股有缓冲</strong>。</p>
+</li>
+<li>
+<p><strong>T&amp;J 对基本面的警示（本期最重要的一条独立视角）</strong>：T&amp;J 14:35 指出「明明都知道基本面没有上修空间且有不小 miss 可能，但没人敢跳出来下修……但结局也不会比电池好到哪去，<strong>后面还是下修业绩了</strong>」——<strong>基本面无上修空间 + 下修风险被延后而非消除</strong>，这是与产业侧调研（PCB/液冷/铜箔景气）方向相反的判断，需持续跟踪验证。</p>
+</li>
+</ol>
+<hr />
+<h2>次日衔接（9/16 观察锚）</h2>
+<ul>
+<li><strong>防守位</strong>：<strong>3857.58</strong>（日线 BOLL 下轨，今日精准止跌）→ <strong>3852.03</strong>（9/11 前低·T&amp;J 争夺核心，差 -0.32%）→ <strong>3847.09</strong>（日线一卖/三卖锚，差 -0.45%）。</li>
+<li><strong>压力位</strong>：<strong>3878.35</strong>（15F MA20，+0.36%）→ <strong>3885.90</strong>（15F MA55·T&amp;J「压力山大」，+0.56%）→ <strong>3905.54</strong>（60F MA20，+1.07%）→ <strong>3919.21</strong>（日线 MA55，+1.42%）→ <strong>3923.64</strong>（日线 MA20，+1.54%）。</li>
+<li><strong>核心变量</strong>：</li>
+<li><strong>量能</strong>——4.41 亿手创近期新低，缩量僵持未改；放量才可能选方向。</li>
+<li><strong>15F MA55（3885.90）得失</strong>——今日盘中一度站上后失守；有效站上才打开反抽空间（对应 T&amp;J「等其下行后再挑战」，均线已降至 3885.90，挑战成本较昨日降低 19 点）。</li>
+<li><strong>3852.03 前低</strong>——T&amp;J 明确的争夺核心，有效跌破则打开下行空间至 3847.09。</li>
+<li><strong>日线 MACD 死叉深度</strong>（DIF -6.65 &lt; DEA 1.83，gap -8.48）——大级别无修复迹象，任何反抽均属弱势反弹。</li>
+</ul>
+<hr />
+<h2>附录 A · 抓取通道信息</h2>
+<ul>
+<li>行情/OHLC：腾讯 fqkline（sh000001，日线 qfq）+ mkline（60F/15F）</li>
+<li>行业强弱榜：akshare 申万一级实时（31 行业，2026-09-15 17:07）</li>
+<li>技术指标：日线/60F/15F MACD(12,26,9) 自算 + MA55/MA20</li>
+<li>引擎：chan-signal 买卖点（引擎 B，五周期）＋ BOLL×缠论变盘概率（引擎 C）</li>
+<li><strong>⚠️ 数据事故（连续第 3 期报告 · 跨 9/14、9/15 两个交易日）</strong>：Cookie 通道（大鹏鸟 / 短评&amp;信息 / 180K / AI 产业链）全部 HTTP 401 零数据，各重试 3 次均败；Skill 通道正常（卫斯李 12 / 基业长青 26 / T&amp;J 1 = 39 条，图 44 张、附件 77 个）。<strong>修复方式：更新 <code>.workbuddy/zsxq_cookie.txt</code>（重新登录知识星球后抓取新 Cookie 覆盖）</strong>。</li>
+</ul>
+<h2>附录 B · 星球代号对照表</h2>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>代号</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>①</td>
+<td>T&amp;J</td>
+<td>Truth and Justice</td>
+</tr>
+<tr>
+<td>②</td>
+<td>大鹏鸟</td>
+<td>大鹏鸟笔记（本期缺）</td>
+</tr>
+<tr>
+<td>③</td>
+<td>基业长青</td>
+<td>基业长青+</td>
+</tr>
+<tr>
+<td>④</td>
+<td>卫斯李</td>
+<td>卫斯李</td>
+</tr>
+<tr>
+<td>⑤</td>
+<td>180K</td>
+<td>180K Research（本期缺）</td>
+</tr>
+<tr>
+<td>⑥</td>
+<td>AI 产业链</td>
+<td>AI 产业链·Serenity 速报（本期缺）</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>

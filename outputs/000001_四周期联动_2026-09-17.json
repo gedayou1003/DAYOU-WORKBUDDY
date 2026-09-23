@@ -1,0 +1,159 @@
+{
+ "periods": {
+  "日线": {
+   "tag": "日线",
+   "price": 3875.6,
+   "trend": "向下",
+   "pzs": "在中枢下方（中枢上沿:4175.35 下沿:4061.15）",
+   "ma55": 3912.41,
+   "ma_pos": "下方",
+   "ma_slope": "向下",
+   "ma_dist_pct": -0.94,
+   "latest_signal": {
+    "name": "一买",
+    "type": "buy",
+    "level": 1,
+    "date": "2026-09-16",
+    "price": 3842.72,
+    "confidence": 0.5,
+    "description": "一买：下跌背驰底分型（无背驰，信号较弱）"
+   },
+   "recent_signals": [
+    {
+     "name": "一买",
+     "type": "buy",
+     "level": 1,
+     "date": "2026-09-16",
+     "price": 3842.72,
+     "confidence": 0.5,
+     "description": "一买：下跌背驰底分型（无背驰，信号较弱）"
+    }
+   ],
+   "bi_count": 38,
+   "zhongshu_count": 6,
+   "last_zs": {
+    "start_date": "2026-04-23",
+    "end_date": "2026-06-29",
+    "high": 4175.35,
+    "low": 4061.15,
+    "mid": 4118.25,
+    "bi_count": 3
+   }
+  },
+  "120分钟": {
+   "tag": "120分钟",
+   "price": 3875.6,
+   "trend": "向下",
+   "pzs": "在中枢下方（中枢上沿:3970.31 下沿:3915.22）",
+   "ma55": 3926.21,
+   "ma_pos": "下方",
+   "ma_slope": "向下",
+   "ma_dist_pct": -1.29,
+   "latest_signal": {
+    "name": "一买",
+    "type": "buy",
+    "level": 1,
+    "date": "2026-09-04",
+    "price": 3915.22,
+    "confidence": 0.5,
+    "description": "一买：下跌背驰底分型（无背驰，信号较弱）"
+   },
+   "recent_signals": [
+    {
+     "name": "一买",
+     "type": "buy",
+     "level": 1,
+     "date": "2026-09-04",
+     "price": 3915.22,
+     "confidence": 0.5,
+     "description": "一买：下跌背驰底分型（无背驰，信号较弱）"
+    }
+   ],
+   "bi_count": 37,
+   "zhongshu_count": 7,
+   "last_zs": {
+    "start_date": "2026-08-18",
+    "end_date": "2026-09-04",
+    "high": 3970.31,
+    "low": 3915.22,
+    "mid": 3942.765,
+    "bi_count": 3
+   }
+  },
+  "60分钟": {
+   "tag": "60分钟",
+   "price": 3875.6,
+   "trend": "向下",
+   "pzs": "在中枢下方（中枢上沿:3967.59 下沿:3927.55）",
+   "ma55": 3924.55,
+   "ma_pos": "下方",
+   "ma_slope": "向下",
+   "ma_dist_pct": -1.25,
+   "latest_signal": {
+    "name": "三卖",
+    "type": "sell",
+    "level": 3,
+    "date": "2026-09-15",
+    "price": 3891.48,
+    "confidence": 0.75,
+    "description": "三卖：跌破中枢后反弹不进入"
+   },
+   "recent_signals": [
+    {
+     "name": "三卖",
+     "type": "sell",
+     "level": 3,
+     "date": "2026-09-15",
+     "price": 3891.48,
+     "confidence": 0.75,
+     "description": "三卖：跌破中枢后反弹不进入"
+    }
+   ],
+   "bi_count": 35,
+   "zhongshu_count": 5,
+   "last_zs": {
+    "start_date": "2026-08-10",
+    "end_date": "2026-08-19",
+    "high": 3967.59,
+    "low": 3927.55,
+    "mid": 3947.57,
+    "bi_count": 3
+   }
+  },
+  "15分钟": {
+   "tag": "15分钟",
+   "price": 3875.6,
+   "trend": "向上",
+   "pzs": "无中枢参考",
+   "ma55": 3877.26,
+   "ma_pos": "下方",
+   "ma_slope": "向下",
+   "ma_dist_pct": -0.04,
+   "latest_signal": null,
+   "recent_signals": [],
+   "bi_count": 41,
+   "zhongshu_count": 0,
+   "last_zs": null
+  }
+ },
+ "taoquan": [
+  {
+   "pair": "日线→120分钟",
+   "conclusion": "买点但大周期已跌破中枢（一买）",
+   "strength": "弱",
+   "pos": -162.5
+  },
+  {
+   "pair": "120分钟→60分钟",
+   "conclusion": "卖点但大周期在支撑下方（三卖）",
+   "strength": "弱",
+   "pos": -71.9
+  },
+  {
+   "pair": "60分钟→15分钟",
+   "conclusion": "小周期无信号",
+   "strength": "",
+   "pos": -129.7
+  }
+ ]
+}

@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 580" font-family="-apple-system,'PingFang SC',sans-serif">
+<defs><style>
+.grid{stroke:#d8d2c4;stroke-width:0.5;stroke-dasharray:2 3}
+.axis{stroke:#3a4a4a;stroke-width:1;fill:none}
+.label{fill:#3a4a4a;font-size:10px}
+.actual{stroke:#1f3a3a;stroke-width:2.2;fill:none}
+.main-path{stroke:#2b2b2b;stroke-width:2;fill:none;stroke-dasharray:1 0}
+.branch-a{stroke:#b33a1f;stroke-width:2.2;fill:none}
+.branch-b{stroke:#1a7a3a;stroke-width:2.2;fill:none}
+.node{fill:#f6f2e9;stroke:#b33a1f;stroke-width:2}
+.tt{font-size:11px;font-weight:700}
+.tb{font-size:10px}
+.ts{font-size:9px}
+</style></defs>
+<text x="450" y="18" text-anchor="middle" class="tt" fill="#1f3a3a" font-size="15">上证综指 8/27 预判 · 条件触发决策路径图（v5）</text>
+<line class="grid" x1="20" y1="365.1" x2="600" y2="365.1"/>
+<text class="label" x="14" y="368.1" text-anchor="end">3844</text>
+<line class="grid" x1="20" y1="323.3" x2="600" y2="323.3"/>
+<text class="label" x="14" y="326.3" text-anchor="end">3860</text>
+<line class="grid" x1="20" y1="271.1" x2="600" y2="271.1"/>
+<text class="label" x="14" y="274.1" text-anchor="end">3880</text>
+<line class="grid" x1="20" y1="218.8" x2="600" y2="218.8"/>
+<text class="label" x="14" y="221.8" text-anchor="end">3900</text>
+<line class="grid" x1="20" y1="166.6" x2="600" y2="166.6"/>
+<text class="label" x="14" y="169.6" text-anchor="end">3920</text>
+<line class="grid" x1="20" y1="114.4" x2="600" y2="114.4"/>
+<text class="label" x="14" y="117.4" text-anchor="end">3940</text>
+<line class="grid" x1="20" y1="62.1" x2="600" y2="62.1"/>
+<text class="label" x="14" y="65.1" text-anchor="end">3960</text>
+<line class="grid" x1="20" y1="41.3" x2="600" y2="41.3"/>
+<text class="label" x="14" y="44.3" text-anchor="end">3968</text>
+<line class="axis" x1="20" y1="40" x2="20" y2="480"/>
+<line class="grid" x1="240" y1="40" x2="240" y2="480" stroke="#a89e87" stroke-dasharray="3 4"/>
+<text x="130" y="500" text-anchor="middle" class="label">8/26 已走</text>
+<text x="420" y="500" text-anchor="middle" class="label">8/27 决策路径</text>
+<path class="actual" d="M 20.0,266.5 L 86.0,149.8 L 130.0,205.8 L 175.0,231.9 L 240.0,186.1"/>
+<circle cx="20" cy="266.5" r="3" fill="#1f3a3a"/>
+<text class="ts" x="18" y="280.5" text-anchor="end" fill="#1a5a3a">O 3881.74</text>
+<circle cx="86" cy="149.8" r="3" fill="#b33a1f"/>
+<text class="ts" x="90" y="145.8" fill="#b33a1f">H 3926.44</text>
+<circle cx="240" cy="186.1" r="4.5" fill="#2b2b2b"/>
+<text class="tb" x="234" y="178.1" text-anchor="end" fill="#2b2b2b">现价 3912.52</text>
+<path class="main-path" d="M 240.0,186.1 L 400.0,151.8"/>
+<text class="ts" x="385" y="162.6" text-anchor="end" fill="#5a5a4f">主路径：上攻 60F55</text>
+<polygon class="node" points="400.0,140.80199430199417 411.0,151.80199430199417 400.0,162.80199430199417 389.0,151.80199430199417"/>
+<text class="tb" x="416.0" y="147.8" fill="#b33a1f">决策位 60F55 3925.67</text>
+<text class="ts" x="416.0" y="159.8" fill="#5a5a4f">8/26 突破 0.77 点未站稳</text>
+<path class="branch-a" d="M 400.0,151.8 L 465.0,101.3 L 530.0,40.0 L 600.0,40.0"/>
+<polygon points="600,36 608,44 600,52 592,44" fill="#b33a1f"/>
+<text class="tb" x="470" y="77.0" fill="#b33a1f">A 放量突破</text>
+<text class="ts" x="470" y="89.0" fill="#b33a1f">触发：放量站稳 3925</text>
+<text class="ts" x="470" y="100.0" fill="#b33a1f">应对：追多·持股</text>
+<text class="ts" x="598" y="26.0" text-anchor="end" fill="#b33a1f">目标 3968 周线一卖</text>
+<path class="branch-b" d="M 400.0,151.8 L 455.0,189.9 L 510.0,193.3 L 545.0,266.5 L 600.0,364.5"/>
+<polygon points="600,360.5 608,368.5 600,376.5 592,368.5" fill="#1a7a3a"/>
+<text class="tb" x="448" y="201.8" fill="#1a7a3a">B 缩量假突破·诱多</text>
+<text class="ts" x="448" y="213.8" fill="#1a7a3a">触发：缩量遇阻回落</text>
+<text class="ts" x="448" y="224.8" fill="#1a7a3a">应对：逢高减仓·不追涨</text>
+<text class="ts" x="448" y="235.8" fill="#1a7a3a">跌破 3911 看 3881</text>
+<text class="ts" x="598" y="386.5" text-anchor="end" fill="#1a7a3a">目标 3844 60F下轨</text>
+<line x1="20" y1="40.0" x2="600" y2="40.0" stroke="#b33a1f" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
+<text class="ts" x="610" y="43.0" fill="#b33a1f">RESIST 3968.48 周线一卖</text>
+<line x1="20" y1="146.1" x2="600" y2="146.1" stroke="#b33a1f" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
+<text class="ts" x="610" y="149.1" fill="#b33a1f">RESIST 3927.85 三共振</text>
+<line x1="20" y1="151.8" x2="600" y2="151.8" stroke="#b33a1f" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
+<text class="ts" x="610" y="154.8" fill="#b33a1f">RESIST 3925.67 60F MA55（决策位）</text>
+<line x1="20" y1="193.3" x2="600" y2="193.3" stroke="#1a7a3a" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
+<text class="ts" x="610" y="196.3" fill="#1a7a3a">SUPP 3909.79 15F三买</text>
+<line x1="20" y1="266.5" x2="600" y2="266.5" stroke="#1a7a3a" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
+<text class="ts" x="610" y="269.5" fill="#1a7a3a">SUPP 3881.74 前低10日</text>
+<line x1="20" y1="347.2" x2="600" y2="347.2" stroke="#2e8a4e" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
+<text class="ts" x="610" y="350.2" fill="#2e8a4e">SUPP 3850.86 8/25低</text>
+<line x1="20" y1="364.5" x2="600" y2="364.5" stroke="#2e8a4e" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
+<text class="ts" x="610" y="367.5" fill="#2e8a4e">SUPP 3844.22 60F BOLL下轨</text>
+<g>
+<rect x="615" y="385" width="270" height="150" rx="6" fill="#fffdf6" stroke="#a89e87" stroke-width="0.8"/>
+<text x="627" y="403" class="tb" fill="#1f3a3a">盘面应对（逆势反抽纪律）</text>
+<text x="627" y="423" class="ts" fill="#b33a1f">A 放量站稳 3925 → 60F 趋势修复</text>
+<text x="627" y="437" class="ts" fill="#b33a1f">   追多/持股，目标 3968 周线一卖</text>
+<text x="627" y="455" class="ts" fill="#1a7a3a">B 缩量遇阻 3925 → 假突破回落</text>
+<text x="627" y="469" class="ts" fill="#1a7a3a">   逢高减仓不追涨，跌破 3911</text>
+<text x="627" y="483" class="ts" fill="#1a7a3a">   看 3881 前低 / 3844 下轨</text>
+<text x="627" y="501" class="ts" fill="#5a5a4f">空头区反抽 60F55 = 减仓非追涨；</text>
+<text x="627" y="515" class="ts" fill="#5a5a4f">只有放量站稳 3927 + 周线 trend</text>
+<text x="627" y="529" class="ts" fill="#5a5a4f">持续 3 天向上才考虑翻多。</text>
+</g>
+<g>
+<rect x="20" y="545" width="580" height="26" rx="4" fill="#fffdf6" stroke="#a89e87" stroke-width="0.6"/>
+<line x1="30" y1="558" x2="52" y2="558" stroke="#1f3a3a" stroke-width="2"/>
+<text x="56" y="562" class="ts" fill="#1f3a3a">8/26 已走</text>
+<polygon points="105,551 115,558 105,565 95,558" fill="#f6f2e9" stroke="#b33a1f" stroke-width="1.5"/>
+<text x="120" y="562" class="ts" fill="#1f3a3a">决策点</text>
+<line x1="175" y1="558" x2="197" y2="558" stroke="#b33a1f" stroke-width="2"/>
+<text x="201" y="562" class="ts" fill="#b33a1f">A 放量突破（追多）</text>
+<line x1="330" y1="558" x2="352" y2="558" stroke="#1a7a3a" stroke-width="2"/>
+<text x="356" y="562" class="ts" fill="#1a7a3a">B 缩量假突破（减仓）</text>
+<line x1="490" y1="558" x2="512" y2="558" stroke="#7a7a7a" stroke-width="1" stroke-dasharray="2 3"/>
+<text x="516" y="562" class="ts" fill="#5a5a4f">关键位</text>
+</g>
+</svg>

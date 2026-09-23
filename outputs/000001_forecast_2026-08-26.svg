@@ -1,0 +1,36 @@
+<svg viewBox="0 0 680 470" width="100%" xmlns="http://www.w3.org/2000/svg" role="img" style="font-family:'PingFang SC','Microsoft YaHei',sans-serif">
+  <title>2026-08-26 上证综指午间预判</title>
+  <desc>13:05 现价 3912.77 (+0.60%)，突破3925.67未站稳，多空胶着</desc>
+  <text x="40" y="28" font-size="15" font-weight="500" fill="#E8E4D8">上证综指 2026-08-26 (Wed) 午间预判</text>
+  <text x="40" y="46" font-size="12" fill="#9BA39A">现价 3912.77 (+0.60%) · 高点3926.44突破60F MA55未站稳 · 多空胶着</text>
+  <g font-size="11">
+    <line x1="420" y1="60" x2="438" y2="60" stroke="#E06052" stroke-width="2.5" stroke-dasharray="5,3"/>
+    <text x="442" y="64" fill="#E8E4D8">A · 放量站稳翻多 40%</text>
+    <line x1="420" y1="78" x2="438" y2="78" stroke="#3E9E6D" stroke-width="2.5" stroke-dasharray="5,3"/>
+    <text x="442" y="82" fill="#E8E4D8">B · 假突破回落 35%</text>
+  </g>
+  <g font-size="10" fill="#9BA39A" text-anchor="start"><line x1="50" y1="164" x2="630" y2="164" stroke="#3A4038" stroke-dasharray="2,4"/>
+<text x="632" y="167" fill="#3A4038" font-weight="500">3926.44 今日高(突破强压)</text>
+<line x1="50" y1="167" x2="630" y2="167" stroke="#3A4038" stroke-dasharray="2,4"/>
+<text x="632" y="170" fill="#3A4038" font-weight="500">3925.67 60F MA55(三共振)</text>
+<line x1="50" y1="219" x2="630" y2="219" stroke="#E8B64A" stroke-dasharray="4,3"/>
+<text x="632" y="222" fill="#E8B64A" font-weight="500">3912.77 现价(+0.60%)</text>
+<line x1="50" y1="226" x2="630" y2="226" stroke="#3A4038" stroke-dasharray="2,4"/>
+<text x="632" y="229" fill="#3A4038" font-weight="500">3911.08 60F一卖+三卖</text>
+<line x1="50" y1="343" x2="630" y2="343" stroke="#3A4038" stroke-dasharray="2,4"/>
+<text x="632" y="346" fill="#3A4038" font-weight="500">3881.74 15F三买+开盘低</text></g>
+  <g fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 80 343 L 150 164 L 240 219" stroke="#D8CFC0" opacity="0.95"/>
+    <path d="M 240 219 L 330 167 L 420 150 L 540 118" stroke="#E06052" stroke-dasharray="6,4" opacity="0.9"/>
+    <path d="M 240 219 L 330 270 L 420 343 L 540 390" stroke="#3E9E6D" stroke-dasharray="6,4" opacity="0.9"/>
+  </g>
+  <g font-size="10" fill="#9BA39A" text-anchor="middle">
+    <line x1="50" y1="450" x2="630" y2="450" stroke="#5F645C" stroke-width="1"/>
+    <text x="80" y="466">9:30</text>
+    <text x="150" y="466">11:00</text>
+    <text x="240" y="466">13:05现</text>
+    <text x="330" y="466">13:30</text>
+    <text x="420" y="466">14:00</text>
+    <text x="540" y="466">15:00</text>
+  </g>
+</svg>

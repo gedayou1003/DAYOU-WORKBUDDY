@@ -1,0 +1,42 @@
+<svg viewBox="0 0 680 470" width="100%" xmlns="http://www.w3.org/2000/svg" role="img" style="font-family:'PingFang SC','Microsoft YaHei',sans-serif">
+  <title>2026-08-25 上证综指尾盘预判</title>
+  <desc>13:40 现价 3886，15F带宽0.95%极度收口变盘，A/B双向剧本</desc>
+  <text x="40" y="28" font-size="15" font-weight="500" fill="#E8E4D8">上证综指 2026-08-25 (Tue) 尾盘预判</text>
+  <text x="40" y="46" font-size="12" fill="#9BA39A">现价 3886.15 (+0.11%) · 15F带宽0.95%极度收口 · 前低支撑3850已精准验证</text>
+  <g font-size="11">
+    <line x1="430" y1="62" x2="448" y2="62" stroke="#E06052" stroke-width="2.5" stroke-dasharray="5,3"/>
+    <text x="452" y="66" fill="#E8E4D8">A · BULL 变盘向上 40%</text>
+    <line x1="430" y1="80" x2="448" y2="80" stroke="#3E9E6D" stroke-width="2.5" stroke-dasharray="5,3"/>
+    <text x="452" y="84" fill="#E8E4D8">B · BEAR 延续向下 60%</text>
+  </g>
+  <g font-size="10" fill="#9BA39A" text-anchor="start"><line x1="50" y1="128" x2="630" y2="128" stroke="#3A4038" stroke-dasharray="2,4"/>
+<text x="632" y="131" fill="#3A4038" font-weight="500">3925.67 60F MA55</text>
+<line x1="50" y1="178" x2="630" y2="178" stroke="#3A4038" stroke-dasharray="2,4"/>
+<text x="632" y="181" fill="#3A4038" font-weight="500">3911 60F一卖+BOLL中轨</text>
+<line x1="50" y1="220" x2="630" y2="220" stroke="#3A4038" stroke-dasharray="2,4"/>
+<text x="632" y="223" fill="#3A4038" font-weight="500">3899 60F中轨</text>
+<line x1="50" y1="231" x2="630" y2="231" stroke="#E8B64A" stroke-dasharray="4,3"/>
+<text x="632" y="234" fill="#E8B64A" font-weight="500">3896 15F一卖+15F中轨(反抽遇阻)</text>
+<line x1="50" y1="266" x2="630" y2="266" stroke="#E8B64A" stroke-dasharray="4,3"/>
+<text x="632" y="269" fill="#E8B64A" font-weight="500">3886 现价</text>
+<line x1="50" y1="394" x2="630" y2="394" stroke="#3A4038" stroke-dasharray="2,4"/>
+<text x="632" y="397" fill="#3A4038" font-weight="500">3850.86 前低(精准支撑)</text>
+<line x1="50" y1="416" x2="630" y2="416" stroke="#3A4038" stroke-dasharray="2,4"/>
+<text x="632" y="419" fill="#3A4038" font-weight="500">3844 60F BOLL下轨</text></g>
+  <g font-size="10" fill="#9BA39A" text-anchor="end"><text x="44" y="130">RESIST 3925</text><text x="44" y="180">RESIST 3911</text><text x="44" y="223">RESIST 3899</text><text x="44" y="233">RESIST 3896</text><text x="44" y="397">SUPP 3850</text><text x="44" y="418">SUPP 3844</text></g>
+  <g fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 80 348 L 130 231 L 190 394 L 250 266" stroke="#D8CFC0" opacity="0.95"/>
+    <path d="M 250 266 L 340 231 L 430 178 L 540 128" stroke="#E06052" stroke-dasharray="6,4" opacity="0.9"/>
+    <path d="M 250 266 L 340 394 L 430 416 L 540 416" stroke="#3E9E6D" stroke-dasharray="6,4" opacity="0.9"/>
+  </g>
+  <g font-size="10" fill="#9BA39A" text-anchor="middle">
+    <line x1="50" y1="450" x2="630" y2="450" stroke="#5F645C" stroke-width="1"/>
+    <text x="80" y="466">9:30</text>
+    <text x="130" y="466">10:30</text>
+    <text x="190" y="466">11:30</text>
+    <text x="250" y="466">13:40现</text>
+    <text x="340" y="466">14:00</text>
+    <text x="430" y="466">14:30</text>
+    <text x="540" y="466">15:00</text>
+  </g>
+</svg>

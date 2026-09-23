@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>000001 预判回测报告</title>
+<style>
+:root{--bg:#141518;--card:#1f2126;--text:#e8e8ea;--muted:#9a9ba3;--border:#2c2e33;--red:#E24B4A;--green:#1D9E75;--blue:#5a8dee;--amber:#EF9F27}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;padding:24px;line-height:1.65}
+h1{font-size:20px;font-weight:600}
+.sub{font-size:12px;color:var(--muted);margin:6px 0 20px}
+h2{font-size:15px;font-weight:600;margin:28px 0 12px;padding-left:10px;border-left:3px solid var(--blue)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.card .k{font-size:12px;color:var(--muted)}
+.card .v{font-size:22px;font-weight:600;margin-top:4px}
+.good{color:var(--red)}.bad{color:var(--green)}.warn{color:var(--amber)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:6px 8px;text-align:center;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-weight:500;position:sticky;top:0;background:var(--bg)}
+.findings{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px}
+.findings li{margin:8px 0;font-size:13px}
+.tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:12px;margin:2px}
+.tag.red{background:rgba(226,75,74,.15);color:#F09595}
+.tag.green{background:rgba(29,158,117,.15);color:#7FD8B5}
+.tag.amber{background:rgba(239,159,39,.15);color:#FAC775}
+.note{margin-top:16px;font-size:12px;color:var(--muted)}
+</style></head><body>
+<h1>上证综指 000001 · 预判回测报告</h1>
+<div class="sub">回测区间 2026-07-28 ~ 2026-08-24（19 个交易日）· 模型：chan-signal 缠论买卖点（日/周/60F/15F 四周期）· 星球参考：TRUTH AND JUSTICE 技术分析 · 无未来函数（只用截止 T 收盘数据）· 涨红跌绿</div>
+
+<h2>一、核心指标</h2>
+<div class="cards">
+<div class="card"><div class="k">方向准确率</div><div class="v" style="color:bad">31.6%</div></div>
+<div class="card"><div class="k">方向相反率</div><div class="v" style="color:bad">52.6%</div></div>
+<div class="card"><div class="k">T&J 方向准确率</div><div class="v" style="color:good">47.4%</div></div>
+<div class="card"><div class="k">区间覆盖率</div><div class="v" style="color:bad">10.5%</div></div>
+<div class="card"><div class="k">支撑平均误差</div><div class="v" style="color:bad">-24.53 点</div></div>
+<div class="card"><div class="k">压力平均误差</div><div class="v" style="color:bad">30.28 点</div></div>
+<div class="card"><div class="k">支撑守住率</div><div class="v" style="color:bad">10.5%</div></div>
+<div class="card"><div class="k">压力守住率</div><div class="v" style="color:bad">36.8%</div></div>
+</div>
+
+<h2>二、关键发现</h2>
+<div class="findings">
+<ol>
+<li><b>方向判断：引擎严重失效，星球观点明显更准</b>。纯缠论引擎方向准确率仅 <b>31.6%</b>（相反 52.6%，比抛硬币还差）；而 T&J 技术分析方向准确率 <b>47.4%</b>（相反 36.8%），高出约 16 个百分点。核心原因是买卖点信号<b>滞后</b>：7 月底暴跌中引擎还残留买点偏多、8 月初反弹中又残留卖点偏空，信号成了"反向指标"。</li>
+<li><b>区间系统性偏窄</b>。支撑~压力区间覆盖实际走势仅 <b>10.5%</b>；支撑位平均被跌破 <b>-24.53 点</b>、压力位平均被突破 <b>30.28 点</b>，说明模型给的区间比真实波动窄约 ±0.8%。</li>
+<li><b>关键拐点 T&J 更有价值</b>：8-18（-2.40%）、8-21（-0.97%）两次下跌，T&J 均提前偏空命中，而引擎在 8-21→8-24 仍给"震荡偏多"看错。</li>
+</ol>
+</div>
+
+<h2>三、偏差标签统计（观察，不修改策略）</h2>
+<div>
+<span class="tag red">方向错误 52.6%</span>
+<span class="tag green">压力位被突破 57.9%</span>
+<span class="tag green">支撑位被跌破 36.8%</span>
+<span class="tag amber">区间越界（窄）</span>
+<span class="tag red">信号滞后（趋势反转期反向）</span>
+</div>
+
+<h2>四、改进可能（待样本累积后评估）</h2>
+<div class="findings">
+<ol>
+<li><b>方向校准引入星球观点</b>：T&J 方向 47.4% 明显优于引擎 31.6%，且关键拐点更准——建议在方向判断中提高 T&J/大鹏鸟等技术观点权重，或在引擎"方向不明"时以星球观点为准。</li>
+<li><b>区间放宽</b>：当前支撑~压力区间系统性偏窄 ±30 点（约 ±0.8%），可考虑区间上/下沿各外扩 0.5~1 个档位，或用 BOLL 上下轨替代单一买卖点作为区间边界。</li>
+<li><b>支撑/压力取宽带</b>：买卖点价位作为支撑/压力被穿透是常态（支撑跌破 36.8%、压力突破 57.9%），可结合 BOLL 中轨/上下轨取"支撑带/压力带"而非单点。</li>
+<li><b>买卖点滞后问题</b>：趋势反转初期信号反向，是缠论结构类信号固有局限，需用"变盘信号"（15F 带宽收口、日线零轴金叉/死叉）前置预警。</li>
+</ol>
+</div>
+
+<h2>五、逐日明细（19 个预判）</h2>
+<table>
+<thead><tr><th>预判日</th><th>验证日</th><th>预判方向</th><th>支撑~压力</th><th>T&J</th><th>实际涨跌</th><th>实际低/高</th><th>方向</th><th>区间</th><th>支撑</th><th>压力</th></tr></thead>
+<tbody><tr><td>07-28</td><td>07-29</td><td style="color:#888">震荡</td><td>—~—</td><td>偏多</td><td style="color:#E24B4A">+0.40%</td><td>3782.5/3845.8</td><td style="color:#888">⚠️部分</td><td>—</td><td>—</td><td>—</td></tr><tr><td>07-29</td><td>07-30</td><td style="color:#1D9E75">震荡偏空</td><td>—~3845.8</td><td>偏多</td><td style="color:#1D9E75">-0.62%</td><td>3767.5/3839.3</td><td style="color:#E24B4A">✅命中</td><td>—</td><td>—</td><td>✅精准</td></tr><tr><td>07-30</td><td>07-31</td><td style="color:#1D9E75">震荡偏空</td><td>—~3826.6</td><td>偏多</td><td style="color:#E24B4A">+0.72%</td><td>3822.4/3847.1</td><td style="color:#1D9E75">❌相反</td><td>—</td><td>—</td><td>❌突破(20.5点)</td></tr><tr><td>07-31</td><td>08-03</td><td style="color:#1D9E75">震荡偏空</td><td>—~3847.1</td><td>偏多</td><td style="color:#1D9E75">-0.59%</td><td>3797.6/3827.6</td><td style="color:#E24B4A">✅命中</td><td>—</td><td>—</td><td>✅未触及</td></tr><tr><td>08-03</td><td>08-04</td><td style="color:#1D9E75">偏空</td><td>3801.7~3847.1</td><td>震荡</td><td style="color:#E24B4A">+0.33%</td><td>3799.5/3831.9</td><td style="color:#1D9E75">❌相反</td><td>✅区间内</td><td>❌跌破(-2.2点)</td><td>✅未触及</td></tr><tr><td>08-04</td><td>08-05</td><td style="color:#1D9E75">偏空</td><td>—~3814.4</td><td>偏多</td><td style="color:#E24B4A">+1.47%</td><td>3815.1/3884.4</td><td style="color:#1D9E75">❌相反</td><td>—</td><td>—</td><td>❌突破(70.0点)</td></tr><tr><td>08-05</td><td>08-06</td><td style="color:#1D9E75">偏空</td><td>—~3814.4</td><td>偏多</td><td style="color:#E24B4A">+0.57%</td><td>3864.3/3902.1</td><td style="color:#1D9E75">❌相反</td><td>—</td><td>—</td><td>❌突破(87.7点)</td></tr><tr><td>08-06</td><td>08-07</td><td style="color:#1D9E75">偏空</td><td>3869.9~3847.1</td><td>偏多</td><td style="color:#E24B4A">+1.02%</td><td>3885.6/3940.9</td><td style="color:#1D9E75">❌相反</td><td>⚠️越界</td><td>✅未触及</td><td>❌突破(93.8点)</td></tr><tr><td>08-07</td><td>08-10</td><td style="color:#1D9E75">偏空</td><td>—~3919.6</td><td>偏空</td><td style="color:#E24B4A">+0.67%</td><td>3938.6/3967.6</td><td style="color:#1D9E75">❌相反</td><td>—</td><td>—</td><td>❌突破(48.0点)</td></tr><tr><td>08-10</td><td>08-11</td><td style="color:#1D9E75">偏空</td><td>3938.6~3847.1</td><td>偏多</td><td style="color:#1D9E75">-0.82%</td><td>3930.6/3966.4</td><td style="color:#E24B4A">✅命中</td><td>⚠️越界</td><td>❌跌破(-8.0点)</td><td>❌突破(119.3点)</td></tr><tr><td>08-11</td><td>08-12</td><td style="color:#1D9E75">偏空</td><td>—~3967.6</td><td>偏空</td><td style="color:#E24B4A">+0.32%</td><td>3927.6/3950.6</td><td style="color:#1D9E75">❌相反</td><td>—</td><td>—</td><td>✅未触及</td></tr><tr><td>08-12</td><td>08-13</td><td style="color:#1D9E75">偏空</td><td>—~3947.4</td><td>偏多</td><td style="color:#1D9E75">-0.50%</td><td>3924.6/3968.5</td><td style="color:#E24B4A">✅命中</td><td>—</td><td>—</td><td>❌突破(21.1点)</td></tr><tr><td>08-13</td><td>08-14</td><td style="color:#E24B4A">震荡偏多</td><td>3959.4~3847.1</td><td>偏空</td><td style="color:#E24B4A">+0.01%</td><td>3903.7/3932.6</td><td style="color:#888">⚠️部分</td><td>⚠️越界</td><td>❌跌破(-55.7点)</td><td>❌突破(85.5点)</td></tr><tr><td>08-14</td><td>08-17</td><td style="color:#E24B4A">震荡偏多</td><td>3959.4~3847.1</td><td>偏空</td><td style="color:#E24B4A">+1.41%</td><td>3924.5/3983.5</td><td style="color:#E24B4A">✅命中</td><td>⚠️越界</td><td>❌跌破(-34.9点)</td><td>❌突破(136.4点)</td></tr><tr><td>08-17</td><td>08-18</td><td style="color:#1D9E75">偏空</td><td>—~3977.4</td><td>偏多</td><td style="color:#E24B4A">+0.19%</td><td>3955.6/3994.2</td><td style="color:#1D9E75">❌相反</td><td>—</td><td>—</td><td>❌突破(16.8点)</td></tr><tr><td>08-18</td><td>08-19</td><td style="color:#1D9E75">偏空</td><td>3955.6~3992.1</td><td>偏空</td><td style="color:#1D9E75">-2.40%</td><td>3879.6/3961.1</td><td style="color:#E24B4A">✅命中</td><td>⚠️越界</td><td>❌跌破(-76.0点)</td><td>✅未触及</td></tr><tr><td>08-19</td><td>08-20</td><td style="color:#1D9E75">偏空</td><td>3911.4~3992.1</td><td>震荡</td><td style="color:#E24B4A">+0.24%</td><td>3888.1/3925.1</td><td style="color:#1D9E75">❌相反</td><td>⚠️越界</td><td>❌跌破(-23.3点)</td><td>✅未触及</td></tr><tr><td>08-20</td><td>08-21</td><td style="color:#1D9E75">震荡偏空</td><td>3879.6~3909.4</td><td>偏空</td><td style="color:#E24B4A">+0.04%</td><td>3883.8/3912.1</td><td style="color:#888">⚠️部分</td><td>✅区间内</td><td>✅精准</td><td>❌突破(2.8点)</td></tr><tr><td>08-21</td><td>08-24</td><td style="color:#E24B4A">震荡偏多</td><td>3895.9~3911.1</td><td>偏空</td><td style="color:#1D9E75">-0.97%</td><td>3855.3/3910.2</td><td style="color:#1D9E75">❌相反</td><td>⚠️越界</td><td>❌跌破(-40.6点)</td><td>✅精准</td></tr></tbody>
+</table>
+
+<div class="note">说明：① 本回测为"预判 vs 实际走势"的偏差统计，非收益回测；② 预判方向由四周期买卖点信号加权得出，支撑/压力取近期买卖点价位；③ 方向命中阈值 ±0.15%（震荡 ±0.3%）；④ 以上为历史回测，仅供研究参考，不构成投资建议。</div>
+</body></html>

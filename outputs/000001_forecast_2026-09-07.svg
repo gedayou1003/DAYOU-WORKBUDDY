@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 0 940 600" font-family="-apple-system,'PingFang SC',sans-serif">
+<defs><style>
+.grid{stroke:#d8d2c4;stroke-width:0.5;stroke-dasharray:2 3}
+.axis{stroke:#3a4a4a;stroke-width:1;fill:none}
+.label{fill:#3a4a4a;font-size:10px}
+.actual{stroke:#1f3a3a;stroke-width:2.2;fill:none}
+.node-up{fill:#fdf0ec;stroke:#b33a1f;stroke-width:2}
+.node-dn{fill:#edf5ee;stroke:#1a7a3a;stroke-width:2}
+.tt{font-size:11px;font-weight:700}
+.tb{font-size:10px}
+.ts{font-size:9px}
+</style></defs>
+
+<!-- 标题 -->
+<text x="430" y="18" text-anchor="middle" class="tt" fill="#1f3a3a" font-size="15">上证综指 2026-09-07 预判 · 震荡偏多（政策催化 + 技术压制）· v5</text>
+
+<!-- y 轴网格 (3870-4000, 每 10 点) -->
+<!-- y(price) = 480 - (price-3870)*3.077 -->
+<line class="grid" x1="20" y1="480.0" x2="600" y2="480.0"/>
+<text class="label" x="14" y="483.0" text-anchor="end">3870</text>
+<line class="grid" x1="20" y1="449.2" x2="600" y2="449.2"/>
+<text class="label" x="14" y="452.2" text-anchor="end">3880</text>
+<line class="grid" x1="20" y1="387.7" x2="600" y2="387.7"/>
+<text class="label" x="14" y="390.7" text-anchor="end">3890</text>
+<line class="grid" x1="20" y1="326.1" x2="600" y2="326.1"/>
+<text class="label" x="14" y="329.1" text-anchor="end">3900</text>
+<line class="grid" x1="20" y1="295.4" x2="600" y2="295.4"/>
+<text class="label" x="14" y="298.4" text-anchor="end">3910</text>
+<line class="grid" x1="20" y1="264.6" x2="600" y2="264.6"/>
+<text class="label" x="14" y="267.6" text-anchor="end">3920</text>
+<line class="grid" x1="20" y1="233.9" x2="600" y2="233.9"/>
+<text class="label" x="14" y="236.9" text-anchor="end">3930</text>
+<line class="grid" x1="20" y1="172.3" x2="600" y2="172.3"/>
+<text class="label" x="14" y="175.3" text-anchor="end">3940</text>
+<line class="grid" x1="20" y1="110.8" x2="600" y2="110.8"/>
+<text class="label" x="14" y="113.8" text-anchor="end">3950</text>
+<line class="grid" x1="20" y1="80.0" x2="600" y2="80.0"/>
+<text class="label" x="14" y="83.0" text-anchor="end">3960</text>
+
+<!-- y 轴 -->
+<line class="axis" x1="20" y1="40" x2="20" y2="490"/>
+<!-- x 轴分区 -->
+<line class="grid" x1="240" y1="40" x2="240" y2="490" stroke="#a89e87" stroke-dasharray="3 4"/>
+<text x="130" y="510" text-anchor="middle" class="label">9/4 实况</text>
+<text x="420" y="510" text-anchor="middle" class="label">9/7 今日预判 · 震荡区间 · 变盘路径</text>
+
+<!-- 已走路径（9/4 OHLC） -->
+<path class="actual" d="M 20.0,216.76 L 100.0,140.91 L 170.0,340.86 L 240.0,295.01"/>
+<circle cx="20" cy="216.76" r="3" fill="#1f3a3a"/>
+<text class="ts" x="18" y="230.76" text-anchor="end" fill="#1a5a3a">O 3955.55</text>
+<circle cx="100" cy="140.91" r="3" fill="#b33a1f"/>
+<text class="ts" x="104" y="136.91" fill="#b33a1f">H 3980.20</text>
+<circle cx="170" cy="340.86" r="3" fill="#1a7a3a"/>
+<text class="ts" x="174" y="354.86" fill="#1a7a3a">L 3915.22</text>
+<circle cx="240" cy="295.01" r="3" fill="#1f3a3a"/>
+<text class="ts" x="228" y="287.01" text-anchor="end" fill="#1f3a3a">C 3930.12</text>
+
+<!-- 当日关键信号（左上） -->
+<text x="22" y="48.0" class="tb" fill="#b33a1f">▸ 9/4 实况关键信号</text>
+<text x="24" y="63.0" class="ts" fill="#5a5a4f">· 9/4 冲高 3980.20 后失守 60F55</text>
+<text x="24" y="78.0" class="ts" fill="#5a5a4f">· 剧本 B 几近完美：最低 3915.22（距 3911 仅 4 点）</text>
+<text x="24" y="93.0" class="ts" fill="#5a5a4f">· 60F 三卖@3911.08 conf0.75 压制上方</text>
+
+<!-- 震荡带（3930-3958） -->
+<rect x="240" y="200.0" width="360" height="95.0" fill="#f3eddd" opacity="0.55"/>
+<text class="ts" x="592" y="270.0" text-anchor="end" fill="#8a7a55">核心带 3930-3958</text>
+
+<!-- 现价锚点 -->
+<circle cx="240" cy="295.01" r="4.5" fill="#2b2b2b"/>
+<text class="tb" x="234" y="287.01" text-anchor="end" fill="#2b2b2b">现价 3930.12</text>
+
+<!-- 关键位水平线 -->
+<!-- 支撑线（绿色虚线） -->
+<line x1="20" y1="295.01" x2="600" y2="295.01" stroke="#1a7a3a" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
+<text class="ts" x="610" y="298.0" fill="#1a7a3a">SUPP 3930.00 60F55线·T&J锚点</text>
+<line x1="20" y1="302.92" x2="600" y2="302.92" stroke="#1a7a3a" stroke-width="0.6" stroke-dasharray="2 3" opacity="0.65"/>
+<text class="ts" x="610" y="306.0" fill="#1a7a3a">SUPP 3927.55 60F中枢下沿</text>
+<line x1="20" y1="353.6" x2="600" y2="353.6" stroke="#1a7a3a" stroke-width="0.6" stroke-dasharray="2 3" opacity="0.65"/>
+<text class="ts" x="610" y="356.6" fill="#1a7a3a">SUPP 3911.08 60F三卖（远端）</text>
+
+<!-- 压力线（橙色虚线） -->
+<line x1="20" y1="223.84" x2="600" y2="223.84" stroke="#b33a1f" stroke-width="0.6" stroke-dasharray="2 3" opacity="0.65"/>
+<text class="ts" x="610" y="226.84" fill="#b33a1f">RESIST 3953.25 15F中轨</text>
+<line x1="20" y1="208.42" x2="600" y2="208.42" stroke="#b33a1f" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
+<text class="ts" x="610" y="211.42" fill="#b33a1f">RESIST 3958.26 60F中轨·多空分水岭</text>
+<line x1="20" y1="179.72" x2="600" y2="179.72" stroke="#b33a1f" stroke-width="0.6" stroke-dasharray="2 3" opacity="0.65"/>
+<text class="ts" x="610" y="182.72" fill="#b33a1f">RESIST 3967.59 60F中枢上沿</text>
+<line x1="20" y1="140.91" x2="600" y2="140.91" stroke="#b33a1f" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
+<text class="ts" x="610" y="143.91" fill="#b33a1f">RESIST 3980.20 T&J拒绝X段</text>
+
+<!-- 三剧本路径 -->
+
+<!-- 剧本 B：政策利好但技术压制震荡 45%（最可能） -->
+<path d="M 240.0,295.01 L 320.0,260.0 L 400.0,225.0 L 480.0,250.0 L 600.0,235.0" stroke="#8a8a80" stroke-width="2.5" fill="none" stroke-dasharray="4 3"/>
+<text class="tb" x="335" y="275.0" fill="#6a6a5f">剧本 B · 震荡 45%（最可能）</text>
+<text class="ts" x="490" y="222.0" fill="#6a6a5f">3930-3958 磨一天 · 冲高乏力</text>
+
+<!-- 剧本 A：政策催化反弹 30% -->
+<polygon class="node-up" points="420.0,252.0 431.0,263.0 420.0,274.0 409.0,263.0"/>
+<path d="M 420.0,263.0 L 510.0,179.72 L 600.0,140.91" stroke="#b33a1f" stroke-width="2.5" fill="none"/>
+<polygon points="600,132.91 608,140.91 600,148.91 592,140.91" fill="#b33a1f"/>
+<text class="tb" x="436.0" y="256.0" fill="#b33a1f">剧本 A · 反弹 30%</text>
+<text class="ts" x="490" y="177.0" fill="#b33a1f">放量过 3958 → 看 3967/3980</text>
+
+<!-- 剧本 C：政策利好兑现失败 25% -->
+<polygon class="node-dn" points="420.0,322.0 431.0,333.0 420.0,344.0 409.0,333.0"/>
+<path d="M 420.0,333.0 L 510.0,353.6 L 600.0,471.14" stroke="#1a7a3a" stroke-width="2.2" fill="none"/>
+<polygon points="600,463.14 608,471.14 600,479.14 592,471.14" fill="#1a7a3a"/>
+<text class="tb" x="436.0" y="346.0" fill="#1a7a3a">剧本 C · 跌破 25%</text>
+<text class="ts" x="490" y="350.0" fill="#1a7a3a">失守 3930 → 看 3911/3872</text>
+
+<!-- 决策菱形：60F 中轨 3958 -->
+<polygon points="420,200 432,212 420,224 408,212" fill="#fffdf6" stroke="#b33a1f" stroke-width="2"/>
+<text class="tb" x="420" y="216" text-anchor="middle" fill="#b33a1f">决策</text>
+<text class="ts" x="420" y="196" text-anchor="middle" fill="#b33a1f">3958</text>
+
+<!-- 盘面应对右侧 -->
+<g>
+<rect x="615" y="50" width="270" height="200" rx="6" fill="#fffdf6" stroke="#a89e87" stroke-width="0.8"/>
+<text x="627" y="68" class="tb" fill="#1f3a3a">盘面应对（v5 纪律）</text>
+<text x="627" y="88" class="ts" fill="#b33a1f">▸ A 反弹 30%：放量过 3958 → 追多</text>
+<text x="627" y="103" class="ts" fill="#b33a1f">           看 3967 / 3980</text>
+<text x="627" y="123" class="ts" fill="#6a6a5f">▸ B 震荡 45%：3930-3958 不追涨杀跌</text>
+<text x="627" y="143" class="ts" fill="#1a7a3a">▸ C 跌破 25%：失守 3930 → 减仓</text>
+<text x="627" y="158" class="ts" fill="#1a7a3a">           看 3911 / 3872</text>
+<text x="627" y="178" class="ts" fill="#5a5a4f">▸ 锚点：3930 是 T&J 锚点+60F55</text>
+<text x="627" y="193" class="ts" fill="#5a5a4f">▸ 决策：3958 是 60F 中轨（多空分水岭）</text>
+<text x="627" y="208" class="ts" fill="#5a5a4f">▸ 信号：T&J 9/6 22:35 周末定调</text>
+<text x="627" y="223" class="ts" fill="#5a5a4f">▸ 催化：财政部 3600 亿注资金融央企</text>
+<text x="627" y="238" class="ts" fill="#5a5a4f">▸ 警示：失守 3930 = X段反抽证伪</text>
+</g>
+
+<!-- 图例 -->
+<g>
+<rect x="20" y="555" width="580" height="30" rx="4" fill="#fffdf6" stroke="#a89e87" stroke-width="0.6"/>
+<line x1="30" y1="570" x2="52" y2="570" stroke="#1f3a3a" stroke-width="2"/>
+<text x="56" y="574" class="ts" fill="#1f3a3a">9/4 实况</text>
+<line x1="130" y1="570" x2="152" y2="570" stroke="#8a8a80" stroke-width="2.5" stroke-dasharray="4 3"/>
+<text x="156" y="574" class="ts" fill="#5a5a4f">剧本 B 震荡（45%，最可能）</text>
+<line x1="320" y1="570" x2="342" y2="570" stroke="#b33a1f" stroke-width="3"/>
+<text x="346" y="574" class="ts" fill="#b33a1f">剧本 A 反弹 30%</text>
+<line x1="450" y1="570" x2="472" y2="570" stroke="#1a7a3a" stroke-width="2.5"/>
+<text x="476" y="574" class="ts" fill="#1a7a3a">剧本 C 跌破 25%</text>
+</g>
+</svg>

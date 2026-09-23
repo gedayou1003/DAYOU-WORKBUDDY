@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>上证综指四周期联动分析 · 2026-08-16</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2129; --border:#2d333b;
+    --text:#e6edf3; --sub:#8b949e; --muted:#6e7681;
+    --up:#f85149; --down:#3fb950; --accent:#58a6ff; --warn:#d29922;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;padding:24px;line-height:1.6;}
+  .wrap{max-width:1080px;margin:0 auto;}
+  header{border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:20px;}
+  h1{font-size:22px;font-weight:700;}
+  .sub{color:var(--sub);font-size:13px;margin-top:6px;}
+  .badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;margin-left:8px;vertical-align:middle;}
+  .badge.up{background:rgba(248,81,73,.15);color:var(--up);border:1px solid rgba(248,81,73,.4);}
+  .badge.down{background:rgba(63,185,80,.15);color:var(--down);border:1px solid rgba(63,185,80,.4);}
+  .badge.warn{background:rgba(210,153,34,.15);color:var(--warn);border:1px solid rgba(210,153,34,.4);}
+  h2{font-size:16px;margin:26px 0 12px;padding-left:10px;border-left:3px solid var(--accent);}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  @media(max-width:860px){.grid{grid-template-columns:repeat(2,1fr);}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;}
+  .card .pname{font-size:14px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+  .price{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .price.up{color:var(--up);} .price.down{color:var(--down);}
+  .row{display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0;border-bottom:1px dashed var(--border);}
+  .row:last-child{border-bottom:none;}
+  .row .k{color:var(--sub);}
+  .row .v{color:var(--text);font-variant-numeric:tabular-nums;}
+  .v.up{color:var(--up);} .v.down{color:var(--down);} .v.mut{color:var(--muted);}
+  .tag-trend{font-weight:600;}
+  .tag-trend.up{color:var(--up);} .tag-trend.down{color:var(--down);}
+  .sig{font-size:12px;background:var(--panel2);border-radius:6px;padding:6px 8px;margin-top:8px;}
+  .sig.buy{border-left:3px solid var(--up);}
+  .sig.sell{border-left:3px solid var(--down);}
+  .sig.none{border-left:3px solid var(--muted);color:var(--muted);}
+  .tao{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+  .tao .pair{font-weight:700;font-size:14px;min-width:120px;}
+  .tao .concl{flex:1;font-size:13.5px;}
+  .strength{display:inline-block;padding:2px 12px;border-radius:6px;font-size:12px;font-weight:700;}
+  .strength.强{background:var(--up);color:#fff;}
+  .strength.中{background:var(--warn);color:#111;}
+  .strength.弱{background:var(--panel2);color:var(--sub);border:1px solid var(--border);}
+  .strength.无{background:var(--panel2);color:var(--muted);border:1px solid var(--border);}
+  .lvls{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:640px){.lvls{grid-template-columns:1fr;}}
+  .lvl{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 18px;}
+  .lvl h3{font-size:14px;margin-bottom:8px;}
+  .lvl.res h3{color:var(--up);} .lvl.sup h3{color:var(--down);}
+  .lvl ul{list-style:none;}
+  .lvl li{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px dashed var(--border);}
+  .lvl li:last-child{border-bottom:none;}
+  .lvl .n{font-variant-numeric:tabular-nums;font-weight:600;}
+  .path{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:12px;}
+  .path h3{font-size:14px;margin-bottom:6px;}
+  .path p{font-size:13.5px;color:var(--sub);}
+  .path.base h3{color:var(--accent);}
+  .path.strong h3{color:var(--up);}
+  .path.weak h3{color:var(--down);}
+  .foot{margin-top:24px;padding-top:12px;border-top:1px solid var(--border);color:var(--muted);font-size:12px;}
+  .now{font-size:13px;color:var(--sub);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>上证综指（000001）四周期联动 + 区间套分析
+      <span class="badge up">收盘 3927.18</span>
+    </h1>
+    <div class="sub">数据时点：2026-08-14（周五）收盘 · 生成：2026-08-16（周日例行快照，休市沿用最新收盘数据）</div>
+  </header>
+
+  <h2>一、四周期状态卡片</h2>
+  <div class="grid">
+
+    <div class="card">
+      <div class="pname"><span>日线</span><span class="tag-trend up">趋势向上</span></div>
+      <div class="price up">3927.18</div>
+      <div class="row"><span class="k">中枢位置</span><span class="v">中枢下方</span></div>
+      <div class="row"><span class="k">中枢区间</span><span class="v">4061.15 ~ 4175.35</span></div>
+      <div class="row"><span class="k">价 vs MA55</span><span class="v down">下方 -1.17%</span></div>
+      <div class="row"><span class="k">MA55 方向</span><span class="v down">向下（3973.56）</span></div>
+      <div class="sig sell">最新信号：<b>一卖</b> @3847.09（07-31，弱）</div>
+    </div>
+
+    <div class="card">
+      <div class="pname"><span>120分钟</span><span class="tag-trend up">趋势向上</span></div>
+      <div class="price up">3927.18</div>
+      <div class="row"><span class="k">中枢位置</span><span class="v">中枢上方</span></div>
+      <div class="row"><span class="k">中枢区间</span><span class="v">3767.50 ~ 3858.31</span></div>
+      <div class="row"><span class="k">价 vs MA55</span><span class="v up">上方 +1.05%</span></div>
+      <div class="row"><span class="k">MA55 方向</span><span class="v down">向下（3886.25）</span></div>
+      <div class="sig sell">最新信号：<b>一卖</b> @3967.59（08-10，弱）</div>
+    </div>
+
+    <div class="card">
+      <div class="pname"><span>60分钟</span><span class="tag-trend down">趋势向下</span></div>
+      <div class="price up">3927.18</div>
+      <div class="row"><span class="k">中枢位置</span><span class="v">中枢下方</span></div>
+      <div class="row"><span class="k">中枢区间</span><span class="v">4019.21 ~ 4074.83</span></div>
+      <div class="row"><span class="k">价 vs MA55</span><span class="v up">上方 +1.22%</span></div>
+      <div class="row"><span class="k">MA55 方向</span><span class="v up">向上（3879.68）</span></div>
+      <div class="sig none">最新信号：无</div>
+    </div>
+
+    <div class="card">
+      <div class="pname"><span>15分钟</span><span class="tag-trend down">趋势向下</span></div>
+      <div class="price up">3927.18</div>
+      <div class="row"><span class="k">中枢位置</span><span class="v">中枢上方</span></div>
+      <div class="row"><span class="k">中枢区间</span><span class="v">3800.50 ~ 3841.49</span></div>
+      <div class="row"><span class="k">价 vs MA55</span><span class="v down">下方 -0.35%</span></div>
+      <div class="row"><span class="k">MA55 方向</span><span class="v down">向下（3940.88）</span></div>
+      <div class="sig buy">最新信号：<b>三买</b> @3959.39（08-13）</div>
+    </div>
+  </div>
+
+  <h2>二、区间套判定（相邻周期）</h2>
+  <div class="tao">
+    <span class="pair">日线 → 120分钟</span>
+    <span class="concl">卖点但大周期在支撑下方（一卖）</span>
+    <span class="strength 弱">弱</span>
+  </div>
+  <div class="tao">
+    <span class="pair">120分钟 → 60分钟</span>
+    <span class="concl">小周期无信号，无共振</span>
+    <span class="strength 无">无</span>
+  </div>
+  <div class="tao">
+    <span class="pair">60分钟 → 15分钟</span>
+    <span class="concl">三买但大周期已跌破中枢</span>
+    <span class="strength 弱">弱</span>
+  </div>
+  <div class="now">结论：当前<b>无强区间套买卖点</b>，三对相邻周期均为弱信号或空转，价格处于多空拉锯状态。</div>
+
+  <h2>三、关键点位</h2>
+  <div class="lvls">
+    <div class="lvl res">
+      <h3>▲ 压力位（自上而下）</h3>
+      <ul>
+        <li><span>15分钟 MA55</span><span class="n">3940.88</span></li>
+        <li><span>日线 MA55</span><span class="n">3973.56</span></li>
+        <li><span>60分钟中枢下沿</span><span class="n">4019.21</span></li>
+        <li><span>日线中枢下沿</span><span class="n">4061.15</span></li>
+        <li><span>60分钟中枢上沿</span><span class="n">4074.83</span></li>
+        <li><span>日线中枢上沿</span><span class="n">4175.35</span></li>
+      </ul>
+    </div>
+    <div class="lvl sup">
+      <h3>▼ 支撑位（自下而上）</h3>
+      <ul>
+        <li><span>120分钟 MA55</span><span class="n">3886.25</span></li>
+        <li><span>120分钟中枢上沿</span><span class="n">3858.31</span></li>
+        <li><span>15分钟中枢上沿</span><span class="n">3841.49</span></li>
+        <li><span>15分钟中枢下沿</span><span class="n">3800.50</span></li>
+        <li><span>120分钟中枢下沿</span><span class="n">3767.50</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>四、后市预判（三种路径）</h2>
+  <div class="path base">
+    <h3>基准路径（概率较高）· 震荡整理</h3>
+    <p>现价 3927 处于日线/15分钟 MA55 下方、120分钟 MA55 上方，多周期信号互相矛盾。短线大概率在 3886（120分 MA55）～ 3973（日线 MA55）区间内反复拉锯，等待方向选择。日线 MA55 已拐头向下，反弹至 3973 一线遇阻概率大。</p>
+  </div>
+  <div class="path strong">
+    <h3>偏强路径 · 放量上攻</h3>
+    <p>若放量站稳 3973（日线 MA55）之上，则有望进一步回补至 4019（60分钟中枢下沿），甚至挑战 4061（日线中枢下沿）。触发条件：60分钟趋势由下转上、15分钟三买兑现且不破 3886。</p>
+  </div>
+  <div class="path weak">
+    <h3>偏弱路径 · 跌破支撑</h3>
+    <p>若跌破 3886（120分 MA55），则 15分钟三买失效，价格回踩 3858 → 3841 → 3800 一带。日线趋势虽仍标注向上，但已处中枢下方且 MA55 向下，需警惕日线级别趋势转弱的可能。</p>
+  </div>
+
+  <div class="foot">
+    本报告由缠论（chan-signal）+ MA55 双引擎自动生成，仅作技术分析参考，不构成任何投资建议。市场有风险，投资需谨慎。
+  </div>
+</div>
+</body>
+</html>

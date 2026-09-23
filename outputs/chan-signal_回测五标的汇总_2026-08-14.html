@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>chan-signal 打分回测 · 五标的汇总</title>
+<style>
+:root{--bg:#141518;--card:#1f2126;--text:#e8e8ea;--muted:#9a9ba3;--border:#2c2e33;--buy:#E24B4A;--sell:#1D9E75}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;padding:24px;line-height:1.6}
+h1{font-size:18px;font-weight:600}
+.sub{font-size:12px;color:var(--muted);margin:4px 0 20px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:24px}
+th,td{padding:10px 12px;text-align:center;border:1px solid var(--border)}
+th{color:var(--muted);font-weight:500;font-size:12px}
+td.num{font-variant-numeric:tabular-nums;font-weight:600;color:#fff}
+td.name{text-align:left;font-weight:600}
+td.base{background:#23252b;color:var(--muted)}
+.e_deep_red{background:#b3362f}
+.e_red{background:#E24B4A}
+.e_green{background:#2d8a5e}
+.e_deep_green{background:#1d6e4a}
+.best{outline:2px solid #f0b90b;outline-offset:-2px}
+.star{color:#f0b90b;font-weight:700}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12px;color:var(--muted);margin-bottom:20px}
+.legend span{display:flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:4px;display:inline-block;border:1px solid var(--border)}
+.note{font-size:12px;color:var(--muted)}
+.note b{color:var(--text)}
+.rule{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:16px}
+.rule h2{font-size:14px;margin-bottom:10px}
+.rule ol{padding-left:20px;font-size:13px;color:var(--text)}
+.rule li{margin-bottom:8px}
+.flow{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;flex-wrap:wrap}
+.flow .chip{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;text-align:center}
+.flow .chip .t{font-weight:600}
+.flow .chip .b{font-size:11px;color:var(--muted);margin-top:2px}
+.flow .chip .o{font-size:12px;color:#f0b90b;font-weight:600;margin-top:2px}
+.arrow{color:var(--muted)}
+</style>
+</head>
+<body>
+<h1>chan-signal 打分回测 · 五标的 × 三档汇总</h1>
+<div class="sub">初始 ¥100,000 · 单边成本万3 · 信号次日生效 · 打分模型：卖点=1分清仓 / 买点=7~9分建仓 · 仓位=分数÷10</div>
+
+<div class="legend">
+<span><i class="sw" style="background:#b3362f"></i>大幅跑赢基准(>+5%)</span>
+<span><i class="sw" style="background:#E24B4A"></i>小幅跑赢(0~+5%)</span>
+<span><i class="sw" style="background:#2d8a5e"></i>小幅跑输(0~-5%)</span>
+<span><i class="sw" style="background:#1d6e4a"></i>大幅跑输(<-5%)</span>
+<span><i class="sw" style="background:#f0b90b"></i>★ 该标的最优档</span>
+</div>
+
+<table>
+<thead>
+<tr><th style="text-align:left">标的（按"越需少动"排序）</th><th>基准(满仓持有)</th><th>全部信号<br>≥0.0</th><th>过滤弱信号<br>≥0.7</th><th>仅背驰确认<br>≥0.8</th></tr>
+</thead>
+<tbody>
+<tr>
+<td class="name">上证综指<br><span style="font-size:11px;color:var(--muted)">大盘 · 低波动震荡</span></td>
+<td class="base">+7.85%</td>
+<td class="num e_red best">+18.07% <span class="star">★</span></td>
+<td class="num e_deep_green">−2.01%</td>
+<td class="num e_red">+12.81%</td>
+</tr>
+<tr>
+<td class="name">中证1000<br><span style="font-size:11px;color:var(--muted)">中小盘 · 高波动震荡</span></td>
+<td class="base">−2.64%</td>
+<td class="num e_green">−2.85%</td>
+<td class="num e_deep_red best">+35.15% <span class="star">★</span></td>
+<td class="num e_deep_red">+34.42%</td>
+</tr>
+<tr>
+<td class="name">黄金现货<br><span style="font-size:11px;color:var(--muted)">美元计价 · 温和趋势 +141%</span></td>
+<td class="base">+140.65%</td>
+<td class="num e_deep_green">+14.61%</td>
+<td class="num e_deep_green best">+41.90% <span class="star">★</span></td>
+<td class="num e_deep_green">+33.26%</td>
+</tr>
+<tr>
+<td class="name">江海股份<br><span style="font-size:11px;color:var(--muted)">趋势牛股 · +355%</span></td>
+<td class="base">+355.42%</td>
+<td class="num e_deep_green">+40.70%</td>
+<td class="num e_deep_green best">+311.64% <span class="star">★</span></td>
+<td class="num e_deep_green">+265.55%</td>
+</tr>
+<tr>
+<td class="name">中际旭创<br><span style="font-size:11px;color:var(--muted)">超级牛股 · +1054%</span></td>
+<td class="base">+1053.80%</td>
+<td class="num e_deep_green">+38.12%</td>
+<td class="num e_deep_green">+126.68%</td>
+<td class="num e_deep_green best">+560.12% <span class="star">★</span></td>
+</tr>
+</tbody>
+</table>
+
+<div class="rule">
+<h2>三条结论</h2>
+<ol>
+<li><b>"全部信号"（含弱信号、频繁进出）几乎总最差</b>——趋势票上反复卖飞主升浪，震荡票上被交易成本吃掉；唯一例外是最低波动的大盘指数（上证）。</li>
+<li><b>波动越大、趋势越强，越要"少动"（强过滤）</b>：最优档沿「上证 0.0 → 中证1000 0.7 → 黄金 0.7 → 江海 0.7 → 中际旭创 0.8」单调抬升。</li>
+<li><b>趋势大牛股（含黄金）上，任何择时都跑不赢"买入持有"</b>（黄金、江海、中际旭创三行全绿）；这套打分模型的价值在<b>震荡/下跌市控回撤、少亏</b>，而非多赚。</li>
+</ol>
+<div class="flow">
+<div class="chip"><div class="t">上证综指</div><div class="b">低波动</div><div class="o">最优 ≥0.0</div></div>
+<span class="arrow">→</span>
+<div class="chip"><div class="t">中证1000</div><div class="b">高波动震荡</div><div class="o">最优 ≥0.7</div></div>
+<span class="arrow">→</span>
+<div class="chip"><div class="t">黄金现货</div><div class="b">温和趋势 +141%</div><div class="o">最优 ≥0.7</div></div>
+<span class="arrow">→</span>
+<div class="chip"><div class="t">江海股份</div><div class="b">趋势 +355%</div><div class="o">最优 ≥0.7</div></div>
+<span class="arrow">→</span>
+<div class="chip"><div class="t">中际旭创</div><div class="b">趋势 +1054%</div><div class="o">最优 ≥0.8</div></div>
+</div>
+</div>
+
+<div class="note" style="margin-top:16px">以上为历史回测，仅供参考，不构成投资建议。股市有风险，投资需谨慎。</div>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<svg viewBox="0 0 680 470" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect x="0" y="0" width="680" height="470" fill="#fafafa"/>
+
+  <!-- Title -->
+  <text x="50" y="28" font-size="15" font-weight="bold" fill="#1f2937">000001 SHCOMP Pre-Market Forecast · Mon 8/24 (ref close 8/21 Fri 3905.20 +0.04%)</text>
+
+  <!-- Plot area background -->
+  <rect x="50" y="60" width="610" height="360" fill="white" stroke="#e5e7eb"/>
+
+  <!-- Y axis labels (prices) -->
+  <text x="45" y="91" text-anchor="end" font-size="10" fill="#6b7280">3930</text>
+  <text x="45" y="146" text-anchor="end" font-size="10" fill="#6b7280">3920</text>
+  <text x="45" y="202" text-anchor="end" font-size="10" fill="#6b7280">3910</text>
+  <text x="45" y="229" text-anchor="end" font-size="10" fill="#6b7280">3905</text>
+  <text x="45" y="257" text-anchor="end" font-size="10" fill="#6b7280">3900</text>
+  <text x="45" y="312" text-anchor="end" font-size="10" fill="#6b7280">3890</text>
+  <text x="45" y="368" text-anchor="end" font-size="10" fill="#6b7280">3880</text>
+  <text x="45" y="395" text-anchor="end" font-size="10" fill="#6b7280">3875</text>
+
+  <!-- X axis labels (time) -->
+  <text x="50" y="445" text-anchor="middle" font-size="10" fill="#6b7280">8/21 9:30</text>
+  <text x="140" y="445" text-anchor="middle" font-size="10" fill="#6b7280">11:30</text>
+  <text x="215" y="445" text-anchor="middle" font-size="10" fill="#6b7280">13:30</text>
+  <text x="270" y="445" text-anchor="middle" font-size="10" fill="#6b7280">15:00</text>
+  <text x="380" y="445" text-anchor="middle" font-size="10" fill="#6b7280">8/24 9:30</text>
+  <text x="485" y="445" text-anchor="middle" font-size="10" fill="#6b7280">11:30</text>
+  <text x="545" y="445" text-anchor="middle" font-size="10" fill="#6b7280">13:30</text>
+  <text x="650" y="445" text-anchor="middle" font-size="10" fill="#6b7280">15:00</text>
+
+  <!-- Weekend gap indicator -->
+  <text x="325" y="240" text-anchor="middle" font-size="9" fill="#9ca3af">— Weekend —</text>
+
+  <!-- Key level lines (horizontal) -->
+  <!-- 3927.85: y=100 -->
+  <line x1="50" y1="100" x2="660" y2="100" stroke="#dc2626" stroke-width="1" stroke-dasharray="3,3" opacity="0.55"/>
+  <text x="657" y="96" text-anchor="end" font-size="9" fill="#dc2626" font-weight="bold">RESIST W-B1+中枢下沿 3927.85 (+0.58%)</text>
+
+  <!-- 3911.08: y=193 -->
+  <line x1="50" y1="193" x2="660" y2="193" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>
+  <text x="657" y="189" text-anchor="end" font-size="9" fill="#b45309" font-weight="bold">RESIST 60F S1/15F上轨 3911.08 (+0.15%)</text>
+
+  <!-- 3893.28: y=291 (Day BOLL Mid) -->
+  <line x1="50" y1="291" x2="660" y2="291" stroke="#9ca3af" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.5"/>
+  <text x="657" y="287" text-anchor="end" font-size="9" fill="#6b7280">Day BOLL Mid 3893.28 (-0.31%)</text>
+
+  <!-- 3883.79: y=344 -->
+  <line x1="50" y1="344" x2="660" y2="344" stroke="#16a34a" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>
+  <text x="657" y="340" text-anchor="end" font-size="9" fill="#16a34a" font-weight="bold">SUPP 15F B3/120F B1 3883.79 (-0.55%)</text>
+
+  <!-- 3879.58: y=367 (备援) -->
+  <line x1="50" y1="367" x2="660" y2="367" stroke="#9ca3af" stroke-width="0.5" stroke-dasharray="2,4" opacity="0.4"/>
+  <text x="657" y="363" text-anchor="end" font-size="8" fill="#6b7280">备用 60F B1 3879.58 (-0.66%)</text>
+
+  <!-- Friday 8/21 actual path (solid red) -->
+  <path d="M 50 303 L 90 187 L 140 254 L 215 344 L 270 225" stroke="#dc2626" stroke-width="2.5" fill="none"/>
+
+  <!-- Friday key points -->
+  <circle cx="50" cy="303" r="3" fill="#dc2626"/>
+  <circle cx="90" cy="187" r="3" fill="#dc2626"/>
+  <circle cx="215" cy="344" r="3" fill="#dc2626"/>
+  <circle cx="270" cy="225" r="4" fill="#dc2626" stroke="#7f1d1d" stroke-width="0.5"/>
+  <text x="55" y="298" font-size="9" fill="#dc2626">O 3891.18</text>
+  <text x="95" y="183" font-size="9" fill="#dc2626">H 3912.13</text>
+  <text x="175" y="358" font-size="9" fill="#dc2626">L 3883.79</text>
+  <text x="232" y="218" font-size="9" fill="#dc2626">C 3905.20</text>
+
+  <!-- Monday A·Bull path (dashed red) -->
+  <path d="M 380 225 L 410 211 L 440 193 L 465 171 L 485 143 L 545 115 L 580 100 L 615 143 L 650 154" stroke="#dc2626" stroke-width="2" fill="none" stroke-dasharray="6,3" opacity="0.85"/>
+
+  <!-- Monday A·Bull labels -->
+  <text x="385" y="240" font-size="9" fill="#dc2626">A·Open 3905</text>
+  <text x="445" y="189" font-size="9" fill="#dc2626">A·Test 3911</text>
+  <text x="585" y="96" font-size="9" fill="#dc2626">A·Test 3927.85</text>
+  <text x="610" y="160" font-size="9" fill="#dc2626">A·Settle 3918</text>
+
+  <!-- Monday B·Side path (dashed gray) -->
+  <path d="M 380 225 L 410 277 L 440 332 L 465 344 L 485 309 L 545 277 L 580 265 L 615 291 L 650 309" stroke="#6b7280" stroke-width="2" fill="none" stroke-dasharray="6,3" opacity="0.85"/>
+
+  <!-- Monday B·Side labels -->
+  <text x="425" y="358" font-size="9" fill="#6b7280">B·Test 3883.79</text>
+  <text x="490" y="273" font-size="9" fill="#6b7280">B·Recover 3895.91</text>
+  <text x="610" y="316" font-size="9" fill="#6b7280">B·Settle 3890</text>
+
+  <!-- Legend -->
+  <g transform="translate(50, 458)">
+    <line x1="0" y1="0" x2="22" y2="0" stroke="#dc2626" stroke-width="2.5"/>
+    <text x="28" y="3" font-size="9" fill="#374151">8/21 Fri Actual (red solid)</text>
+
+    <line x1="190" y1="0" x2="212" y2="0" stroke="#dc2626" stroke-width="2" stroke-dasharray="6,3"/>
+    <text x="218" y="3" font-size="9" fill="#374151">A·Bull 3927.85 (red dash, ~35%)</text>
+
+    <line x1="385" y1="0" x2="407" y2="0" stroke="#6b7280" stroke-width="2" stroke-dasharray="6,3"/>
+    <text x="413" y="3" font-size="9" fill="#374151">B·Side 3883.79 (gray dash, ~50%)</text>
+  </g>
+</svg>

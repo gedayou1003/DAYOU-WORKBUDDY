@@ -1,0 +1,202 @@
+{
+ "periods": {
+  "日线": {
+   "tag": "日线",
+   "price": 3942.09,
+   "trend": "向下",
+   "pzs": "在中枢下方（中枢上沿:4175.35 下沿:4061.15）",
+   "ma55": 3945.75,
+   "ma_pos": "下方",
+   "ma_slope": "向下",
+   "ma_dist_pct": -0.09,
+   "latest_signal": {
+    "name": "一卖",
+    "type": "sell",
+    "level": 1,
+    "date": "2026-07-31",
+    "price": 3847.09,
+    "confidence": 0.5,
+    "description": "一卖：上涨背驰顶分型（无背驰，信号较弱）"
+   },
+   "recent_signals": [
+    {
+     "name": "一卖",
+     "type": "sell",
+     "level": 1,
+     "date": "2026-07-31",
+     "price": 3847.09,
+     "confidence": 0.5,
+     "description": "一卖：上涨背驰顶分型（无背驰，信号较弱）"
+    },
+    {
+     "name": "三卖",
+     "type": "sell",
+     "level": 3,
+     "date": "2026-07-31",
+     "price": 3847.09,
+     "confidence": 0.75,
+     "description": "三卖：跌破中枢后反弹不进入"
+    }
+   ],
+   "bi_count": 38,
+   "zhongshu_count": 6,
+   "last_zs": {
+    "start_date": "2026-04-23",
+    "end_date": "2026-06-29",
+    "high": 4175.35,
+    "low": 4061.15,
+    "mid": 4118.25,
+    "bi_count": 3
+   }
+  },
+  "120分钟": {
+   "tag": "120分钟",
+   "price": 3942.09,
+   "trend": "向上",
+   "pzs": "在中枢上方（中枢上沿:3858.31 下沿:3767.50）",
+   "ma55": 3908.21,
+   "ma_pos": "上方",
+   "ma_slope": "向上",
+   "ma_dist_pct": 0.87,
+   "latest_signal": {
+    "name": "一卖",
+    "type": "sell",
+    "level": 1,
+    "date": "2026-08-28",
+    "price": 3970.31,
+    "confidence": 0.8,
+    "description": "一卖：上涨背驰顶分型（MACD顶背驰确认）"
+   },
+   "recent_signals": [
+    {
+     "name": "一卖",
+     "type": "sell",
+     "level": 1,
+     "date": "2026-08-28",
+     "price": 3970.31,
+     "confidence": 0.8,
+     "description": "一卖：上涨背驰顶分型（MACD顶背驰确认）"
+    }
+   ],
+   "bi_count": 37,
+   "zhongshu_count": 6,
+   "last_zs": {
+    "start_date": "2026-07-20",
+    "end_date": "2026-08-10",
+    "high": 3858.31,
+    "low": 3767.5,
+    "mid": 3812.905,
+    "bi_count": 3
+   }
+  },
+  "60分钟": {
+   "tag": "60分钟",
+   "price": 3942.09,
+   "trend": "向上",
+   "pzs": "在中枢内部或未明显离开（中枢上沿:3967.59 下沿:3927.55）",
+   "ma55": 3933.18,
+   "ma_pos": "上方",
+   "ma_slope": "向上",
+   "ma_dist_pct": 0.23,
+   "latest_signal": {
+    "name": "一卖",
+    "type": "sell",
+    "level": 1,
+    "date": "2026-08-21",
+    "price": 3911.08,
+    "confidence": 0.5,
+    "description": "一卖：上涨背驰顶分型（无背驰，信号较弱）"
+   },
+   "recent_signals": [
+    {
+     "name": "一卖",
+     "type": "sell",
+     "level": 1,
+     "date": "2026-08-21",
+     "price": 3911.08,
+     "confidence": 0.5,
+     "description": "一卖：上涨背驰顶分型（无背驰，信号较弱）"
+    },
+    {
+     "name": "三卖",
+     "type": "sell",
+     "level": 3,
+     "date": "2026-08-21",
+     "price": 3911.08,
+     "confidence": 0.75,
+     "description": "三卖：跌破中枢后反弹不进入"
+    }
+   ],
+   "bi_count": 32,
+   "zhongshu_count": 5,
+   "last_zs": {
+    "start_date": "2026-08-10",
+    "end_date": "2026-08-19",
+    "high": 3967.59,
+    "low": 3927.55,
+    "mid": 3947.57,
+    "bi_count": 3
+   }
+  },
+  "15分钟": {
+   "tag": "15分钟",
+   "price": 3942.09,
+   "trend": "向上",
+   "pzs": "在中枢上方（中枢上沿:3841.49 下沿:3800.50）",
+   "ma55": 3962.06,
+   "ma_pos": "下方",
+   "ma_slope": "向上",
+   "ma_dist_pct": -0.5,
+   "latest_signal": {
+    "name": "三买",
+    "type": "buy",
+    "level": 3,
+    "date": "2026-09-03",
+    "price": 3930.45,
+    "confidence": 0.75,
+    "description": "三买：突破中枢后回踩不进入"
+   },
+   "recent_signals": [
+    {
+     "name": "三买",
+     "type": "buy",
+     "level": 3,
+     "date": "2026-09-03",
+     "price": 3930.45,
+     "confidence": 0.75,
+     "description": "三买：突破中枢后回踩不进入"
+    }
+   ],
+   "bi_count": 35,
+   "zhongshu_count": 1,
+   "last_zs": {
+    "start_date": "2026-07-27",
+    "end_date": "2026-08-04",
+    "high": 3841.49,
+    "low": 3800.5,
+    "mid": 3820.995,
+    "bi_count": 9
+   }
+  }
+ },
+ "taoquan": [
+  {
+   "pair": "日线→120分钟",
+   "conclusion": "卖点但大周期在支撑下方（一卖）",
+   "strength": "弱",
+   "pos": -104.3
+  },
+  {
+   "pair": "120分钟→60分钟",
+   "conclusion": "卖点但大周期已突破中枢（一卖）",
+   "strength": "弱",
+   "pos": 192.3
+  },
+  {
+   "pair": "60分钟→15分钟",
+   "conclusion": "区间套买点（三买）",
+   "strength": "中",
+   "pos": 36.3
+  }
+ ]
+}

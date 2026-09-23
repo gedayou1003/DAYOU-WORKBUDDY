@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>链路审计报告 · 2026-09-18</title>
+<style>
+* { box-sizing: border-box; }
+body { background: #f6f2e9; color: #2b2b2b;
+  font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+  font-size: 15px; line-height: 1.85; max-width: 900px; margin: 0 auto; padding: 44px 36px 96px; }
+h1 { font-size: 26px; color: #1f3a3a; font-weight: 700; line-height: 1.35;
+  border-bottom: 3px solid #1f3a3a; padding-bottom: 14px; margin: 0 0 10px; }
+h2 { font-size: 20px; color: #1f3a3a; font-weight: 700; margin: 52px 0 18px;
+  padding-top: 18px; border-top: 1px solid #e0d8c8; }
+h3 { font-size: 16px; color: #b33a1f; font-weight: 600; margin: 30px 0 12px; }
+h4 { font-size: 15px; color: #1f3a3a; font-weight: 600; margin: 22px 0 8px; }
+p { margin: 12px 0; }
+blockquote { margin: 16px 0; padding: 12px 18px; background: #fffdf6;
+  border-left: 3px solid #b33a1f; color: #5a5a4f; font-size: 14px; line-height: 1.75;
+  border-radius: 0 6px 6px 0; }
+blockquote p { margin: 6px 0; }
+table { border-collapse: collapse; width: 100%; margin: 18px 0;
+  font-size: 13.5px; line-height: 1.6; background: #fffdf6; }
+th, td { border: 1px solid #e0d8c8; padding: 9px 12px; text-align: left; vertical-align: top; }
+th { background: #ece4d0; color: #1f3a3a; font-weight: 600; white-space: nowrap; }
+tr:nth-child(even) td { background: #fbf7ec; }
+ul, ol { margin: 10px 0; padding-left: 26px; }
+li { margin: 6px 0; }
+hr { border: none; border-top: 2px solid #e0d8c8; margin: 42px 0; }
+strong { color: #1f3a3a; font-weight: 600; }
+code { background: #ece4d0; padding: 1px 6px; border-radius: 4px;
+  font-family: 'SF Mono', Consolas, monospace; font-size: 12.5px; color: #b33a1f; }
+.meta { color: #5a5a4f; font-size: 13.5px; line-height: 1.7; margin: 0 0 6px; }
+.tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 8px;
+  border-radius: 4px; margin-right: 8px; vertical-align: 2px; }
+.p0 { background: #b33a1f; color: #fffdf6; }
+.p1 { background: #c98a3a; color: #fffdf6; }
+.p2 { background: #8a9a8a; color: #fffdf6; }
+.ok { background: #1a7a3a; color: #fffdf6; }
+.card { background: #fffdf6; border: 1px solid #e0d8c8; border-radius: 8px;
+  padding: 16px 20px; margin: 18px 0; }
+.card h4 { margin-top: 0; }
+.ev { background: #f3eddd; border-left: 3px solid #a89e87; padding: 10px 14px;
+  margin: 10px 0; font-size: 13px; line-height: 1.7; color: #4a4a42;
+  font-family: 'SF Mono', Consolas, monospace; white-space: pre-wrap; word-break: break-word; }
+.fix { border-left: 3px solid #1a7a3a; background: #edf5ee; padding: 10px 14px;
+  margin: 10px 0; font-size: 13.5px; line-height: 1.7; border-radius: 0 6px 6px 0; }
+.kv { font-size: 13.5px; }
+.num { font-variant-numeric: tabular-nums; }
+.small { font-size: 13px; color: #5a5a4f; }
+</style>
+</head>
+<body>
+
+<h1>链路审计报告 · 2026-09-18</h1>
+
+<p class="meta">审计对象：<code>.workbuddy/</code> 59 个脚本 · 8 份文档 · 36 个运行件 · 5 份最新报告 · 双链数据（forecast 51 条 / consensus 20 条）</p>
+<p class="meta">审计方法：反模式静态扫描 → 文档↔实况对账 → 退出码语义核查 → 官方统计函数复核 → 报告逐段通读</p>
+
+<blockquote>
+<p><strong>一句话结论</strong>：链路骨架是健康的（校验器真实有效、链落盘有幂等与回读断言、统计表由程序生成）。但存在 <strong>3 个真 BUG</strong>（其中 1 个已写进今天交付的报告）、<strong>4 类框架性技术债</strong>，以及一批排版读感问题。<strong>所有问题均可复现</strong>，下面每条都给了证据与修法。</p>
+</blockquote>
+
+<h2>一、问题分布</h2>
+
+<svg viewBox="0 0 860 128" width="100%" style="max-width:860px;display:block;margin:14px 0 6px;">
+  <rect x="0" y="0" width="860" height="128" fill="#fffdf6" stroke="#e0d8c8" rx="8"/>
+  <text x="20" y="30" font-size="13" font-weight="700" fill="#1f3a3a">按严重度（共 12 项）</text>
+  <rect x="20" y="46" width="200" height="26" fill="#b33a1f" rx="3"/>
+  <text x="230" y="64" font-size="13" fill="#2b2b2b">P0 立即修　3 项</text>
+  <rect x="20" y="78" width="200" height="26" fill="#c98a3a" rx="3"/>
+  <text x="230" y="96" font-size="13" fill="#2b2b2b">P1 本周修　4 项（框架性技术债）</text>
+  <rect x="440" y="46" width="200" height="26" fill="#8a9a8a" rx="3"/>
+  <text x="650" y="64" font-size="13" fill="#2b2b2b">P2 择机　5 项</text>
+  <text x="440" y="96" font-size="12.5" fill="#5a5a4f">P0 全部集中在「失败被当成成功」</text>
+  <text x="20" y="118" font-size="12.5" fill="#5a5a4f">校验器本身有效：check_layout 退出码分级正确、check_display_name 实测 exit 0、变异测试 test_gen_forecast_svg_neg 已有 6 个变异点</text>
+</svg>
+
+<h2>二、P0 · 三个真 BUG</h2>
+
+<div class="card">
+<h4><span class="tag p0">P0-1</span>已交付报告里的数字错误：偏差表「本期变化」基期取错</h4>
+
+<p><strong>位置</strong>：<code>outputs/作战报告_晨报_2026-09-18.md</code> 第 211 行</p>
+<p><strong>报告原文</strong>：「样本 49→50 期。方向 ⚠️ +1（<strong>56.2%</strong>→<strong>56.0%</strong>）；区间 ✅ +1（<strong>36.7%</strong>→38.0%）」</p>
+
+<p><strong>实测三期的真实值</strong>（从历次报告提取）：</p>
+<table>
+<tr><th>报告</th><th>期数 n</th><th>方向 ✅/⚠️/❌</th><th>方向纯命中率</th><th>区间纯命中率</th></tr>
+<tr><td>9/17 晨报</td><td class="num">48</td><td class="num">27 / 17 / 4</td><td class="num"><strong>56.2%</strong></td><td>—</td></tr>
+<tr><td>9/17 收盘</td><td class="num">49</td><td class="num">28 / 17 / 4</td><td class="num"><strong>57.1%</strong></td><td class="num"><strong>36.7%</strong></td></tr>
+<tr><td>9/18 晨报（本份）</td><td class="num">50</td><td class="num">28 / 18 / 4</td><td class="num">56.0%</td><td class="num">38.0%</td></tr>
+</table>
+
+<p><strong>问题</strong>：同一句话里两个维度的对比基期不一致 ——</p>
+<ul>
+<li><strong>方向</strong>用了 <strong>56.2%（9/17 晨报，n=48）</strong> 作基期 → <strong>取成了上上期</strong>，正确应为 <strong>57.1%（9/17 收盘，n=49）</strong>；</li>
+<li><strong>区间</strong>用了 <strong>36.7%（9/17 收盘，n=49）</strong> 作基期 → 这个是对的。</li>
+</ul>
+<p>两处基期一个 48 期、一个 49 期，与同句声明的「样本 49→50 期」也对不上。</p>
+
+<div class="fix"><strong>修法</strong>：把该句改为「方向 ⚠️ +1（<strong>57.1%</strong>→56.0%）」。<br>
+<strong>根因</strong>：这段是手写文本，而统计表本身是 <code>chainlib.bias_stats()</code> 程序生成的（已复核，与报告表格 28/18/4、n=50、56.0% 完全一致 ✓）。<strong>即：表格可信、叙述不可信。</strong><br>
+<strong>建议</strong>：把「本期变化」也改为程序生成（对比上一期快照），或至少在 <code>check_layout.py</code> 里加一条断言：报告正文出现的「上期值」必须等于上一份报告的对应单元格。</div>
+</div>
+
+<div class="card">
+<h4><span class="tag p0">P0-2</span>抓取失败仍退出 0，且用残缺结果覆盖原始快照（数据不可恢复）</h4>
+
+<p><strong>位置</strong>：<code>.workbuddy/fetch_zsxq.py</code> 第 299–311 行</p>
+
+<div class="ev">out = .../zsxq_fetch_raw.json
+with open(out, "w", encoding="utf-8") as f:      # ← 无条件覆盖，不判断本轮成功率
+    json.dump(results, f, ensure_ascii=False, indent=1)
+...
+if auth_failed:
+    print(f"COOKIE_AUTH_FAILED={len(auth_failed)} (gid: ...) → 需更新 .../zsxq_cookie.txt")
+print(f"SAVED={out}")                             # ← 然后正常结束，退出码 0</div>
+
+<p><strong>后果链</strong>（全部实测确认）：</p>
+<ol>
+<li>Cookie 通道失效时，6 个 Cookie 星球全部取不到数据 → <code>results</code> 只剩 Skill 通道的 3 个星球；</li>
+<li>脚本<strong>仍然写文件、仍然打印 <code>SAVED=</code>、仍然退出 0</strong> → 调用方（我 / 手动执行）无法分辨「抓成功」与「抓残了」；</li>
+<li>该文件<strong>既不在 git 跟踪列表</strong>（已用 <code>git ls-files</code> 确认），<strong>也在备份脚本的排除清单里</strong>（<code>export_backup.py</code> 的 <code>EXCLUDE_SUFFIX</code> 含 <code>zsxq_fetch_raw.json</code>）→ <strong>一旦被覆盖，上一轮完整快照无法恢复</strong>。</li>
+</ol>
+
+<p class="small">注：脚本已区分「真失效（401）」与「限流抖动（HTTP 200 但 succeeded=false）」并分别计数上报（<code>COOKIE_AUTH_FAILED</code> / <code>COOKIE_FLAKY_FAILED</code>）——<strong>分级做对了，缺的只是最后一步「按计数决定退出码」</strong>。</p>
+
+<div class="fix"><strong>修法（两处，都很小）</strong>：
+<ol style="margin:6px 0">
+<li><strong>加退出码</strong>：<code>main()</code> 末尾 <code>return 2 if auth_failed else (1 if flaky_failed else 0)</code>，并在 <code>__main__</code> 里 <code>sys.exit(main())</code>；</li>
+<li><strong>加写入守卫</strong>：若 <code>results</code> 为空、或 <code>auth_failed</code> 非空，则写入<strong>带日期后缀的旁路文件</strong>（如 <code>zsxq_fetch_raw_2026-09-18_partial.json</code>）而非覆盖主快照，并在 stderr 明确提示「主快照未更新」。</li>
+</ol></div>
+</div>
+
+<div class="card">
+<h4><span class="tag p0">P0-3</span>归档脚本无「0 条守卫」，会把当天归档覆盖成空</h4>
+
+<p><strong>位置</strong>：<code>.workbuddy/gen_tj_archive.py</code> 第 76–80 行</p>
+
+<div class="ev">out = os.path.join(ROOT, 'outputs', f'DRAGON_BALL_原始记录_{today}.md')
+with open(out, 'w', encoding='utf-8') as f:      # ← 无条件覆盖，文件名按日期固定
+    f.write(md)
+print(f"DRAGON BALL模型 归档完成，{len(tj)} 条 -> {out}")   # ← 0 条也报「完成」，退出 0</div>
+
+<p><strong>与 P0-2 联动</strong>：上游快照被写残（或目标星球本轮恰无新帖）时，本脚本会把当天的归档文件<strong>重写为「本期共 0 条」</strong>并显示「归档完成」；而 <code>outputs/</code> 不在 git 里 → <strong>当天已归档的原文无法恢复</strong>。</p>
+
+<div class="fix"><strong>修法</strong>：
+<ol style="margin:6px 0">
+<li><code>len(tj) == 0</code> 时<strong>不覆盖已有文件</strong>：若目标文件已存在则跳过并 stderr 告警，退出码非零；</li>
+<li>写入改为「先写临时文件 → 校验条数 &gt; 0 → 原子替换」；</li>
+<li>顺带：头部「抓取通道：zsxq-cli Skill」是<strong>写死的</strong>，而实际是双通道（Skill + Cookie 回退）→ 改为按数据来源生成。</li>
+</ol></div>
+</div>
+
+<h2>三、P1 · 四项框架性技术债</h2>
+
+<div class="card">
+<h4><span class="tag p1">P1-1</span>校验器退出码无 ERROR/WARN 分级 + 静态初验变成永久告警</h4>
+<p><strong>位置</strong>：<code>.workbuddy/check_integrity.py</code> 第 192 行 <code>return 2 if problems else 0</code></p>
+<p><strong>问题</strong>：既定约定是 <code>0 通过 / 1 有 ERROR / 2 有 WARN</code>（<code>check_layout.py</code> 与 <code>check_display_name.py</code> 都正确实现了）。但 <code>check_integrity</code> <strong>任何问题都返回 2</strong> → 无法区分「链断档」（严重）与「1 条 review 缺字段」（轻微）。</p>
+<p><strong>更值得改的是噪声</strong>：按既有机制，晨报档会对前一日收盘档做<strong>开盘前静态初验</strong>，此时该条 <code>review.actual</code> 本就不含 OHLC（刻意为之）。但【5】把它计入 <code>problems</code> 并打 ⚠️ → <strong>每个晨报档都会固定报同一条告警</strong>，今天的结果就是「数据异常 1」。而项目笔记里应对办法是「先确认是不是静态初验的预期状态」—— <strong>靠人脑排除噪声，正是闸门失效的标准路径</strong>。</p>
+<div class="fix"><strong>修法</strong>：
+<ol style="margin:6px 0">
+<li>新增识别：<code>review.phase</code> 含「静态初验」或四维中有 support/resistance 判定但 <code>actual</code> 无 OHLC → 该条降为 <strong>INFO</strong>（明示「待收盘补判」），不计入 problems；</li>
+<li>引入 <code>ERROR</code>/<code>WARN</code> 两级计数，返回 <code>1 if errors else (2 if warns else 0)</code>；</li>
+<li>把分级口径写进 <code>脚本地图.md</code>（目前该约定只在记忆里）。</li>
+</ol></div>
+</div>
+
+<div class="card">
+<h4><span class="tag p1">P1-2</span>文档三胞胎：同一批脚本被三份文档各描述一遍 → 已产生 41 处失效引用</h4>
+<p><strong>三份文档的重叠</strong>：<code>脚本地图.md</code>(29 KB) / <code>报告生成流程.md</code>(10 KB) / <code>README_预判系统.md</code>(8 KB)。实测被两份以上文档重复描述的脚本 <strong>17 个</strong>（<code>fetch_zsxq</code> / <code>get_daily_ohlc</code> / <code>analyze_000001_multi</code> / <code>check_layout</code> 各被 3 份描述）。</p>
+<p><strong>代价已兑现</strong>：扫描文档中引用的 <code>*.py</code> 共 <strong>41 处指向不存在的文件</strong>，其中 <strong>13 处指向的是已经归档的脚本</strong>（<code>update_chains.py</code>、<code>append_consensus.py</code>、<code>gen_evening_report.py</code>、<code>gen_intraday_svg.py</code>、<code>_tech_extra.py</code>、<code>_audit_layout.py</code>、<code>_calc_boll.py</code> …全部已在 <code>.workbuddy/archive/</code>），另有 5 处是真失效名（<code>zsxq_api.py</code>、<code>chan_signal.py</code>、<code>run_000001.py</code>…）。</p>
+<p class="small">（另 2 处 <code>run_000001_chansignal.py</code> / <code>run_000001_boll_chan.py</code> 实际存在于技能目录 <code>chan-signal__skillhub/</code>，<strong>不算失效</strong>，但文档未标注它们是技能内脚本 —— 这也是误判来源。）</p>
+<div class="fix"><strong>修法</strong>：
+<ol style="margin:6px 0">
+<li><strong>定一份权威</strong>：<code>脚本地图.md</code> 作为唯一「脚本清单」来源，另两份只写<strong>流程</strong>并链接过去，不再逐脚本复述；</li>
+<li>给脚本地图加「<strong>状态列</strong>」（✅在用 / 📦已归档 / 🔧技能内），归档时同步改这一列；</li>
+<li>加一条守卫（可并入 <code>check_display_name.py</code> 同级的 <code>check_docs.py</code>）：扫描文档里的 <code>*.py</code> 引用，不存在且不在技能目录 → 报 WARN。</li>
+</ol></div>
+</div>
+
+<div class="card">
+<h4><span class="tag p1">P1-3</span>review 两代字段长期并存：兼容逻辑散落 6 处，漏写即静默少算</h4>
+<p><strong>实测代际分布</strong>（50 条 verified）：</p>
+<table>
+<tr><th>字段代际</th><th>条数</th><th>读法</th></tr>
+<tr><td>新一代</td><td class="num">20</td><td><code>review.direction_verdict</code></td></tr>
+<tr><td>老一代</td><td class="num">30</td><td><code>review.direction</code>（无 <code>_verdict</code> 后缀）</td></tr>
+</table>
+<p><code>chainlib.py</code> / <code>chain_apply.py</code> / <code>build_dims_data.py</code> / <code>engine_effectiveness.py</code> / <code>report_builder.py</code> 都写了 <code>rv.get(k+'_verdict') or rv.get(k)</code> 兼容；但 <code>normalize_verdicts.py</code> 只读新代字段。</p>
+<p><strong>本轮实证</strong>：我写审计探针时只读了 <code>direction_verdict</code>，得到「只有 20 条有判定、30 条缺失」——<strong>差点错报成「30 条被静默排除」</strong>。这说明该兼容口径对任何新脚本都是陷阱。</p>
+<div class="fix"><strong>修法</strong>：把兼容读法下沉为 <code>chainlib.get_verdict(record, dim)</code> 单一出口，<strong>禁止</strong>其他脚本直接 <code>rv.get('direction_verdict')</code>；或做一次性 <code>normalize_verdicts.py --apply</code> 把 30 条老记录回填成新字段，让代际消失（更彻底，需先备份链）。</div>
+</div>
+
+<div class="card">
+<h4><span class="tag p1">P1-4</span>退出码语义缺失 + <code>str.index</code> 裸崩溃（report_builder 类）</h4>
+<p><strong>位置</strong>：<code>.workbuddy/report_builder.py</code> 第 187–191 行、第 199–213 行</p>
+<div class="ev">def main():
+    if not os.path.exists(SRC_MD):
+        print(f'❌ 原始晨报不存在：{SRC_MD}')
+        return                        # ← 打印 ❌ 但 return None → 退出码 0
+    ...
+    b1_start = md.index('## 第一块'); b1_end = md.index('## 第二块')   # ← 缺章节即抛 ValueError（裸崩溃）</div>
+<p><strong>两条失败路径都不干净</strong>：文件不存在 → <strong>退出 0</strong>（与 skill 里「四连断言」的要求正好相反）；章节缺失 → <strong>Traceback 裸崩溃</strong>（rc≠0 但属意外崩溃，不是有意报错）。</p>
+<p><strong>同类清单</strong>：全量扫描出 <strong>24 个脚本有入口但无失败退出码</strong>，其中真正危险的是「<strong>会打印错误/❌ 却不退出非零</strong>」这一类：<code>report_builder.py</code>、<code>fetch_zsxq.py</code>、<code>fetch_zsxq_fallback.py</code>、<code>fetch_tj_topics.py</code>、<code>normalize_chain.py</code>、<code>backfill_actual_data.py</code>。其余（回测/扫描类）崩溃即 rc≠0，风险低。</p>
+<div class="fix"><strong>修法</strong>：给上述 6 个加 <code>return 非零</code> + <code>sys.exit(main())</code>；<code>report_builder.py</code> 的 <code>md.index()</code> 换成「先探测全部章节，缺哪个报哪个」的有意报错（<code>[FAIL] 缺章节：## 第三块</code>）。</div>
+</div>
+
+<h2>四、P2 · 五项可优化</h2>
+
+<table>
+<tr><th>#</th><th>问题</th><th>证据</th><th>建议</th></tr>
+<tr>
+<td>P2-1</td>
+<td><strong>三份抓取脚本各抄一份解析逻辑</strong></td>
+<td><code>fetch_zsxq.py</code> / <code>fetch_zsxq_fallback.py</code> / <code>backfill_zsxq_window.py</code> 各自定义 <code>extract_images</code> / <code>norm_topic</code> / <code>in_window</code> / <code>fetch_cookie</code>（跨脚本同名函数扫描确认）</td>
+<td>抽 <code>zsxq_lib.py</code>，三个脚本只留窗口参数与输出路径。改动面中等，建议在下次 cookie 失效被迫动这三处时一并做</td>
+</tr>
+<tr>
+<td>P2-2</td>
+<td><strong>三份 HTML 卡片式报告生成器重复</strong></td>
+<td><code>gen_backtest_report.py</code> / <code>gen_dims_html.py</code> / <code>gen_range_band_html.py</code> 各自定义 <code>card</code> / <code>X</code> / <code>Y</code> 及同一套 CSS</td>
+<td>抽 <code>html_card.py</code>（配色与卡片壳）。注意：这三份都在用，不是死代码</td>
+</tr>
+<tr>
+<td>P2-3</td>
+<td><strong>两个「统一入口」并存</strong></td>
+<td><code>run.py</code>（venv python 转发器）与 <code>fetch_all.py</code>（<code>fetch_zsxq.main()</code> 薄封装）语义重叠，且都与现行 <code>$PY</code> 直接调用约定并列</td>
+<td>保留 <code>run.py</code>，把 <code>fetch_all.py</code> 归档；或反过来在文档里二选一写明</td>
+</tr>
+<tr>
+<td>P2-4</td>
+<td><strong>硬编码绝对路径 → 公司机器跑不起来</strong></td>
+<td><code>backtest_forecast_multiperiod.py:11</code> 与 <code>backtest_v5.py:8</code>：<code>SKILL = r"C:\Users\gedayou\.workbuddy\skills\...";</code>（其余脚本已改为 <code>expanduser</code>）</td>
+<td>改用 <code>os.path.expanduser('~/.workbuddy/skills/...')</code>。2 行改动，直接修</td>
+</tr>
+<tr>
+<td>P2-5</td>
+<td><strong>清理策略不一致：一个删、两个归档</strong></td>
+<td><code>cleanup_images.py</code> 用真删除（<code>--apply</code> 后不可恢复）；而 <code>cleanup_engine_output.py</code> / <code>cleanup_workspace.py</code> 都坚持「<strong>归档而非删除</strong> + MANIFEST + dry-run」</td>
+<td>图片改为 move 到 <code>archive/hygiene_&lt;日期&gt;/images/</code>（体积不大、可回滚）。属一致性改善，非紧急</td>
+</tr>
+</table>
+
+<h3>顺带：运行件堆积（不构成问题，但值得一次性清）</h3>
+<table>
+<tr><th>类别</th><th>体积/数量</th><th>说明</th></tr>
+<tr><td><code>_dg_*.txt</code>（digest 分片）</td><td class="num">7 个 / 约 1.24 MB</td><td>当轮跑完即无用</td></tr>
+<tr><td><code>_zsxq_digest_*.txt</code></td><td class="num">3 个 / 约 693 KB</td><td>同上</td></tr>
+<tr><td><code>_*.log</code></td><td class="num">4 个 / 约 28 KB</td><td>抓取/引擎运行日志</td></tr>
+<tr><td><code>_tech_*.json</code> / <code>_bias_*.json</code></td><td class="num">8 个</td><td><strong>其中 <code>_bias_2026-09-18.json</code> 是报告「产物清单」里声明的交付物</strong>，不能一概删</td></tr>
+</table>
+<p class="small">38 个运行件中 <strong>34 个已被 <code>.gitignore</code> 覆盖</strong>（用 <code>git check-ignore</code> 实测，不会同步到公司机器）；余下 4 个是<strong>刻意入库的已跟踪文件</strong>（<code>morning_prompt_std.txt</code> 模板、<code>dims_hitrate_data.json</code>、<code>range_band_data.json</code>、<code>模型体检报告_2026-09-16.html</code>）——其中最后一个是<strong>唯一一处归类不一致</strong>：同类报告 HTML 放在 <code>outputs/</code> 下就被忽略，放在 <code>.workbuddy/</code> 下就进了 git。</p>
+<p class="small"><strong>建议</strong>：把清理动作加进 <code>cleanup_workspace.py</code> 的声明式清单（<code>ACTIONS</code>），而不是再写一次性脚本——这正是该工具的既定用法。<strong>注意</strong>：<code>_bias_2026-09-18.json</code> 是报告「产物清单」里声明的交付物，不能一概删。</p>
+
+<h2>五、排版与读感（以 9/18 晨报为样本逐段实测）</h2>
+
+<p>先说结论：<strong>结构是好的</strong>（五块 + 附录 + 产物清单、关键位唯一落地、一眼能看到方向/区间/剧本）。问题集中在<strong>「长文本塞进表格单元格」</strong>和<strong>同一结论的多次复述</strong>。</p>
+
+<h3>5.1 表格宽度：三处长文本单元格被挤成竖条</h3>
+<table>
+<tr><th>位置</th><th>单元格字数</th><th>问题</th></tr>
+<tr><td>第二块「上期共识复盘」第 3 列「说明」</td><td class="num">≈110 字/格 × 5 行</td><td>在 880 px 宽的 HTML 里会被压成窄条，5 行挤在一列</td></tr>
+<tr><td>第五块「做多榜 TOP3」「规避榜 TOP3」的「依据」列</td><td class="num">≈200 字/格</td><td>本期最严重——一堆产业逻辑塞进一格</td></tr>
+<tr><td>附录 A 抓取通道表「备注」列</td><td class="num">≈90 字/格</td><td>同因；且备注里混着「本条要点」与「通道状态」两种信息</td></tr>
+</table>
+<div class="fix"><strong>改法</strong>：把这三个长文本列<strong>从表格里拆出来，改「分章列表式」</strong>——与既有的「对立观点区块改用分章列表式」是同一原则，项目已有先例，直接沿用即可。表格只留「可对比的短字段」（行业 / 涨跌幅 / 方向分 / 置信度），长依据下沉为表下的 <code>- **对象**：依据…</code> 列表。</div>
+
+<h3>5.2 信息重复：同一结论出现 4–10 次</h3>
+<table>
+<tr><th>结论</th><th>出现次数</th><th>分布</th></tr>
+<tr><td>「60F 中轨 = 唯一否决点 / 行情强弱分界」</td><td class="num">≈10 处</td><td>速览、第一块、第三块定性、第四块置信度、纪律 1、开盘观察 1、关键位表</td></tr>
+<tr><td>「隔夜三项反向变量（纳指 +1.7% / 10Y -7bp / WTI 两连跌）」</td><td class="num">≈8 处</td><td>速览、上期共识复盘、总体、上期复盘方向行、一句话预判、附注一、纪律 5</td></tr>
+<tr><td>「15F 带宽 0.65% 收口 → 变盘在即、方向未定」</td><td class="num">4 处</td><td>第三块表、第三块正文、置信度、v5 打分明细</td></tr>
+</table>
+<p>报告自己声明的原则是「信息原子唯一落地」（价格 ≤ 8 次），<strong>但该原则目前只约束价格，不约束结论</strong>；而结论层的重复反而是读者最疲劳的地方。</p>
+<div class="fix"><strong>改法（不删信息，只改朝向）</strong>：速览三行后各加一个<strong>指针</strong>（如「→ 详见第三块」，需要时的展开处），把重复的<strong>解释</strong>收敛到首次出现处，后续只做<strong>引用</strong>（「见第三块」）。<br>另外：把「同一价位 ≤ 8 次」这条硬指标<strong>纳入 <code>check_layout.py</code> 自动校验</strong>（现在只校验块/错位/语义），顺带把「同一短语重复 ≤ N 次」也加上——这条是可机器验证的，靠人写容易飘。</div>
+
+<h3>5.3 术语与口径的一致性</h3>
+<table>
+<tr><th>问题</th><th>实例</th></tr>
+<tr><td>同一对象两种写法</td><td><code>30F55</code>（第 281 行）vs <code>30F MA55</code>（第 164 行）—— 全篇 55 线体系混用「xx55」与「xx MA55」</td></tr>
+<tr><td>同一数值两个名字</td><td>日线 <code>MA20</code> 与日线 <code>BOLL 中轨</code> 都是 3922.09（数学上本相等），报告里三处分别叫「日线 MA20 / BOLL 中轨」「日线中轨」「MA20」</td></tr>
+<tr><td>取整口径不透明</td><td>区间上沿写 <strong>3896</strong>，关键位表里对应值是 <strong>3895.75（30F55）</strong>；第 189 行算「距上沿 -20.40 点」用的是 3896。整数与精确值混用，读者无法复算</td></tr>
+<tr><td>表格语义被破坏</td><td>「关键位相对现价」表里插了一行「<strong>现价 3875.60</strong>」，其「属性」列填「—」——它不是关键位，却占了关键位表的行</td></tr>
+</table>
+<div class="fix"><strong>改法</strong>：① 55 线体系统一写 <code>MA55</code>（含 30F/60F/15F/5F/120F）；② BOLL 中轨与 MA20 同时出现时，<strong>只保留一个名字</strong>并在表下注一次「BOLL 中轨 ≡ MA20」；③ 区间上下沿<strong>统一给精确值</strong>（3895.75），整数近似只用于速览；④ 把「现价」行移出关键位表，改为表头下方一行说明。</div>
+
+<h3>5.4 附录 A 与附录 B 口径不一致</h3>
+<p>附录 B 列出 <strong>10 个星球</strong>，附录 A 只列 <strong>7 行</strong>（6 个有数 + 短评 0 条）。<strong>信息平权 / 投行圈子 / 口罩哥</strong>三个星球在 A 里完全没出现，也没有一句「本期未覆盖」——读者会以为漏抓。</p>
+<div class="fix"><strong>改法</strong>：附录 A 补一行「本期未覆盖：星球⑧⑨⑩（通道未返回数据 / 未配置）」并在数据完整性说明里点明。</div>
+
+<h3>5.5 校验器覆盖面的一个盲区</h3>
+<p><code>check_layout.py</code> 只校验<strong>每个档位最新一份</strong>报告（本次 5 份：晨报 9/18、午间 9/8、盘中 9/3、收盘 9/17、复盘 9/15）。今天晨报确实在列 ✓。但若某天出现「<strong>链已写、报告 md 没生成</strong>」的中间态，两份校验器都会报绿（<code>check_integrity</code> 查的是链，不是报告文件）→ <strong>漏产报告不会被拦下</strong>。</p>
+<div class="fix"><strong>改法</strong>：给 <code>check_integrity</code> 加一条【7】当日产物存在性断言：按当日已有的链记录，检查对应 <code>outputs/作战报告_&lt;档位&gt;_&lt;日期&gt;.md</code> 是否存在，缺失即 ERROR。</div>
+
+<h2>六、建议执行顺序</h2>
+
+<table>
+<tr><th>顺序</th><th>动作</th><th>改动面</th><th>收益</th></tr>
+<tr><td>1</td><td>修 P0-1：改 9/18 晨报那一句（57.1%→56.0%），并重新生成 HTML</td><td>1 行 + 重生成</td><td>消除已交付报告里的数字错误</td></tr>
+<tr><td>2</td><td>修 P0-2 / P0-3：抓取退出码 + 主快照写入守卫 + 归档 0 条守卫</td><td>2 个脚本，约 25 行</td><td>堵住「失败当成功」，且保护不可恢复的数据</td></tr>
+<tr><td>3</td><td>修 P1-1：<code>check_integrity</code> 分级 + 静态初验降 INFO</td><td>1 个脚本</td><td>闸门不再每期固定刷同一条告警</td></tr>
+<tr><td>4</td><td>修 P2-4（硬编码路径，2 行）＋ P0-1 的「上期值一致性」断言</td><td>极小</td><td>顺手提升跨机可用性与数字自检</td></tr>
+<tr><td>5</td><td>P1-3：抽 <code>chainlib.get_verdict()</code> 单一出口（或一次性回填 30 条老记录）</td><td>中等，需备份链</td><td>消除新脚本静默少算的隐患</td></tr>
+<tr><td>6</td><td>P1-2 + 5.3/5.1/5.2 的排版改法：文档定权威 + 长文本列拆表格 + 术语统一</td><td>文档与报告模板</td><td>读感与可维护性，建议下次晨报迭代时一起做</td></tr>
+<tr><td>7</td><td>P2-1/P2-2 抽公共模块；运行件按 <code>cleanup_workspace.py</code> 清单归档</td><td>较大，非紧急</td><td>技术债清偿，可在被迫改动时顺带做</td></tr>
+</table>
+
+<h2>七、本次新增的常驻工具</h2>
+
+<p>本轮审计的扫描逻辑已固化为 <code>.workbuddy/audit_pipeline.py</code>，<strong>下次「梳理链路」直接跑它</strong>，不再写一次性脚本（符合项目「常驻工具、归档而不删除」的既有原则）。</p>
+
+<div class="ev">$PY .workbuddy/audit_pipeline.py          # 摘要（默认）
+$PY .workbuddy/audit_pipeline.py --full   # 逐条明细
+$PY .workbuddy/audit_pipeline.py --out 文件.txt   # 终端中文乱码时用</div>
+
+<p>退出码：<code>0</code> 无 P0 / <code>1</code> 有 P0（失败退出码缺失·高危）/ <code>2</code> 仅 P1-P2。共七项检查：退出码语义、静默失败反模式、硬编码、文档对账、重复、运行件 gitignore、校验器退出码取值。</p>
+
+<p class="small"><strong>工具自身也修了两个假警报</strong>（否则就是「校验器变成噪声源」）：① 硬编码扫描原本把 docstring 里「已修复」的说明也计入命中（5 处 → 修正为真实的 2 处）；② <code>git check-ignore --stdin</code> 在本机 shim 环境下读不到标准输入，会导致「38 个运行件全部未被忽略」的误报（改用命令行传参后正确）。</p>
+
+<blockquote>
+<p><strong>没问题的部分（明确记录，避免过度重构）</strong>：链落盘有幂等 + 回读断言 + 空壳拒绝；<code>test_gen_forecast_svg_neg.py</code> 已实现变异测试；<code>bias_stats</code> 程序化统计经独立复核完全正确；<code>check_display_name.py</code>（昨日新增）退出码分级正确；<code>gen_forecast_svg.py</code> 已消除「静默回退到 8/31 数据」这一最危险的默认值；备份脚本自动探测工作区、不硬编码路径。</p>
+</blockquote>
+
+</body>
+</html>
