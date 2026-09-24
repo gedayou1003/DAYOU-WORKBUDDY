@@ -26,6 +26,7 @@ sys.path.insert(0, os.path.join(SKILL, 'scripts'))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from chan_signal import run_engine, build_analysis
 import qt_api      # 腾讯接口多域名 failover（2026-09-18：web.ifzq.gtimg.cn 被代理拦）
+from dragonball_signals import classify_macd_state, classify_pullback  # DRAGONBALL 融合 P0（2026-09-24）
 
 UA = {'User-Agent': 'Mozilla/5.0'}
 CODE = '000001'
@@ -85,10 +86,20 @@ def analyze(df, tag):
     zs = structure.get('recent_zhongshu', [])
     zs_last = zs[-1] if zs else None
 
+    # DRAGONBALL 融合 P0（2026-09-24）：MACD 六态（篇4 稳定性分类）。
+    # 与 trend（缠论趋势）/ ma_slope（均线斜率）语义独立，不混用。
+    close_s = df['close']
+    e12 = close_s.ewm(span=12, adjust=False).mean()
+    e26 = close_s.ewm(span=26, adjust=False).mean()
+    dif = e12 - e26
+    dea = dif.ewm(span=9, adjust=False).mean()
+    mstate = classify_macd_state(float(dif.iloc[-1]), float(dea.iloc[-1]))
+
     return {
         'tag': tag, 'price': round(price, 2), 'trend': trend, 'pzs': pzs,
         'ma55': round(ma55, 2), 'ma_pos': ma_pos, 'ma_slope': ma_slope,
         'ma_dist_pct': round(ma_dist, 2),
+        'macd_state': mstate['state'], 'macd_state_side': mstate['side'],
         'latest_signal': latest, 'recent_signals': signals[:6],
         'bi_count': structure['bi_count'], 'zhongshu_count': structure['zhongshu_count'],
         'last_zs': zs_last,
@@ -198,6 +209,25 @@ def main():
         print('[FAIL] 行情含 NaN（%s），未生成数据包' % '、'.join(nan_dim), file=sys.stderr)
         return 1
 
+    # DRAGONBALL 融合 P0（2026-09-24）：X段 vs 带结构回踩（篇3）
+    # 三元组映射：N+2 主涨段 → N+1 回踩中轨（有无结构）→ N 级别 X段/带结构。
+    # ⚠️ 主涨段用「N+2 的 macd_state 极强/强」近似（非篇5 严格公式，待 P1-8 落地）；
+    #    N+1 有无结构用 bi_count（笔数）代理（一笔必含顶分型+底分型+合并K线）。
+    def _main_up(r):
+        return r['macd_state'] in ('极强', '强')
+
+    xduan = {
+        '60F_X段(日线主涨→120F回踩)': classify_pullback(
+            has_structure_n1=(results['120分钟']['bi_count'] > 0),
+            is_main_up_n2=_main_up(results['日线'])),
+        '15F_X段(120F主涨→60F回踩)': classify_pullback(
+            has_structure_n1=(results['60分钟']['bi_count'] > 0),
+            is_main_up_n2=_main_up(results['120分钟'])),
+    }
+    print('\n== DRAGONBALL X段判定 ==')
+    for k, v in xduan.items():
+        print(f"[{k}] → {v}")
+
     print('\n== 区间套判定（相邻周期）==')
     pairs = [
         assess_pair(results['日线'], results['120分钟']),
@@ -212,7 +242,7 @@ def main():
     out = out_override or os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                        '..', 'outputs', f'000001_四周期联动_{date_str}.json')
     out = os.path.normpath(out)
-    payload = {'periods': {k: v for k, v in results.items()}, 'taoquan': pairs}
+    payload = {'periods': {k: v for k, v in results.items()}, 'taoquan': pairs, 'xduan': xduan}
     try:
         with open(out, 'w', encoding='utf-8') as f:
             json.dump(payload, f, ensure_ascii=False, indent=1, default=str)

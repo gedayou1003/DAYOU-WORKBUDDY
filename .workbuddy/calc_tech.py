@@ -18,7 +18,8 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE)
 from market_codes import resolve
 from qt_api import get_json as _qt_json   # 域名 failover 统一入口（2026-09-18）
-from dragonball_signals import classify_macd_state, classify_break  # DRAGONBALL 融合 P0（2026-09-24）
+from dragonball_signals import (classify_macd_state, classify_break, detect_zero_cross,
+                                build_ma55_grid, infer_transmission)  # DRAGONBALL 融合 P0（2026-09-24）
 
 
 def _get(url):
@@ -84,6 +85,8 @@ def report(name, rows):
         'zone': trend + cross,
         'macd_state': _st['state'],
         'macd_state_side': _st['side'],
+        # DRAGONBALL 融合 P0：零轴金叉/死叉（篇4：零轴金叉≡极强、零轴死叉≡极弱 的第二识别）
+        'zero_cross': detect_zero_cross(d, e, d1, e1),
         'gap': round(d - e, 2),
         'dif_dir': '向上' if d > d1 else '向下',
         'dea_dir': '向上' if e > e1 else '向下',
@@ -112,13 +115,34 @@ def main():
 
     out = {}
     day = dkline(tcode, 160)          # 只取一次，避免重复 HTTP
+    m60_rows = mkline(tcode, 'm60', 400)
+    m15_rows = mkline(tcode, 'm15', 600)
     out['code'] = r['code']
     out['name'] = r['name']
     out['day'] = report('日线', day)
-    out['m60'] = report('60F', mkline(tcode, 'm60', 400))
-    out['m15'] = report('15F', mkline(tcode, 'm15', 600))
+    out['m60'] = report('60F', m60_rows)
+    out['m15'] = report('15F', m15_rows)
     out['recent'] = [{'date': x['t'], 'o': x['o'], 'h': x['h'], 'l': x['l'], 'c': x['c']}
                      for x in day[-8:]]
+
+    # DRAGONBALL 融合 P0（2026-09-24）：多级别 55 线网格 + 极强传递性（篇4 特征3）
+    # 55 线网格 = 每个级别的多空分水岭，作为「关键位」一等公民输出；
+    # 极强传递性 = 某级别极强且有效突破本级 55 → 有向上一级 55 运动惯性（下一目标位）。
+    _grid = build_ma55_grid({
+        '日线': [x['c'] for x in day],
+        '60F': [x['c'] for x in m60_rows],
+        '15F': [x['c'] for x in m15_rows],
+    })
+    out['ma55_grid'] = _grid
+    out['transmission'] = {
+        '15F→60F': infer_transmission(out['m15']['macd_state'], out['m15']['close'],
+                                      _grid['15F'], _grid['60F']),
+        '60F→日线': infer_transmission(out['m60']['macd_state'], out['m60']['close'],
+                                       _grid['60F'], _grid['日线']),
+        # 日线→周线：本脚本不取周线，target=None 表示「有惯性但上一级目标未接入」
+        '日线→周线': infer_transmission(out['day']['macd_state'], out['day']['close'],
+                                        _grid['日线'], None),
+    }
     # 近 10 日最低（前低，不含当日）
     prev10 = day[-11:-1]
     out['prev10_low'] = min(x['l'] for x in prev10)

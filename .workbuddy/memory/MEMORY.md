@@ -1326,6 +1326,13 @@ SVG 自述的 `date` **取「记录 id 的日期段」，不取 `levels.date`** 
 - 接入 `calc_tech.py`：report() 加 `macd_state` / `macd_state_side` / `break_state` 三字段。
 - 接入 `forecast_analyze.py`：compute_tj_bypass 加 `_macd` + 日线 `macd_state`。
 
+**P0 剩余四函数接入**（2026-09-24 晚，用户「先接入55,极强,零轴,X段」）：
+- `calc_tech.py`：report() 加 `zero_cross`（零轴金叉/死叉）；main() 加 `ma55_grid`
+  （三级别 55 线网格）+ `transmission`（15F→60F、60F→日线、日线→周线，日线→周线 target=None）。
+- `analyze_000001_multi.py`：analyze() 补 `macd_state`；main() 加 `xduan` X段判定
+  （三元组 N+2 主涨段→N+1 回踩有无结构→N 级别 X段；主涨段用 macd_state 极强/强**近似**，
+  待 P1-8 严格落地；N+1 有无结构用 bi_count 代理）。
+
 **P1 回测结论**（`backtest_dragonball_p1.py`，日线 405 根，篇4 MACD 六态精确口径）：
 1. **六态无独立方向增量**（全部 50%±10% 内）——再次印证「关键位工具，非方向工具」。
 2. ⭐ **本轮最有价值发现：两种「极强」口径方向相反** ——
