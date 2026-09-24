@@ -17,6 +17,20 @@
      ⚠️ 教训（2026-09-21）：备份若做成散文件，临时目录会膨胀到 700+ 个，
      清理时撞上环境的安全删除闸门，**冒烟在第一行就死掉**——闸门把测闸门的人也拦了。
   2b. 每次运行都新建独立临时目录（`_smoke_tmp/run_<时间戳>`），**从不删别人的目录**。
+      ⚠️ 代价：目录**不会自动回收**（`_cleanup` 只在文件数 < 40 时删本次的）。
+      回收交给独立小工具 `recycle_smoke_tmp.py` —— **刻意不塞进本脚本**：本脚本的设计前提是
+      「零副作用」，若它自己去删历史目录，就有了删除副作用，排查时无法区分是谁删的。
+  2c. **语义核对 ≠ md5 核对**（2026-09-24 复审 R2-2/R2-3，重要）：
+      md5 只能证明「文件**没被改过**」，**不能证明「文件内容是对的」**。
+      若某一环写出来的产物本身就是错的（例：走势图叠了错日子的 actual、报告落盘时漏了一整节），
+      md5 前后一致、阶段全绿，冒烟照样报 ALL PASS。三个具体盲区：
+        ① 静默失败：脚本 rc=0 但产物是错的（生成器打印一行 `SVG written` 就算成功）；
+        ② 既有错误：**跑之前就错的文件**，冒烟根本不看它（只比前后）；
+        ③ 覆盖事故：写进**同名不同档位**的文件，md5 变化被判「受保护文件被改」→ 回滚，
+           但**为什么会被改**这条信息没有，事后查不出是哪一环干的。
+      故新增 `SEMANTIC_RULES`（弱于 md5 的存在性 + 身份核对）：
+      受保护交付物跑完后必须仍**能推出自己的所属档位/日期**，且与其身份自述一致。
+      这不是要替代 md5，而是补上「产物内容正确性」这一层 —— 结论行里明确区分二者。
   3. **声明式阶段清单**：加/改一环只改 `build_stages()`，不新写脚本。
   4. **「期望退出码」写在声明里**：如 `gen_tj_archive` 空窗口退 2 是**设计**而非故障、
      `md_to_html` 无参退 1 是**守卫**而非崩溃。不写清楚就只能靠人肉记忆，等于没有判据。
@@ -62,6 +76,16 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 PY = sys.executable
 TIMEOUT = 480          # 单个阶段墙钟上限（秒）
+# ── 慢阶段单独放宽（2026-09-24 修）──
+# 原实现所有阶段共用 480s。`run_tests.py` 2026-09-24 已涨到 580s（19 个测试文件，
+# 其中 test_gen_forecast_svg_neg.py 单跑 136s、test_audit_docrot_neg.py 114s），
+# 于是 A3 恒 rc=124（超时）→ 冒烟永远 FAIL。
+# ⚠️ 注意这条自伤的形态：**一个只能报红的闸门等于没有闸门** ——
+#    一旦超时被判为常态噪声，真正的「测试跑不过」就再也不会被看见了。
+# 所以这里不是放宽判据，而是让「慢」有明确、显式、可解释的额度：
+#    正常跑完 → 按退出码判定（该 FAIL 还是 FAIL）
+#    真超时   → 仍 rc=124 → 仍 FAIL（额度只是更大，不是免检）
+TIMEOUT_SLOW = 1500    # 标记为「慢」的阶段（build_stages 第 6 个字段）用这个上限
 DEFAULT_TMP = os.path.join(HERE, '_smoke_tmp')
 CLEANUP_MAX_FILES = 40  # 临时目录超过这么多文件就不自动删（见 _cleanup 的说明）
 
@@ -135,8 +159,18 @@ def _cleanup(tmp):
                     pass
     total = loose + members
     if total > CLEANUP_MAX_FILES:
+        # ⚠️ 这里**故意不自动删**（2026-09-21 的血泪）：环境删除闸门按 zip 成员数计数，
+        #    一次删几百个会直接被拦死，整个冒烟在第一行就死。所以本函数只负责
+        #    「删得掉就删、删不掉就如实说」。
+        #    存量回收是**独立工具**的职责（2026-09-24 R3 落地）：
+        #      python .workbuddy/recycle_smoke_tmp.py            # 预演，一个字都不删
+        #      python .workbuddy/recycle_smoke_tmp.py --apply --keep 5
+        #    把它写进提示，是为了让读到这条 WARN 的人知道下一步该敲什么 ——
+        #    一条「只报问题、不给出路」的警告，下场就是被无视。
         print('[WARN] 临时目录 %d 个文件（含备份 zip 成员 %d）超过阈值 %d，**不自动删除**：%s'
               % (loose, members, CLEANUP_MAX_FILES, tmp))
+        print('       回收请用独立工具（默认预演，不动真实目录）：'
+              'python .workbuddy/recycle_smoke_tmp.py --apply --keep 5')
         return False
     shutil.rmtree(tmp, ignore_errors=True)
     if os.path.isdir(tmp):
@@ -198,6 +232,134 @@ def newest_by_mtime(pattern, base=None):
     base = base or ROOT
     fs = glob.glob(os.path.join(base, pattern))
     return max(fs, key=os.path.getmtime) if fs else None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 语义核对（2026-09-24 复审 R2-2/R2-3）
+#
+# 为什么必须有这一层：**md5 只证明「没被改过」，不证明「内容是对的」**。
+#   ① 脚本 rc=0 但产物写错了 —— 例如走势图叠了**另一天**的 actual：
+#      生成器只打印一行 `SVG written`，路径合理、幂等、md5 前后一致 → 全绿。
+#   ② 跑之前**就已经是错的**文件 —— 冒烟只比前后，从不看存量内容。
+#   ③ 覆盖事故 —— 写进同名不同档的文件，会以「受保护文件被改」的形式出现，
+#      但**为什么被改**（哪一环、写错了什么）在报告里看不到。
+# 故这里加一组**弱于 md5 但独立于它**的断言：受保护交付物跑完后必须仍
+# **能推出自己的所属档位/日期**，且与其**身份自述**一致。
+# 刻意做得比 md5 弱：只查「身份能不能对上」，不查内容细节（那属单元测试范畴）。
+# ─────────────────────────────────────────────────────────────────────────────
+
+# 交付物 → 语义断言。每条 = (glob, 规则名, 检查函数(rel, abspath) -> None|str(问题))
+SEMANTIC_SVG_DESC = re.compile(r'<desc>(.*?)</desc>', re.S)
+SEMANTIC_SVG_SINCE = '2026-09-25'      # 自述机制生效日（与 check_integrity 同口径）
+
+
+def _sem_svg_identity(rel, path):
+    """走势图必须**自述身份**，且文件名日期 == 自述 date=。
+
+    这正是 2026-09-24 覆盖事故的形态：9/24 的图被写进 2026-09-23.svg，
+    两张 md5 相同、无备份。md5 核对对**已经写坏的存量图**完全无能为力
+    （它只比前后，不比内容），故必须看图自己怎么说。
+    """
+    base = os.path.basename(rel)
+    m = re.match(r'^000001_forecast_(\d{4}-\d{2}-\d{2})\.svg$', base)
+    if not m:
+        return None                        # 命名不符规范的老图（_v2 等），跳过
+    fdate = m.group(1)
+    try:
+        with open(path, encoding='utf-8') as f:
+            text = f.read()
+    except Exception as e:                 # noqa: BLE001
+        return '读取失败 %s' % type(e).__name__
+    d = SEMANTIC_SVG_DESC.search(text)
+    if not d:
+        if fdate < SEMANTIC_SVG_SINCE:
+            return None                    # 自述机制生效前：允许（INFO 层面不计）
+        return 'no-desc: SVG 内无自述 <desc>（date=…），无法核对身份（应为重跑新版生成器补上）'
+    mm = re.search(r'\bdate=(\d{4}-\d{2}-\d{2})', d.group(1))
+    if not mm:
+        # ⚠️ 措辞要与事实相符（2026-09-24 修）：实测 8/25、8/26 两张图**有** <desc>，
+        #    里面是**人类可读的描述文字**（'13:40 现价 3886，15F带宽0.95%…'），
+        #    是「机器自述机制」之前的旧格式 —— 不是「描述缺失」。
+        #    早先文案写成「<desc> 里没有 date= 字段」容易被读成「文件坏了」，
+        #    实际形态是**旧格式**，性质是「历史遗留、重跑即自愈」，不是告警。
+        return (LEGACY_MARK + 'legacy-desc: 旧格式 <desc>（人类描述文字，无机器自述 date=）'
+                ' —— 属历史遗留，用当前生成器重跑该档即自动升级为新格式')
+    if mm.group(1) != fdate:
+        return ('desc-mismatch: 文件名 %s ≠ 自述 %s —— 这正是「覆盖别的档位的图」的形态'
+                '（2026-09-24 真实事故：md5 相同、不可恢复）' % (fdate, mm.group(1)))
+    return None
+
+
+def _sem_report_tier(rel, path):
+    """报告文件名必须能推出「档位 + 日期」，且与首行标题里的日期一致。
+
+    「能推出所属档位/日期」这条断言的价值在于：一旦生成脚本改名格式改了、
+    或报告被写成另一天的内容，**文件名与内容就自相矛盾** —— 而 md5 看不出来。
+    """
+    base = os.path.basename(rel)
+    m = re.match(r'^作战报告_([^_]+)_(\d{4}-\d{2}-\d{2})\.md$', base)
+    if not m:
+        return None                        # 旧命名/匿名版等，跳过
+    fdate = m.group(2)
+    try:
+        with open(path, encoding='utf-8', errors='replace') as f:
+            head = f.read(4000)
+    except Exception as e:                 # noqa: BLE001
+        return '读取失败 %s' % type(e).__name__
+    # 正文里出现**另一个日期**的强断言不做（报告必然引用历史日期），
+    # 只做一条弱断言：文件名日期必须在正文里出现过（否则内容与文件名完全对不上）。
+    if fdate not in head:
+        return 'date-absent: 前 4000 字内找不到文件名日期 %s（内容与文件名可能对不上）' % fdate
+    return None
+
+
+SEMANTIC_RULES = [
+    ('outputs/000001_forecast_*.svg', 'svg-identity', _sem_svg_identity),
+    ('outputs/作战报告_*.md', 'report-filename-date', _sem_report_tier),
+]
+
+# 语义规则返回串若以此前缀开头 → 走 INFO 通道（已知历史遗留，不占 WARN 额度）。
+# 用前缀而不是另建返回值类型：规则函数很薄，让它继续只返回「一个字符串或 None」，
+# 判定逻辑集中在本处；且这个前缀在打印时会剥掉，人看不出实现细节。
+LEGACY_MARK = '[legacy] '
+
+
+def semantic_check(warn_list, info_list=None):
+    """对**现有**受保护交付物跑语义断言（不看前后差异，只看内容是否自洽）。
+
+    ⚠️ 与 md5 核对的本质区别：md5 是**差分**判据（前后比），本函数是**绝对**判据
+    （直接看内容对不对）。这正是复审指出的盲区②——「跑之前就错的文件」，
+    差分判据永远发现不了。
+
+    两条输出通道（2026-09-24 增设 info_list）：
+      · **WARN**（warn_list）—— 需要人看的：身份自相矛盾 / 机制生效后仍无自述。
+      · **INFO**（info_list）—— 已知历史遗留、有自愈路径的：如旧格式 `<desc>`。
+        为什么必须分开：8/25、8/26 两张旧图会让**每一轮**冒烟都冒 2 条 WARN，
+        而它们既不需要处理、重跑该档就自动升级 —— 这就是 2026-09-17 清掉的
+        「永久噪声」形态。噪声留着，真 WARN 就会被一起无视。
+    INFO 不追加进 warn_list，也不参与 rc 判定。
+    返回 (checked, problems)；problems 只含 WARN 级。
+    """
+    checked, problems = 0, []
+    if info_list is None:
+        info_list = []
+    for pattern, rule, fn in SEMANTIC_RULES:
+        for p in sorted(glob.glob(os.path.join(ROOT, pattern))):
+            rel = os.path.relpath(p, ROOT).replace('\\', '/')
+            try:
+                msg = fn(rel, p)
+            except Exception as e:         # noqa: BLE001
+                msg = '规则自身异常 %s: %s' % (type(e).__name__, e)
+            checked += 1
+            if not msg:
+                continue
+            # 「已知历史遗留」前缀 = INFO 通道；其余一律 WARN。
+            if msg.startswith(LEGACY_MARK):
+                info_list.append('%s（%s）：%s' % (rel, rule, msg[len(LEGACY_MARK):].lstrip()))
+                continue
+            problems.append((rule, rel, msg))
+            warn_list.append('%s（%s）：%s' % (rel, rule, msg))
+    return checked, problems
 
 
 # 注意：不要用 % 格式化来拼这段代码 —— 代码体里本来就有 %s/%d，
@@ -447,13 +609,17 @@ def main(argv=None):
     results = []
     for name, cat, cmd, expect, net, slow in stages:
         t0 = time.time()
+        # 慢阶段（build_stages 第 6 字段 slow=True）用放宽后的额度，其余阶段维持 TIMEOUT。
+        _to = TIMEOUT_SLOW if slow else TIMEOUT
         try:
             r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True,
-                               encoding='utf-8', errors='replace', timeout=TIMEOUT,
+                               encoding='utf-8', errors='replace', timeout=_to,
                                env=dict(os.environ, PYTHONIOENCODING='utf-8'))
             rc, out, err, to = r.returncode, r.stdout or '', r.stderr or '', False
         except subprocess.TimeoutExpired as e:
             rc, out, err, to = 124, (e.stdout or '') if isinstance(e.stdout, str) else '', '', True
+            # 超时是真失败，不是噪声 —— 把额度写进输出，便于区分「额度不够」与「脚本卡死」
+            err = '[TIMEOUT] 超过本阶段墙钟上限 %ds（慢阶段额度 %ds）\n' % (_to, TIMEOUT_SLOW)
         dt = time.time() - t0
         blob = out + err
         tb = TB_MARK in blob and name not in ALLOW_TB
@@ -462,7 +628,8 @@ def main(argv=None):
                         'tb': tb, 'to': to, 'dt': dt, 'out': out, 'err': err})
         W('  [%s] %-42s rc=%-4s %6.1fs%s' % (
             'OK  ' if ok else ('TIME' if to else 'FAIL'), name, rc, dt,
-            '  ← 崩栈（有 traceback，退出码合格也不算过）' if tb else ''))
+            '  ← 崩栈（有 traceback，退出码合格也不算过）' if tb else
+            ('  ← 超时（额度 %ds；慢阶段 %ds）' % (_to, TIMEOUT_SLOW) if to else '')))
 
     # ── 跑后核对：受保护文件 ──
     # 口径：MAY_CHANGE 优先。命中 MAY_CHANGE 的文件不参与「受保护」判定，
@@ -545,12 +712,45 @@ def main(argv=None):
         for f in new_files:
             W('         %s' % f)
 
-    rc = 1 if (fail or changed or missing) else (2 if (added_prot or new_files) else 0)
+    W('')
+    W('③ 语义核对（**独立于 md5**：直接看产物内容对不对，不是只看有没有被改）')
+    W('   为什么要有这一节：「没被改过」与「内容是对的」是两件事 ——'
+      '脚本 rc=0 但产物写错时，md5 前后一致，全链路照样全绿。')
+    sem_warns = []
+    sem_infos = []
+    sem_checked, sem_problems = semantic_check(sem_warns, sem_infos)
+    if sem_problems:
+        for rule, rel, msg in sem_problems:
+            W('  [WARN] %s' % rel)
+            W('         %s' % msg)
+        W('   注：语义问题**不参与 FAIL 判定**（降级为 WARN），因为它是"存量内容"判据 ——'
+          '若因一条历史产物不合规就把整轮冒烟判红，闸门会被无视（与 2026-09-17 清掉的'
+          '「永久噪声」同类）。但每期都会打印出来，不会被埋掉。')
+    else:
+        W('  ✅ %d 份受保护交付物身份自洽（走势图自述目标日 == 文件名日期；报告文件名日期在正文中可见）'
+          % sem_checked)
+    # INFO 通道：已知历史遗留（旧格式 <desc> 等）。**必须打印但不算问题** ——
+    # 不打印就变成了「静默豁免」，那和没有这条规则一样；
+    # 算成 WARN 又会每轮刷屏，把真 WARN 淹掉。折中是：列出来、说清自愈路径、退出码不动。
+    if sem_infos:
+        W('  [INFO] 已知历史遗留 %d 条（不需处理，重跑该档即自愈）：' % len(sem_infos))
+        for s in sem_infos:
+            W('         %s' % s)
+
+    rc = 1 if (fail or changed or missing) else (2 if (added_prot or new_files or sem_problems) else 0)
     W('')
     W('=' * 78)
     W('汇总：阶段 %d · 通过 %d · 失败 %d（其中崩栈 %d）· 受保护文件被改 %d · 新增文件 %d'
       % (len(results), len(results) - len(fail), len(fail),
          sum(1 for r in results if r.get('tb')), len(changed), len(new_files)))
+    W('      语义核对 %d 份 / 问题 %d 条' % (sem_checked, len(sem_problems)))
+    W('')
+    W('⚠️ 结论边界（必读）：本轮「0 改动」只证明**这段时间没有脚本乱写**，')
+    W('   **不证明产物内容正确**。内容正确性由三处独立保证：')
+    W('     · 本节③ 语义核对（身份自洽，弱判据，覆盖存量）；')
+    W('     · `check_integrity.py`【5】【7】【8】（链-报告-走势图三者对应）；')
+    W('     · `run_tests.py` 的单元/回归断言（强判据，覆盖逻辑）。')
+    W('   三者都不覆盖的，属尚未被发现 —— 不要因为本条打印 ALL PASS 就认定产物无误。')
     W('RESULT: %s' % ('ALL PASS' if rc == 0 else ('WARN' if rc == 2 else 'FAIL')))
     W('=' * 78)
 

@@ -12,6 +12,7 @@
 5) forecast_chain 数据完整性：review.actual 缺 date/open/high/low/close/pct_chg
 6) pending 守卫：任一链 pending > 1 → 可能漏复盘上一条（自 chain_apply 下沉）
 7) 链记录 → 报告产物：链上每条记录都应对应一份 outputs/作战报告_<档位>_<日期>.md
+8) 走势图自述一致性：outputs/000001_forecast_<日期>.svg 的**文件名日期** vs SVG 内 `<desc>` 自述的目标日
 
 2026-09-17 加固（消除永久噪声，恢复闸门可用性）
 -----------------------------------------------
@@ -92,6 +93,27 @@
 
 默认检查 2026-08-21（forecast_chain 首条）至今。
 交易日判定：周一~周五，排除 HOLIDAYS 集合（需按实际节假日维护）。
+
+2026-09-24 补盲区【8】（复审 R2-1：SVG 无身份信息 → 覆盖事故无法被机器发现）
+----------------------------------------------------------------------------
+改前问题：**SVG 本体不含任何身份信息**。
+  9/24 晨报的走势图写进了 `000001_forecast_2026-09-23.svg`，把 9/23 午间档的图覆盖掉，
+  两张图 md5 完全相同（`445af259…`）、字节一致、无备份 —— 而**没有任何一处校验能发现它**：
+  【7】只检查 `.md` 报告，从没看过 `.svg`；其它检查项也都不碰 SVG。
+  更糟的是这次覆盖**看起来完全正常**：文件写出来了、路径也合理、重跑幂等，
+  生成器只打印一行 `SVG written` —— 输出里没有任何异常可抓。
+  （这与 §38「加了校验 ≠ 校验覆盖了出事的路径」是同一类失效。）
+
+改后：
+  - `gen_forecast_svg.py` 把 `pred=<记录id> / date=<目标日> / actual=<叠加的actual日>`
+    写进 SVG 的 `<desc>`（并在 `<title>` 写人类可读的一行）；
+  - 本校验项读每个 `outputs/000001_forecast_<日期>.svg`，核对**文件名日期 == 自述目标日**：
+      不一致 → ERROR（文件名与内容指向不同的日子 = 覆盖事故的形态）；
+      无 `<desc>` / 无 `date=` 字段 → ERROR（旧图未自述，无法核对；重跑生成器即可补上）；
+  - `SVG_DESC_SINCE` 之前的历史图归已知例外（自述机制尚未存在）。
+
+为什么用 ERROR 而不是 WARN：这一项**恰好就是覆盖事故**的判据 ——
+一旦不一致，说明磁盘上那张图**已经在描述另一天**，是既成事实的数据损坏，必须处理。
 """
 import datetime
 import json
@@ -175,6 +197,32 @@ TIER_BY_SUFFIX = {
 # 报告命名统一为「作战报告_<档位>_<日期>.md」的生效日。此前的报告用了别的文件名
 # （知识星球晨报_… 等）且多已归档，逐条报缺口就是纯噪声 —— 与 KNOWN_TJ_GAPS 同一处理。
 ARTIFACT_SINCE = '2026-08-27'
+
+# ---------------------------------------------------------------------------
+# 【8】走势图自述一致性（2026-09-24 复审 R2-1）
+#
+# 事故：9/24 晨报的走势图写进 000001_forecast_2026-09-23.svg，覆盖掉 9/23 午间档的图
+#       （两者 md5 相同、无备份、不可恢复）；而**没有任何校验器看过 .svg**。
+# 修法：生成器把 `pred= / date= / actual=` 写进 SVG 的 <title>/<desc>（自带身份），
+#       本项核对「文件名里的日期 == 自述的 date=」—— 这正是覆盖事故的形态。
+#
+# 为什么是 ERROR：一旦不一致，磁盘上那张图**已经在描述另一天**，
+# 是既成事实的损坏（不是"建议看一眼"），必须重绘。
+# ---------------------------------------------------------------------------
+SVG_GLOB_PREFIX = '000001_forecast_'
+# 自述机制生效日：早于此的图没有 <desc>，无法核对，归已知例外（重跑生成器即可补上）。
+SVG_DESC_SINCE = '2026-09-25'
+
+
+def parse_svg_self_desc(text):
+    """从 SVG 文本里抽出 <desc> 的自述字段。返回 dict（可能为空）。"""
+    out = {}
+    m = re.search(r'<desc>(.*?)</desc>', text, re.S)
+    if not m:
+        return out
+    for k, v in re.findall(r'([A-Za-z_]+)\s*=\s*([^\s/][^/]*)', m.group(1)):
+        out[k.strip()] = v.strip()
+    return out
 
 
 def is_static_precheck(rev):
@@ -476,12 +524,72 @@ def main():
               f'（新后缀？需补 TIER_BY_SUFFIX）：' + '、'.join(art_unknown))
         infos += 1
 
+    # 8) 走势图自述一致性（2026-09-24 复审 R2-1）
+    #    判据：文件名里的日期 == SVG <desc> 自述的 date=。
+    #    不一致 = 覆盖事故的形态（磁盘上那张图在描述另一天）。
+    print('\n【8】走势图自述一致性（文件名日期 vs SVG <desc> 自述的 date=）')
+    svg_dir = OUT
+    svg_files = []
+    if os.path.isdir(svg_dir):
+        svg_files = sorted(fn for fn in os.listdir(svg_dir)
+                           if fn.startswith(SVG_GLOB_PREFIX) and fn.endswith('.svg'))
+    svg_bad, svg_nodesc, svg_legacy, svg_ok = [], [], [], []
+    for fn in svg_files:
+        m = re.match(r'^%s(\d{4}-\d{2}-\d{2})\.svg$' % re.escape(SVG_GLOB_PREFIX), fn)
+        if not m:
+            print(f'  ℹ️ 文件名不符规范，跳过核对：{fn}')
+            infos += 1
+            continue
+        fdate = m.group(1)
+        path = os.path.join(svg_dir, fn)
+        try:
+            with open(path, encoding='utf-8') as f:
+                text = f.read()
+        except Exception as e:                              # noqa: BLE001
+            svg_bad.append((fn, '读取失败 %s' % type(e).__name__))
+            continue
+        d = parse_svg_self_desc(text)
+        sdate = d.get('date')
+        if not sdate:
+            # 自述机制生效日之前的图 = 历史例外；之后的图无自述 = 生成器没跑新版
+            (svg_legacy if (not strict and fdate < SVG_DESC_SINCE) else svg_nodesc).append(fn)
+            continue
+        if sdate != fdate:
+            svg_bad.append((fn, '文件名 %s ≠ 自述 %s（pred=%s actual=%s）'
+                            % (fdate, sdate, d.get('pred', '?'), d.get('actual', '?'))))
+        else:
+            svg_ok.append((fn, d))
+    if svg_bad:
+        for fn, why in svg_bad:
+            print(f'  ⚠️ {fn}：{why}')
+        print('     ⚠️ 文件名与内容指向不同的日子 —— 这正是「覆盖别的档位的图」的形态'
+              '（2026-09-24 真实事故：md5 相同、不可恢复），需重绘。')
+        errors += len(svg_bad)
+    if svg_nodesc:
+        for fn in svg_nodesc:
+            print(f'  ⚠️ {fn}：SVG 内无自述 <desc>（date=…）→ 无法核对身份。'
+                  f'请用 gen_forecast_svg.py 重跑该档重绘。')
+        errors += len(svg_nodesc)
+    if not svg_bad and not svg_nodesc:
+        if svg_files:
+            print(f'  ✅ {len(svg_ok)} 张图自述与文件名一致'
+                  + (f'（另有自述机制生效前 {len(svg_legacy)} 张，见下）' if svg_legacy else ''))
+        else:
+            print(f'  ℹ️ outputs 下无 {SVG_GLOB_PREFIX}*.svg，跳过')
+            infos += 1
+    if svg_legacy:
+        print(f'  ℹ️ 自述机制生效前（< {SVG_DESC_SINCE}）的历史图 {len(svg_legacy)} 张'
+              f'（无 <desc>，无法核对，不计入问题；重跑生成器即可补上自述）：'
+              + '、'.join(svg_legacy))
+        infos += 1
+
     # 汇总
     print('\n' + '=' * 70)
     print(f'汇总：DRAGON BALL模型 归档缺口 {len(tj_real)}（另有已知例外 {len(tj_known)}、'
           f'未跑晨报档按设计不产出 {len(tj_notreq)}）· '
           f'档位缺口 {len(fc_real)}（另有已知缺口 {len(fc_known)}）· '
           f'产物缺口 {len(art_gap)} · '
+          f'走势图自述不一致 {len(svg_bad) + len(svg_nodesc)} · '
           f'ERROR {errors} · WARN {warns} · INFO {infos}' + ('  [--strict]' if strict else ''))
     if errors:
         print('❌ 存在 ERROR：必须处理（见上方 ⚠️ 行）。')

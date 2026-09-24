@@ -73,7 +73,7 @@ def is_clean_error(blob):
 
 # ---------- 合成链素材 ----------
 
-def lv_full(date='T-2026-01-02'):
+def lv_full(date='2026-01-02'):
     return {
         'date': date,
         'now': 3900.0,
@@ -86,8 +86,23 @@ def lv_full(date='T-2026-01-02'):
     }
 
 
-ACT = {'date': 'T-2026-01-01', 'open': 3895.0, 'high': 3920.0,
+ACT = {'date': '2026-01-01', 'open': 3895.0, 'high': 3920.0,
        'low': 3885.0, 'close': 3905.0, 'pct_chg': 0.26}
+
+# 合成记录用**真实日期形态**的 id（2026-09-24 复审 R4 修正）
+# ---------------------------------------------------------------
+# 原先用 `T-2026-01-02` 这种「带前缀的假日期」，理由是"一眼看出是合成数据"。
+# 但 R4 让 `gen_forecast_svg.py` 开始**从 id 里正则抽日期段**（目标是按 target 匹配 actual），
+# 于是 `T-2026-01-02` 抽不出日期 → 脚本走了「target 不可解析」的退化分支 → 
+# actual 选不到 → 报「链中找不到含 open/high/low/close 的 verified.review.actual」，
+# **本文件 8 条断言集体假失败**（表象是「脚本坏了」，真相是「测试素材不再符合现实形态」）。
+#
+# 所以改用真实日期：**测试素材必须与生产数据的形态一致**，
+# 否则一旦生产逻辑开始解析那个形态，测试就会以"脚本坏了"的表象报假红。
+# 「一眼看出是合成数据」这个诉求改由 `T-` 前缀挪到 **levels.label / signals 的中文文案**去满足
+# （测试沙箱本来就是临时目录，不会与真实数据混）。
+V_ID = '2026-01-01'          # verified 记录 id
+P_ID = '2026-01-02'          # pending  记录 id
 
 
 def rec_verified(rid, with_actual=True):
@@ -168,29 +183,29 @@ print('=== gen_forecast_svg 回归 ===')
 print('')
 
 # A. 链上无 pending → 报错，且不得渲染陈旧数据
-expect_fail('A 无 pending', [rec_verified('T-2026-01-01')],
+expect_fail('A 无 pending', [rec_verified(V_ID)],
             must_mention=['pending', '--pred'])
 
 # B. --pred 指向不存在的 id → 报错
-expect_fail('B 坏 --pred', [rec_verified('T-2026-01-01')],
+expect_fail('B 坏 --pred', [rec_verified(V_ID)],
             args=['--pred', 'T-NOT-EXIST'], must_mention=['T-NOT-EXIST'])
 
 # C. pending 的 levels 不完整 → 报错
 bad_lv = lv_full()
 del bad_lv['down_lower']
 expect_fail('C levels 残缺',
-            [rec_verified('T-2026-01-01'), rec_pending('T-2026-01-02', bad_lv)],
+            [rec_verified(V_ID), rec_pending(P_ID, bad_lv)],
             must_mention=['down_lower'])
 
 # D. 没有任何 verified 带 actual → 报错
 expect_fail('D 无 actual',
-            [rec_verified('T-2026-01-01', with_actual=False), rec_pending('T-2026-01-02')],
+            [rec_verified(V_ID, with_actual=False), rec_pending(P_ID)],
             must_mention=['open', 'close'])
 
 # F1. levels 缺 date 且未给 --out → 报错（不得退化成写死日期文件名）
 no_date = lv_full()
 no_date.pop('date')
-CH_NODATE = [rec_verified('T-2026-01-01'), rec_pending('T-2026-01-02', no_date)]
+CH_NODATE = [rec_verified(V_ID), rec_pending(P_ID, no_date)]
 blob = expect_fail('F1 缺 date 无 --out', CH_NODATE, with_out=False,
                    must_mention=['date', '--out'])
 check('F1 缺 date 无 --out：未退化成 2026-08-31 文件名', '2026-08-31' not in blob, blob[:200])
@@ -202,13 +217,13 @@ check('F2 缺 date 有 --out：产出了 SVG', c is not None and len(c) > 2000,
       'bytes=%s' % (len(c) if c else -1))
 
 # E. 正常路径：产出 SVG，且两次运行字节完全一致
-CH = [rec_verified('T-2026-01-01'), rec_pending('T-2026-01-02')]
+CH = [rec_verified(V_ID), rec_pending(P_ID)]
 rc1, so1, se1, c1 = run(CH)
 ok1 = (rc1 == 0 and c1 is not None)
 check('E 正常路径：退出码 0 且产出 SVG', ok1, 'rc=%d stdout=%s' % (rc1, so1[:200]))
 check('E 正常路径：SVG 非空（>2000 字节）', ok1 and len(c1) > 2000,
       'bytes=%d' % (len(c1) if c1 else -1))
-check('E 正常路径：stdout 回显 pred id', 'T-2026-01-02' in so1, so1[:200])
+check('E 正常路径：stdout 回显 pred id', P_ID in so1, so1[:200])
 
 rc2, so2, se2, c2 = run(CH)
 check('E 正常路径：两次运行字节一致（确定性）',

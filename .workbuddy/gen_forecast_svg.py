@@ -23,6 +23,7 @@
 import argparse
 import json
 import os
+import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -36,8 +37,74 @@ from display_names import scrub, scrub_all
 CHAIN = os.path.join(HERE, 'forecast_chain.json')
 
 
+def _date_prefix(s):
+    """从 '2026-09-24-morning' / '2026-09-24 全天（09:30-15:00）' 抽 YYYY-MM-DD。抽不到返回 None。"""
+    m = re.match(r'^(\d{4}-\d{2}-\d{2})', str(s or ''))
+    return m.group(1) if m else None
+
+
+def pick_actual(chain, target, rid=None):
+    """按 `target` 选「该叠进走势图的那一天」的 actual。
+
+    ⚠️ 2026-09-24 复审（R4）修正：原实现取「链中**最后一条**带完整 OHLC 的 verified」，
+    这在两种情况下会**取错日子**：
+      ① `--pred <历史记录>` 重绘旧图时 —— 取到的是**今天**的 actual，画成「历史预判 + 未来走势」；
+      ② 记录 target 与 actual.date **不等**时（`*-close` 档 target=次日、actual=次日收盘后回填、
+         周末档 target=下周一 而 actual=上周五）—— 原实现靠着「链顺序恰好如此」蒙对，
+         一旦中间插一条 history 记录就会错。
+    正确语义：**target 锁定的那个交易日**的 actual。
+      取值规则：actual.date 的日期段 **≤ target 日期**，取其中**最接近 target 的那条**
+      （取「最近且不晚于」而非「最近」，是为了避免用**未来**的行情去画**当下**的图）。
+    """
+    tg = _date_prefix(target) or _date_prefix(rid)
+    cands = []
+    for r in chain:
+        if r.get('status') != 'verified':
+            continue
+        rv = r.get('review')
+        if not isinstance(rv, dict):
+            continue
+        a = rv.get('actual')
+        if not isinstance(a, dict):
+            continue
+        if not all(k in a for k in ('open', 'high', 'low', 'close')):
+            continue
+        ad = _date_prefix(a.get('date'))
+        if not ad:
+            continue
+        cands.append((ad, r.get('id'), a))
+    if not cands:
+        raise SystemExit(
+            '[FAIL] 链中找不到含 open/high/low/close 的 verified.review.actual，'
+            '走势图无法叠加真实走势。\n'
+            '       请先完成上一条的复盘（chain_apply 的 review 段）再生成图。')
+    if tg is None:
+        # 既无 target 也无 id 日期 → 退化为「最后一条」（与旧行为一致，但显式打印来源）
+        cands.sort(key=lambda x: (x[0], str(x[1])))
+        ad, sid, a = cands[-1]
+        return a, {'matched': 'fallback-last', 'actual_date': ad, 'source_id': sid, 'target': None}
+    not_later = [c for c in cands if c[0] <= tg]
+    pool = not_later or cands
+    # 距 target 最近（同一天优先），并列时取链上更靠后的
+    pool.sort(key=lambda x: (abs(_days_between(x[0], tg)), x[0], str(x[1])))
+    ad, sid, a = pool[0]
+    return a, {'matched': 'by-target', 'actual_date': ad, 'source_id': sid, 'target': tg,
+               'exact': ad == tg, 'used_future': (not not_later)}
+
+
+def _days_between(d1, d2):
+    """两个 YYYY-MM-DD 的日历日差（绝对值）。解析失败返回一个大数。"""
+    import datetime
+    try:
+        a = datetime.date(*[int(x) for x in str(d1).split('-')[:3]])
+        b = datetime.date(*[int(x) for x in str(d2).split('-')[:3]])
+        return abs((a - b).days)
+    except Exception:
+        return 10 ** 6
+
+
 def load_data(pred_id=None):
-    """读取绘图数据。返回 (levels, actual_ohlc, pred_id)。
+    """读取绘图数据。返回 (levels, actual_ohlc, pred_id, meta)。
 
     ⚠️ 2026-09-17 加固：原实现在读不到数据时**静默回退到写死的 2026-08-31 数据**
     （DEFAULT_LEVELS / DEFAULT_ACTUAL）。后果比崩溃严重得多 —— 链上没有可用 pending 时，
@@ -72,18 +139,12 @@ def load_data(pred_id=None):
         raise SystemExit('[FAIL] %s 的 levels 不完整（需含 %s），无法绘图。'
                          % (rid, ' / '.join(need)))
 
-    act = None
-    for r in reversed([x for x in chain
-                       if x.get('status') == 'verified' and isinstance(x.get('review'), dict)]):
-        a = r['review'].get('actual')
-        if isinstance(a, dict) and all(k in a for k in ['open', 'high', 'low', 'close']):
-            act = a
-            break
-    if act is None:
-        raise SystemExit('[FAIL] 链中找不到含 open/high/low/close 的 verified.review.actual，'
-                         '走势图无法叠加真实走势。\n'
-                         '       请先完成上一条的复盘（chain_apply 的 review 段）再生成图。')
-    return lv, act, rid
+    act, meta = pick_actual(chain, p.get('target'), rid)
+    # ⚠️ 2026-09-24 复审（R4）：目标日以 **记录 id 的日期段** 为准（`levels.date` 曾有
+    # 「填成数据基准日」的历史问题，见下方 --out 缺省命名段的注释）。SVG 的自述目标日
+    # 与默认文件名都统一用这个值，避免两个来源打架。
+    meta['target_date'] = _date_prefix(rid) or _date_prefix(p.get('target')) or meta.get('actual_date') or ''
+    return lv, act, rid, meta
 
 
 def _text_w(s, fs=9.0):
@@ -110,7 +171,8 @@ def _fit(s, max_px, fs=9.0):
     return out + '…'
 
 
-def build_svg(lv, act, out_path):
+def build_svg(lv, act, out_path, rid=None, meta=None):
+    meta = meta or {}
     P_NOW = float(lv['now'])
     # 所有写入 SVG 的文本都过 scrub（标签与信号来自链数据原文）
     P_DEC = float(lv['decision']['price']); L_DEC = scrub(lv['decision']['label'])
@@ -153,6 +215,20 @@ def build_svg(lv, act, out_path):
 
     svg = []
     svg.append('<svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 0 940 580" font-family="-apple-system,\'PingFang SC\',sans-serif">')
+    # ⚠️ 2026-09-24 复审（R2-1）：SVG **自述自己是哪张图**。
+    # 起因：9/23 午间档的图被 9/24 内容**静默覆盖**（md5 完全相同，不可恢复）——
+    # 而 SVG 本体不含任何身份信息，两条同名不同内容的图从字节上完全无法区分。
+    # 现在把「记录 id / 目标日 / 实际叠加的 actual 日期」写进 <title>/<desc>：
+    #   · 人肉排查：直接打开 SVG 源码即可看出它是哪一档；
+    #   · 机器校验：check_integrity.py 会核对 **文件名日期 == 自述目标日**。
+    # 注意 `<title>` 是 SVG 的首个可访问名元素，屏幕阅读器也会读它，故文本保持简短。
+    _self_tgt = str(meta.get('target_date') or '')
+    _self_rid = str(rid or '')
+    _self_act = str(meta.get('actual_date') or '')
+    svg.append('<title>%s</title>' % (
+        '上证综指 %s 预判图' % _self_tgt if _self_tgt else '上证综指预判图'))
+    svg.append('<desc>pred=%s / date=%s / actual=%s</desc>' % (
+        _self_rid, _self_tgt, _self_act))
     svg.append('<defs><style>')
     svg.append('.grid{stroke:#d8d2c4;stroke-width:0.5;stroke-dasharray:2 3}')
     svg.append('.axis{stroke:#3a4a4a;stroke-width:1;fill:none}')
@@ -311,9 +387,11 @@ def main(argv=None):
                     help='指定预判链记录 id 重绘历史图；不给则用最新 pending 记录')
     ap.add_argument('--out', default=None, metavar='PATH',
                     help='输出 SVG 路径；不给则默认 outputs/000001_forecast_<date>.svg')
+    ap.add_argument('--force', action='store_true',
+                    help='允许覆盖「已存在且不属于本记录」的走势图（默认拒绝，防毁掉别的档位的图）')
     a = ap.parse_args(argv)
 
-    lv, act, rid = load_data(a.pred)
+    lv, act, rid, meta = load_data(a.pred)
 
     # ⚠️ 2026-09-17 加固：原为 `d = lv.get('date','') or '2026-08-31'`，
     # 缺日期时文件名会退化成写死的 8/31。现在：给了 --out 就与 date 无关；
@@ -327,13 +405,60 @@ def main(argv=None):
                 '[FAIL] %s 的 levels 缺少 date 字段，推不出默认输出文件名。\n'
                 '       请用 --out <路径.svg> 显式指定输出。' % rid)
         d = str(d).replace('/', '-')
+
+        # ⚠️ 2026-09-24 加固（真实事故）：levels.date 有两种合理语义 ——
+        #   ① 目标交易日（本意，与记录 id 的日期一致）
+        #   ② 数据基准日（现价取自哪天的收盘）
+        # 本档 `2026-09-24-morning` 填了基准日 '2026-09-23'，于是默认文件名推成
+        # `000001_forecast_2026-09-23.svg`，**静默覆盖了 9/23 午间档的走势图**
+        # （新旧同为 7738 字节、无备份、不可恢复）。
+        # 历史记录之所以没暴露，是因为 ① ② **恰好同值**：
+        #   `2026-09-21-morning → '2026-09-21'`、`2026-09-23-noon → '2026-09-23'`。
+        # 故此处必须显式校验：**记录 id 的日期段与 date 不一致 → 报错退出**，
+        # 不再静默按 date 命名（正则应从 `2026-09-24-morning` 抽出 `2026-09-24`）。
+        m = re.match(r'^(\d{4}-\d{2}-\d{2})', str(rid))
+        if m and m.group(1) != d:
+            raise SystemExit(
+                '[FAIL] %s 的 levels.date=%s 与记录 id 的日期 %s 不一致，拒绝按 date 推默认文件名。\n'
+                '       两种可能：① levels.date 填成了「数据基准日」而应为「目标交易日」；\n'
+                '                 ② 该记录的 target 本就跨日。\n'
+                '       ⚠️ 按 date 命名可能**覆盖别的档位的图**（2026-09-24 真实事故：\n'
+                '          9/24 晨报覆盖了 9/23 午间档的 000001_forecast_2026-09-23.svg，不可恢复）。\n'
+                '       请用 --out <路径.svg> 显式指定输出（推荐 outputs/000001_forecast_<目标日>.svg）。'
+                % (rid, d, m.group(1)))
         out = os.path.normpath(os.path.join(HERE, '..', 'outputs', '000001_forecast_%s.svg' % d))
 
     od = os.path.dirname(out)
     if od and not os.path.isdir(od):
         raise SystemExit('[FAIL] 输出目录不存在：%s' % od)
 
-    n = build_svg(lv, act, out)
+    # ⚠️ 2026-09-24 二次加固（复审发现：上一版的守卫**只堵了默认路径，没堵 --out**）。
+    # 事实核对：`outputs/000001_forecast_2026-09-23.svg` 与
+    # `000001_forecast_2026-09-24.svg` **字节完全相同（md5 445af259…）** ——
+    # 说明 9/23 午间档的图**已被 9/24 的内容覆盖且无从恢复**。
+    # 上一版加的「date 与 id 不一致即报错」只在 `else` 分支里，
+    # 而这个覆盖正是**通过显式 --out 打进去的**（我自己的修复动作就是那条路径）→
+    # 守卫形同虚设：真正的风险是「写一个已存在的别的档位的图」，与路径怎么来的无关。
+    #
+    # 故这里改成**按输出路径本身**判定（对 --out 与默认两条路径一视同仁）：
+    #   · 目标文件已存在、且**不是本记录 id 对应**的文件 → 拒绝覆盖
+    #     （本记录重跑要覆盖自己，属正常；覆盖别人的图才是事故）
+    #   · 需要刻意重绘历史档 → `--force` 显式越过（并且要求同时给 --out，避免默认路径下手滑）
+    # 判据用 **目标日**（meta['target_date']，优先取 id 日期段）：文件名里含该日期即视为「自己的图」。
+    _tgt = str(meta.get('target_date') or '')
+    _m2 = re.match(r'^(\d{4}-\d{2}-\d{2})', str(rid or ''))
+    if os.path.exists(out) and not a.force:
+        base = os.path.basename(out)
+        mine = bool(_tgt) and (_tgt in base)
+        if not mine:
+            raise SystemExit(
+                '[FAIL] 拒绝覆盖已存在的走势图：%s\n'
+                '       该文件名与本记录 id=%s 的目标日 %s 不符 —— 覆盖它会**毁掉别的档位的图**\n'
+                '       （2026-09-24 真实事故：9/23 午间档的图已被 9/24 内容覆盖，md5 相同、不可恢复）。\n'
+                '       若确认要重绘，请显式加 --force（建议同时 --out 指定目标）。'
+                % (out, rid, _tgt or '(未知)'))
+
+    n = build_svg(lv, act, out, rid=rid, meta=meta)
     size = os.path.getsize(out)
     print('SVG written: %s' % out)
     print('  chars=%d bytes=%d pred=%s' % (n, size, rid))
@@ -341,6 +466,14 @@ def main(argv=None):
           % (lv['now'], lv['down_support']['price'], lv['decision']['price'],
              lv['up_target']['price'], lv['down_lower']['price']))
     print('  signals=%s prob=%s' % (lv.get('signals', []), lv.get('prob', {})))
+    # ⚠️ 2026-09-24 复审（R4/R2-1）：把「自述目标日」和「实际叠加的 actual 是哪天」都打出来。
+    # 原实现只打 `pred=<id>` —— 而正是这条输出让 9/24 那次覆盖**看起来完全正常**
+    # （图写出来了、路径也合理、幂等重跑一致），没人会想到叠进去的走势图是别的档位的。
+    print('  target_date=%s actual_date=%s match=%s%s'
+          % (meta.get('target_date'), meta.get('actual_date'), meta.get('matched'),
+             '' if meta.get('exact') else '  ⚠️ actual 与目标日不同日（源 id=%s）' % meta.get('source_id')))
+    if meta.get('used_future'):
+        print('  ⚠️ 链上没有「不晚于目标日」的 actual，退化为使用**较晚**日期（%s）' % meta.get('actual_date'))
     return 0
 
 

@@ -45,14 +45,19 @@ MUTS = [
      "    if not isinstance(lv, dict):\n"
      "        lv = {}"),
 
+    # ⚠️ 2026-09-24：该守卫已从 load_data() 搬进 pick_actual()（R4 改动），锚点随之同步。
+    #    变异语义不变：把「找不到 actual 就报错退出」换成「编造一组假的 OHLC 继续画」。
     ('M3 缺 verified.actual 时编造假数据',
-     "    if act is None:\n"
-     "        raise SystemExit('[FAIL] 链中找不到含 open/high/low/close 的 verified.review.actual，'\n"
-     "                         '走势图无法叠加真实走势。\\n'\n"
-     "                         '       请先完成上一条的复盘（chain_apply 的 review 段）再生成图。')",
+     "    if not cands:\n"
+     "        raise SystemExit(\n"
+     "            '[FAIL] 链中找不到含 open/high/low/close 的 verified.review.actual，'\n"
+     "            '走势图无法叠加真实走势。\\n'\n"
+     "            '       请先完成上一条的复盘（chain_apply 的 review 段）再生成图。')",
 
-     "    if act is None:\n"
-     "        act = {'open': 3895.0, 'high': 3920.0, 'low': 3885.0, 'close': 3905.0}"),
+     "    if not cands:\n"
+     "        cands = [('2026-01-01', 'MUTANT',\n"
+     "                  {'open': 3895.0, 'high': 3920.0, 'low': 3885.0, 'close': 3905.0,\n"
+     "                   'date': '2026-01-01'})]"),
 
     ('M4 缺 date 时退化成写死 2026-08-31',
      "        d = lv.get('date', '')\n"
