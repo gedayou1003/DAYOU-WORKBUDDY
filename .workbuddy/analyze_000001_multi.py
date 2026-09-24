@@ -26,7 +26,8 @@ sys.path.insert(0, os.path.join(SKILL, 'scripts'))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from chan_signal import run_engine, build_analysis
 import qt_api      # 腾讯接口多域名 failover（2026-09-18：web.ifzq.gtimg.cn 被代理拦）
-from dragonball_signals import classify_macd_state, classify_pullback  # DRAGONBALL 融合 P0（2026-09-24）
+from dragonball_signals import (classify_macd_state, classify_pullback,
+                                detect_zero_cross, detect_main_up)  # DRAGONBALL 融合（2026-09-24）
 
 UA = {'User-Agent': 'Mozilla/5.0'}
 CODE = '000001'
@@ -94,12 +95,18 @@ def analyze(df, tag):
     dif = e12 - e26
     dea = dif.ewm(span=9, adjust=False).mean()
     mstate = classify_macd_state(float(dif.iloc[-1]), float(dea.iloc[-1]))
+    zcross = detect_zero_cross(float(dif.iloc[-1]), float(dea.iloc[-1]),
+                               float(dif.iloc[-2]), float(dea.iloc[-2]))
+    # 笔类型序列（供主涨段/X段判定；篇3 已确认「带结构段=笔」）
+    bi_types = [b.get('bi_type') for b in engine.get('bi_list', [])]
 
     return {
         'tag': tag, 'price': round(price, 2), 'trend': trend, 'pzs': pzs,
         'ma55': round(ma55, 2), 'ma_pos': ma_pos, 'ma_slope': ma_slope,
         'ma_dist_pct': round(ma_dist, 2),
         'macd_state': mstate['state'], 'macd_state_side': mstate['side'],
+        'zero_cross': zcross,
+        'bi_types': bi_types,
         'latest_signal': latest, 'recent_signals': signals[:6],
         'bi_count': structure['bi_count'], 'zhongshu_count': structure['zhongshu_count'],
         'last_zs': zs_last,
@@ -209,22 +216,43 @@ def main():
         print('[FAIL] 行情含 NaN（%s），未生成数据包' % '、'.join(nan_dim), file=sys.stderr)
         return 1
 
-    # DRAGONBALL 融合 P0（2026-09-24）：X段 vs 带结构回踩（篇3）
-    # 三元组映射：N+2 主涨段 → N+1 回踩中轨（有无结构）→ N 级别 X段/带结构。
-    # ⚠️ 主涨段用「N+2 的 macd_state 极强/强」近似（非篇5 严格公式，待 P1-8 落地）；
-    #    N+1 有无结构用 bi_count（笔数）代理（一笔必含顶分型+底分型+合并K线）。
-    def _main_up(r):
-        return r['macd_state'] in ('极强', '强')
+    # DRAGONBALL 融合（2026-09-24）：主涨段判定（篇5 严格公式）+ X段（篇3）
+    # 主涨段（detect_main_up）：N+2 极强/金叉 → N 上涨 + N 低位。
+    #   ⚠️ 级别口径：本脚本四周期（日/120F/60F/15F）非篇4 标准 4 倍级差，
+    #   故「N+2 触发」降级为「上一级触发」（跨一级近似跨两级）；
+    #   最顶层「日线主涨段」缺周线触发，用日线自身极强/金叉 + 上涨 + 低位近似（标注待周线接入）。
+    # X段（classify_pullback）：N+2 主涨段 → N+1 回踩中轨（有无结构）→ N 级别 X段。
+    #   N+1 有无结构用 bi_count（笔数）代理（一笔必含顶分型+底分型+合并K线）。
+    def _main_up(n2_state, n2_zc, bi_types, dist):
+        return detect_main_up(n2_state, n2_zc, bi_types, dist)['is_main_up']
 
+    main_up_day = _main_up(results['日线']['macd_state'], results['日线']['zero_cross'],
+                           results['日线']['bi_types'], results['日线']['ma_dist_pct'])
+    main_up_120 = _main_up(results['日线']['macd_state'], results['日线']['zero_cross'],
+                           results['120分钟']['bi_types'], results['120分钟']['ma_dist_pct'])
+    main_up_60 = _main_up(results['120分钟']['macd_state'], results['120分钟']['zero_cross'],
+                          results['60分钟']['bi_types'], results['60分钟']['ma_dist_pct'])
+    main_up_15 = _main_up(results['60分钟']['macd_state'], results['60分钟']['zero_cross'],
+                          results['15分钟']['bi_types'], results['15分钟']['ma_dist_pct'])
+
+    main_up = {
+        '日线主涨段': main_up_day,
+        '120分钟主涨段': main_up_120,
+        '60分钟主涨段': main_up_60,
+        '15分钟主涨段': main_up_15,
+    }
     xduan = {
         '60F_X段(日线主涨→120F回踩)': classify_pullback(
             has_structure_n1=(results['120分钟']['bi_count'] > 0),
-            is_main_up_n2=_main_up(results['日线'])),
+            is_main_up_n2=main_up_day),
         '15F_X段(120F主涨→60F回踩)': classify_pullback(
             has_structure_n1=(results['60分钟']['bi_count'] > 0),
-            is_main_up_n2=_main_up(results['120分钟'])),
+            is_main_up_n2=main_up_120),
     }
-    print('\n== DRAGONBALL X段判定 ==')
+    print('\n== DRAGONBALL 主涨段判定（篇5）==')
+    for k, v in main_up.items():
+        print(f"[{k}] → {'主涨段' if v else '非主涨段'}")
+    print('== DRAGONBALL X段判定（篇3）==')
     for k, v in xduan.items():
         print(f"[{k}] → {v}")
 
@@ -242,7 +270,8 @@ def main():
     out = out_override or os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                        '..', 'outputs', f'000001_四周期联动_{date_str}.json')
     out = os.path.normpath(out)
-    payload = {'periods': {k: v for k, v in results.items()}, 'taoquan': pairs, 'xduan': xduan}
+    payload = {'periods': {k: v for k, v in results.items()}, 'taoquan': pairs,
+               'xduan': xduan, 'main_up': main_up}
     try:
         with open(out, 'w', encoding='utf-8') as f:
             json.dump(payload, f, ensure_ascii=False, indent=1, default=str)

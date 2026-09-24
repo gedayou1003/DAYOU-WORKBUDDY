@@ -176,3 +176,50 @@ def classify_pullback(has_structure_n1, is_main_up_n2):
     if not is_main_up_n2:
         return '非主涨段'
     return 'X段' if not has_structure_n1 else '带结构回踩'
+
+
+# ============================================================================
+# P1-8  主涨段判定（篇5 严格公式）
+# ============================================================================
+
+# 主涨段「低位」阈值：N 级别价格距 55 线 ≤ 该百分比视为「低位」（未大涨）。
+# 篇5「低位出现结构后出现主涨段」的「低位」是可调参数，集中一处便于回测调优。
+LOW_POSITION_THRESHOLD = 5.0
+
+
+def detect_main_up(n2_state, n2_zero_cross, bi_types, n_price_ma55_dist=None):
+    """篇5 主涨段判定（严格公式，落地版）。
+
+    原文：N+2 级别 MACD 进入极强（或金叉）→ N 级别在「低位出现结构」后出现主涨段；
+          低位结构一般是「第三段或第五段上涨」，极度强势时第一段即可（概率偏小）。
+
+    落地判据（三个可观测条件，缺一不可）：
+      1. N+2 触发：macd_state == '极强' **或** 零轴金叉（篇5「极强状态，或金叉状态」的「或」=并集）。
+      2. N 级别当前上涨：最近一笔 up（「出现结构」= 已走出上涨笔）。
+      3. N 级别低位：价格距 55 线 ≤ LOW_POSITION_THRESHOLD%（未大涨）。
+
+    ⚠️ 精度边界：「第三/五段上涨」的精确段计数需要缠论**线段**划分，而 chan_signal 引擎
+    只输出**笔**（bi_list，篇3 已确认「带结构段 = 顶分型+底分型+合并≥1K」即笔）。本函数把
+    up_segment（全序列上涨笔序号）作**描述字段**输出，**不参与**主涨段布尔判定 ——
+    精确的「第几段」待线段划分能力补齐后再接入。
+
+    输入：
+      n2_state          : str —— N+2 级别 MACD 六态（classify_macd_state 的 'state'）
+      n2_zero_cross     : str|None —— N+2 级别零轴交叉（detect_zero_cross，'golden'/'dead'/None）
+      bi_types          : list[str] —— N 级别笔类型序列（'up'/'down'，升序）
+      n_price_ma55_dist : float|None —— N 级别价格距 55 线距离%（正=上方）；None=不判位置
+
+    返回 dict：is_main_up / trigger / currently_up / low_position / up_segment
+    """
+    trigger = (n2_state == '极强') or (n2_zero_cross == 'golden')
+    currently_up = bool(bi_types) and bi_types[-1] == 'up'
+    low_position = (n_price_ma55_dist is None) or (n_price_ma55_dist <= LOW_POSITION_THRESHOLD)
+    up_segment = sum(1 for b in bi_types if b == 'up')  # 描述字段，不参与布尔判定
+
+    return {
+        'is_main_up': trigger and currently_up and low_position,
+        'trigger': trigger,
+        'currently_up': currently_up,
+        'low_position': low_position,
+        'up_segment': up_segment,
+    }

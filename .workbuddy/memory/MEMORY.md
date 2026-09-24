@@ -1330,8 +1330,17 @@ SVG 自述的 `date` **取「记录 id 的日期段」，不取 `levels.date`** 
 - `calc_tech.py`：report() 加 `zero_cross`（零轴金叉/死叉）；main() 加 `ma55_grid`
   （三级别 55 线网格）+ `transmission`（15F→60F、60F→日线、日线→周线，日线→周线 target=None）。
 - `analyze_000001_multi.py`：analyze() 补 `macd_state`；main() 加 `xduan` X段判定
-  （三元组 N+2 主涨段→N+1 回踩有无结构→N 级别 X段；主涨段用 macd_state 极强/强**近似**，
-  待 P1-8 严格落地；N+1 有无结构用 bi_count 代理）。
+  （三元组 N+2 主涨段→N+1 回踩有无结构→N 级别 X段；N+1 有无结构用 bi_count 代理）。
+
+**P1-8 主涨段严格公式落地**（2026-09-24 晚，用户「好」）：X段从「单级别 macd_state 极强/强近似」
+升级为「篇5 严格跨级别公式」。
+- `dragonball_signals.py` 新增 `detect_main_up`：触发（极强**或**零轴金叉）+ N 上涨 + N 低位
+  （`LOW_POSITION_THRESHOLD=5.0`）；up_segment 作描述字段不参与布尔。测试扩到 49 断言（+2 变异）。
+- `analyze_000001_multi.py`：analyze() 加 `zero_cross`+`bi_types`；main() 加 `main_up`（四级别）
+  + `xduan`（用 main_up 替换原近似）。真实数据冒烟 EXIT=0。
+- ⚠️ 精度边界（务必记住）：① 四周期（日/120F/60F/15F）非篇4 4 倍级差，「N+2 触发」降级
+  「上一级触发」；② 日线主涨段缺周线，用日线自身近似；③ 「第三/五段」精确段计数需线段划分，
+  chan_signal 只输出笔，up_segment 不参与布尔判定。
 
 **P1 回测结论**（`backtest_dragonball_p1.py`，日线 405 根，篇4 MACD 六态精确口径）：
 1. **六态无独立方向增量**（全部 50%±10% 内）——再次印证「关键位工具，非方向工具」。

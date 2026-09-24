@@ -97,6 +97,20 @@ ck(dbsig.classify_pullback(True, True) == '带结构回踩', '主涨段 + 上一
 ck(dbsig.classify_pullback(False, False) == '非主涨段', '非主涨段 → X 段不适用')
 ck(dbsig.classify_pullback(True, False) == '非主涨段', '非主涨段（即使有结构）→ 不适用')
 
+# A8 主涨段判定（篇5 严格公式：N+2 极强/金叉 + N 上涨 + N 低位）
+r = dbsig.detect_main_up('极强', None, ['up', 'down', 'up'], 2.0)
+ck(r['is_main_up'] is True, '主涨段：极强触发 + 上涨 + 低位 → True')
+r = dbsig.detect_main_up('极强', None, ['up', 'down'], 2.0)
+ck(r['is_main_up'] is False, '最近一笔 down（回调中）→ 非主涨段')
+r = dbsig.detect_main_up('极强', None, ['up'], 8.0)
+ck(r['is_main_up'] is False, '价格远离 55 线（dist>5%）→ 非低位 → 非主涨段')
+r = dbsig.detect_main_up('强', None, ['up'], 2.0)
+ck(r['is_main_up'] is False, 'N+2 非极强且无金叉 → 未触发')
+r = dbsig.detect_main_up('强', 'golden', ['up'], 1.0)
+ck(r['is_main_up'] is True, '零轴金叉触发（篇5「或金叉」并集）→ True')
+r = dbsig.detect_main_up('极强', None, ['up', 'down', 'up', 'down', 'up'], 2.0)
+ck(r['up_segment'] == 3, 'up_segment 描述字段 = 全序列上涨笔数（3）')
+
 print('=== B. 变异测试（判据改错必须被抓住） ===')
 
 _SRC = open(MOD, encoding='utf-8').read()
@@ -133,6 +147,22 @@ if ns:
     mut_grid = ns['build_ma55_grid']
     got = mut_grid({'日线': list(range(1, 56))})['日线']
     ck(got != round(sum(range(1, 56)) / 55.0, 2), 'B3 变异被抓住（除数改错 → 数值漂移）')
+
+# B4 变异主涨段触发：把「极强 或 金叉」的 or 改成 and（把并集改成交集）。
+ns = mutate("(n2_state == '极强') or (n2_zero_cross == 'golden')",
+            "(n2_state == '极强') and (n2_zero_cross == 'golden')", '主涨段触发 or→and')
+if ns:
+    mut_mu = ns['detect_main_up']
+    caught = (mut_mu('极强', None, ['up'], 2.0)['is_main_up'] is False)  # 极强但无金叉应被误判为未触发
+    ck(caught, 'B4 变异被抓住（or 改 and → 极强单触发被漏判）')
+
+# B5 变异低位阈值：<= 改 <（丢掉 dist==5.0 边界）。
+ns = mutate('n_price_ma55_dist <= LOW_POSITION_THRESHOLD',
+            'n_price_ma55_dist < LOW_POSITION_THRESHOLD', '低位阈值 <= → <')
+if ns:
+    mut_mu = ns['detect_main_up']
+    caught = (mut_mu('极强', None, ['up'], 5.0)['low_position'] is False)  # 边界 5.0 应被判为低位
+    ck(caught, 'B5 变异被抓住（<= 改 < → dist=5.0 边界被漏判为非低位）')
 
 print('=== C. 语义隔离测试（稳定性 ≠ 动能） ===')
 
