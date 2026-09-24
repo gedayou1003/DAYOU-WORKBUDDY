@@ -97,8 +97,13 @@ def analyze(df, tag):
     mstate = classify_macd_state(float(dif.iloc[-1]), float(dea.iloc[-1]))
     zcross = detect_zero_cross(float(dif.iloc[-1]), float(dea.iloc[-1]),
                                float(dif.iloc[-2]), float(dea.iloc[-2]))
-    # 笔类型序列（供主涨段/X段判定；篇3 已确认「带结构段=笔」）
-    bi_types = [b.get('bi_type') for b in engine.get('bi_list', [])]
+    # 笔列表（完整，含价格；供线段划分 divide_segments / 主涨段判定）
+    bis = [{'bi_type': b.get('bi_type'),
+            'start_price': float(b.get('start_price', 0) or 0),
+            'end_price': float(b.get('end_price', 0) or 0),
+            'start_date': b.get('start_date'),
+            'end_date': b.get('end_date')}
+           for b in engine.get('bi_list', [])]
 
     return {
         'tag': tag, 'price': round(price, 2), 'trend': trend, 'pzs': pzs,
@@ -106,7 +111,7 @@ def analyze(df, tag):
         'ma_dist_pct': round(ma_dist, 2),
         'macd_state': mstate['state'], 'macd_state_side': mstate['side'],
         'zero_cross': zcross,
-        'bi_types': bi_types,
+        'bis': bis,
         'latest_signal': latest, 'recent_signals': signals[:6],
         'bi_count': structure['bi_count'], 'zhongshu_count': structure['zhongshu_count'],
         'last_zs': zs_last,
@@ -223,17 +228,17 @@ def main():
     #   最顶层「日线主涨段」缺周线触发，用日线自身极强/金叉 + 上涨 + 低位近似（标注待周线接入）。
     # X段（classify_pullback）：N+2 主涨段 → N+1 回踩中轨（有无结构）→ N 级别 X段。
     #   N+1 有无结构用 bi_count（笔数）代理（一笔必含顶分型+底分型+合并K线）。
-    def _main_up(n2_state, n2_zc, bi_types, dist):
-        return detect_main_up(n2_state, n2_zc, bi_types, dist)['is_main_up']
+    def _main_up(n2_state, n2_zc, bis, dist):
+        return detect_main_up(n2_state, n2_zc, bis, dist)['is_main_up']
 
     main_up_day = _main_up(results['日线']['macd_state'], results['日线']['zero_cross'],
-                           results['日线']['bi_types'], results['日线']['ma_dist_pct'])
+                           results['日线']['bis'], results['日线']['ma_dist_pct'])
     main_up_120 = _main_up(results['日线']['macd_state'], results['日线']['zero_cross'],
-                           results['120分钟']['bi_types'], results['120分钟']['ma_dist_pct'])
+                           results['120分钟']['bis'], results['120分钟']['ma_dist_pct'])
     main_up_60 = _main_up(results['120分钟']['macd_state'], results['120分钟']['zero_cross'],
-                          results['60分钟']['bi_types'], results['60分钟']['ma_dist_pct'])
+                          results['60分钟']['bis'], results['60分钟']['ma_dist_pct'])
     main_up_15 = _main_up(results['60分钟']['macd_state'], results['60分钟']['zero_cross'],
-                          results['15分钟']['bi_types'], results['15分钟']['ma_dist_pct'])
+                          results['15分钟']['bis'], results['15分钟']['ma_dist_pct'])
 
     main_up = {
         '日线主涨段': main_up_day,

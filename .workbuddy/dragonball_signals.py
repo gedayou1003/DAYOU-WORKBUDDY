@@ -187,34 +187,35 @@ def classify_pullback(has_structure_n1, is_main_up_n2):
 LOW_POSITION_THRESHOLD = 5.0
 
 
-def detect_main_up(n2_state, n2_zero_cross, bi_types, n_price_ma55_dist=None):
-    """篇5 主涨段判定（严格公式，落地版）。
+def detect_main_up(n2_state, n2_zero_cross, bis, n_price_ma55_dist=None):
+    """篇5 主涨段判定（严格公式，落地版，线段计数）。
 
     原文：N+2 级别 MACD 进入极强（或金叉）→ N 级别在「低位出现结构」后出现主涨段；
           低位结构一般是「第三段或第五段上涨」，极度强势时第一段即可（概率偏小）。
 
     落地判据（三个可观测条件，缺一不可）：
       1. N+2 触发：macd_state == '极强' **或** 零轴金叉（篇5「极强状态，或金叉状态」的「或」=并集）。
-      2. N 级别当前上涨：最近一笔 up（「出现结构」= 已走出上涨笔）。
+      2. N 级别当前上涨：最近一个**线段**方向 up（「出现结构」= 已走出上涨线段）。
       3. N 级别低位：价格距 55 线 ≤ LOW_POSITION_THRESHOLD%（未大涨）。
 
-    ⚠️ 精度边界：「第三/五段上涨」的精确段计数需要缠论**线段**划分，而 chan_signal 引擎
-    只输出**笔**（bi_list，篇3 已确认「带结构段 = 顶分型+底分型+合并≥1K」即笔）。本函数把
-    up_segment（全序列上涨笔序号）作**描述字段**输出，**不参与**主涨段布尔判定 ——
-    精确的「第几段」待线段划分能力补齐后再接入。
+    段计数：up_segment = 全序列「上涨**线段**数」（用 divide_segments 把笔合成线段；
+    篇5 的「第三/五段上涨」的「段」是**线段**，非篇3 的「带结构段=笔」——两者粒度不同）。
+    ⚠️ 口径边界：up_segment 是「全序列」上涨线段数（随数据起点漂移），精确的
+    「从大级别底部起的第几段」需跨级别底部识别，暂未接；up_segment 作描述字段不参与布尔判定。
 
     输入：
       n2_state          : str —— N+2 级别 MACD 六态（classify_macd_state 的 'state'）
       n2_zero_cross     : str|None —— N+2 级别零轴交叉（detect_zero_cross，'golden'/'dead'/None）
-      bi_types          : list[str] —— N 级别笔类型序列（'up'/'down'，升序）
+      bis               : list[dict] —— N 级别笔列表（每笔含 bi_type/start_price/end_price，升序）
       n_price_ma55_dist : float|None —— N 级别价格距 55 线距离%（正=上方）；None=不判位置
 
-    返回 dict：is_main_up / trigger / currently_up / low_position / up_segment
+    返回 dict：is_main_up / trigger / currently_up / low_position / up_segment / n_segments
     """
     trigger = (n2_state == '极强') or (n2_zero_cross == 'golden')
-    currently_up = bool(bi_types) and bi_types[-1] == 'up'
+    segs = divide_segments(bis)
+    up_segment = sum(1 for s in segs if s['direction'] == 'up')
+    currently_up = bool(segs) and segs[-1]['direction'] == 'up'
     low_position = (n_price_ma55_dist is None) or (n_price_ma55_dist <= LOW_POSITION_THRESHOLD)
-    up_segment = sum(1 for b in bi_types if b == 'up')  # 描述字段，不参与布尔判定
 
     return {
         'is_main_up': trigger and currently_up and low_position,
@@ -222,4 +223,229 @@ def detect_main_up(n2_state, n2_zero_cross, bi_types, n_price_ma55_dist=None):
         'currently_up': currently_up,
         'low_position': low_position,
         'up_segment': up_segment,
+        'n_segments': len(segs),
+    }
+
+
+# ============================================================================
+# 缠论线段划分（特征序列分型法）
+# ============================================================================
+
+def divide_segments(bis):
+    """缠论线段划分（特征序列分型法，简化版）。
+
+    把「笔」（chan_signal 的 bi_list）合成「线段」——线段是比笔更大的结构，
+    一个线段由至少 3 笔构成。篇5 的「第三段/第五段上涨」的「段」指的是**线段**，
+    不是篇3 的「带结构段=笔」（两者粒度不同）。
+
+    输入 bis：按时间升序的笔列表，每笔至少含：
+      bi_type     : 'up'/'down'
+      start_price : 笔起点价（up 笔=低点，down 笔=高点）
+      end_price   : 笔终点价（up 笔=高点，down 笔=低点）
+      start_date / end_date : 起止时间（可选）
+
+    输出 segments：每段 {direction, start_price, end_price, start_date, end_date, bi_count}
+
+    规则（缠中说禅原文简化，⚠️ 不含「特征序列缺口」的特殊处理）：
+      1. 线段方向 = 第一笔方向；
+      2. 特征序列 = 线段内与方向**相反**的笔（向上段的特征序列是其中的向下笔，反之亦然）；
+      3. 向上段：特征序列出现「顶分型」（中间元素高点最高 **且** 低点最高）→ 线段结束于
+         分型极点（顶分型的最高点）；向下段对称找「底分型」；
+      4. 分型的中间元素作为下一线段的第一笔（其方向即新线段方向）。
+
+    缺口边界：缠论标准里「特征序列第一、二元素之间存在缺口」时，线段结束条件更严
+    （需等反向特征序列分型确认）。本简化版不区分缺口，遇到缺口场景可能比标准更早判结束
+    —— 对「第几段上涨」的计数用途影响有限，已明确标注。
+    """
+    if not bis or len(bis) < 3:
+        return []
+
+    segments = []
+    seg_bis = [bis[0]]
+    direction = bis[0]['bi_type']
+
+    def _end_price_of(seg, direction):
+        # 段终点：向上段取段内最高（最后一笔终点或分型极点），向下段取最低
+        if direction == 'up':
+            return max(b['end_price'] for b in seg)
+        return min(b['end_price'] for b in seg)
+
+    for bi in bis[1:]:
+        seg_bis.append(bi)
+        feature = [b for b in seg_bis if b['bi_type'] != direction]
+        if len(feature) < 3:
+            continue
+        f1, f2, f3 = feature[-3], feature[-2], feature[-1]
+        if direction == 'up':
+            # 特征序列是 down 笔：顶分型 = f2 高点(start)最高 且 低点(end)最高
+            broken = (f2['start_price'] > f1['start_price'] and
+                      f2['start_price'] > f3['start_price'] and
+                      f2['end_price'] > f1['end_price'] and
+                      f2['end_price'] > f3['end_price'])
+            pole = f2['start_price']
+        else:
+            # 特征序列是 up 笔：底分型 = f2 低点(end)最低 且 高点(start)最低
+            broken = (f2['end_price'] < f1['end_price'] and
+                      f2['end_price'] < f3['end_price'] and
+                      f2['start_price'] < f1['start_price'] and
+                      f2['start_price'] < f3['start_price'])
+            pole = f2['end_price']
+        if not broken:
+            continue
+        # 线段结束于 f2（分型中间元素）；f2 之前的笔 + f2 的极点构成当前段
+        idx_f2 = seg_bis.index(f2) if f2 in seg_bis else len(seg_bis) - 1
+        cur = seg_bis[:idx_f2]          # f2 之前的笔
+        head = seg_bis[0]
+        segments.append({
+            'direction': direction,
+            'start_price': head['start_price'],
+            'end_price': pole,
+            'start_date': head.get('start_date'),
+            'end_date': f2.get('start_date'),
+            'bi_count': len(cur),
+        })
+        # 新线段从 f2 开始
+        seg_bis = seg_bis[idx_f2:]
+        direction = seg_bis[0]['bi_type']
+
+    if seg_bis:
+        head = seg_bis[0]
+        segments.append({
+            'direction': direction,
+            'start_price': head['start_price'],
+            'end_price': _end_price_of(seg_bis, direction),
+            'start_date': head.get('start_date'),
+            'end_date': seg_bis[-1].get('end_date'),
+            'bi_count': len(seg_bis),
+        })
+    return segments
+
+
+# ============================================================================
+# P1-9  主涨特征解除的两路径状态机
+# ============================================================================
+
+def track_break(prev_state, close, ma20):
+    """篇5 主涨特征解除后的两条演化路径（一步状态转移）。
+
+    原文：有效跌破 N-1 中轨 → 主涨特征解除（**但不等于下跌**），一般两种演化：
+      ① 反抽被中轨压制（弱势甚至被 N-2 中轨压制）；
+      ② 反抽突破中轨（甚至金叉）→ 后续不管是否新高，**二次跌破**中轨（泛指最后一次
+        有效跌破）→ 至少回踩 N-1 的 55 线，实现对 N 级别中轨的回踩。
+
+    核心语义（蓝图原则）：**「解除 ≠ 下跌」，单次收盘跌破中轨只是解除候选，二次跌破才算数。**
+
+    输入：
+      prev_state : str —— 上一状态（'维持'/'解除'/'反抽突破'/'二次跌破'，首日传 '维持'）
+      close      : float —— 当日收盘价
+      ma20       : float —— 中轨（MA20 近似）
+
+    返回 (new_state, verdict)：
+      '维持'    ：主涨特征维持（收盘在中轨上方）
+      '解除'    ：首次有效跌破中轨（主涨特征解除，不等于下跌）
+      '反抽突破'：解除后反抽突破中轨（路径②）
+      '二次跌破'：反抽突破后再次跌破中轨（回调升级确认，至少回踩 55 线）
+    """
+    if close < ma20:  # 收盘在中轨下方
+        if prev_state in ('反抽突破', '二次跌破'):
+            return '二次跌破', '二次跌破中轨确认，回调升级，至少回踩 55 线'
+        if prev_state == '解除':
+            return '解除', '中轨下方盘整（反抽未突破，路径①被压制）'
+        return '解除', '首次有效跌破中轨，主涨特征解除（不等于下跌）'
+    else:  # 收盘在中轨上方
+        if prev_state == '解除':
+            return '反抽突破', '反抽突破中轨（路径②，可能伴随金叉）'
+        return '维持', '主涨特征维持'
+
+
+# ============================================================================
+# P2-12  尾指数（Hill 估计量，无需 scipy）
+# ============================================================================
+
+def hill_tail_index(returns, k=None):
+    """Hill 估计量估厚尾指数 ξ（篇1 尾部脆弱性 V_tail = 1/ξ）。
+
+    篇1：尾部脆弱性用广义帕累托分布（GPD）尾指数 ξ 刻画 —— ξ>0 厚尾，ξ 越小尾越厚、
+    极端损失概率越高、脆弱性越强，V_tail = 1/ξ。Hill 估计量是 ξ 的无参估计，
+    只依赖 numpy（项目 venv 无 scipy，故不用 scipy.stats.genpareto）。
+
+    输入：
+      returns : list[float] —— 收益率序列（负值=下跌）
+      k       : int|None —— 用于估计的极端观测数；None 默认 max(10, 10% 样本)
+
+    返回 dict：xi / v_tail / n（损失样本数）/ k（用到的尾观测数）/ note（异常说明）
+
+    口径：对「损失尾」（下跌）估 ξ —— 损失 = -return（只取下跌日，正数）。
+    """
+    import math
+    losses = sorted([-r for r in returns if r < 0], reverse=True)  # 降序：最大损失在前
+    n = len(losses)
+    if n < 10:
+        return {'xi': None, 'v_tail': None, 'n': n, 'k': 0, 'note': '下跌样本不足 10'}
+    k = k or max(10, int(n * 0.1))
+    k = min(k, n - 1)
+    if k < 2:
+        return {'xi': None, 'v_tail': None, 'n': n, 'k': k, 'note': '尾观测数不足'}
+    threshold = losses[k]  # 第 k+1 大损失 = 阈值
+    xi = sum(math.log(losses[i]) - math.log(threshold) for i in range(k)) / k
+    xi = max(xi, 1e-6)  # 防 0/负 → 除零
+    return {'xi': round(xi, 4), 'v_tail': round(1.0 / xi, 4), 'n': n, 'k': k}
+
+
+# ============================================================================
+# P2-10  双级差体系 B：双日/双周聚合
+# ============================================================================
+
+def aggregate_double(rows):
+    """把日线/周线每 2 根聚合为「双日/双周」（篇4 体系 B 的 2 倍级差）。
+
+    篇4 体系 B：1F-5F-30F-120F-双日-双周。「双日」= 2 根日线合并、「双周」= 2 根周线合并，
+    标准接口不直接给这两个周期，故从日线/周线聚合。
+
+    输入 rows：升序 OHLC 序列，每根 {date, open, close, high, low, vol}（vol 可缺省）
+    输出：每 2 根合并为 1 根（最后若剩单根则丢弃）——
+      date  = 第 2 根 date；open = 第 1 根 open；close = 第 2 根 close；
+      high  = max(两根 high)；low = min(两根 low)；vol = 两根 vol 之和。
+    """
+    out = []
+    for i in range(0, len(rows) - 1, 2):
+        a, b = rows[i], rows[i + 1]
+        def _f(v):
+            return v if v is not None else 0
+        out.append({
+            'date': b.get('date'),
+            'open': _f(a.get('open')),
+            'close': _f(b.get('close')),
+            'high': max(_f(a.get('high')), _f(b.get('high'))),
+            'low': min(_f(a.get('low')), _f(b.get('low'))),
+            'vol': _f(a.get('vol')) + _f(b.get('vol')),
+        })
+    return out
+
+
+# ============================================================================
+# P2-11  集中度 Σwi²（抱团度量）
+# ============================================================================
+
+def concentration(weights):
+    """集中度 Σwi²（篇2 詹森不等式里的 E[X]=Σwi²）。
+
+    篇2：把资金权重视为概率分布，E[X]=Σwi² 是「资金集中度」的数学表达——
+    分散行情 E[X]=1/n→0，主线集中 E[X]=1/k（k≪n）越大。Σwi² 越大 = 抱团越明显。
+
+    输入 weights：权重列表（如各行业成交额占比，不必归一化，内部会归一）
+    输出 dict：concentration（Σwi²，∈[1/n,1]）/ n / max_weight / hhi（赫芬达尔指数，=Σwi²）
+    """
+    if not weights:
+        return {'concentration': None, 'n': 0, 'max_weight': None, 'hhi': None}
+    total = sum(weights)
+    if total <= 0:
+        return {'concentration': None, 'n': len(weights), 'max_weight': None, 'hhi': None}
+    w = [x / total for x in weights]
+    conc = sum(x * x for x in w)
+    return {
+        'concentration': round(conc, 6),
+        'hhi': round(conc, 6),
+        'n': len(w),
+        'max_weight': round(max(w), 6),
     }
