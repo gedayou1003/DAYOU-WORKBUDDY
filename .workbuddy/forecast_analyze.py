@@ -37,6 +37,7 @@ CHAIN = os.path.join(HERE, 'forecast_chain.json')
 sys.path.insert(0, HERE)
 from market_codes import resolve
 import qt_api      # 腾讯接口多域名 failover（2026-09-18：web.ifzq.gtimg.cn 被代理拦）
+from dragonball_signals import classify_macd_state  # DRAGONBALL 融合 P0（2026-09-24）
 
 
 def run_py(script, *args):
@@ -169,6 +170,23 @@ def fetch_history(tencent_code, count=60):
     return rows
 
 
+def _macd(closes):
+    """EMA12/EMA26 → DIF，EMA9 → DEA（与 calc_tech.py 同口径）。返回 (dif, dea)。"""
+    def _ema(vals, n):
+        k = 2 / (n + 1)
+        e = vals[0]
+        out = [e]
+        for v in vals[1:]:
+            e = v * k + e * (1 - k)
+            out.append(e)
+        return out
+    e12 = _ema(closes, 12)
+    e26 = _ema(closes, 26)
+    dif = [a - b for a, b in zip(e12, e26)]
+    dea = _ema(dif, 9)
+    return dif, dea
+
+
 def compute_tj_bypass(tencent_code):
     """DRAGON BALL模型 旁路状态检测（backtest_tj_v2.py 回测已验证的两个短线辅助信号）。
 
@@ -176,6 +194,10 @@ def compute_tj_bypass(tencent_code):
     - 持续极强：日线 55 线上方连续加速 2 日 → 短线不追高（次日跌 46.6% vs 涨 32.8%）
     - 解除极弱：55 线下方减速 → 超跌反弹（越跌越买）
     无触发时 signal/note 为 None。
+
+    2026-09-24 融合 P0：新增 `macd_state` / `macd_state_side`（篇4 的 MACD 六态「稳定性」
+    分类）。注意与上面 `state_now`（价格相对 55 线的「加速/减速」动量口径）**语义不同**——
+    前者刻画趋势持续性（DIF/DEA 符号），后者刻画价格动量，二者并存、不互相覆盖。
     """
     try:
         rows = fetch_history(tencent_code, 60)
@@ -209,12 +231,19 @@ def compute_tj_bypass(tencent_code):
             states.append("其他")
 
     s_now, s_prev = states[-1], states[-2]
+
+    # 篇4 MACD 六态（稳定性分类，与上面的动量口径独立）
+    dif, dea = _macd(closes)
+    mstate = classify_macd_state(dif[-1], dea[-1])
+
     out = {
         "close": closes[-1],
         "ma20": round(ma(20, n - 1) or 0, 2),
         "ma55": round(ma(55, n - 1) or 0, 2),
         "state_now": s_now,
         "state_prev": s_prev,
+        "macd_state": mstate['state'],
+        "macd_state_side": mstate['side'],
     }
     if s_prev == "极强" and s_now == "极强":
         out["signal"] = "持续极强"

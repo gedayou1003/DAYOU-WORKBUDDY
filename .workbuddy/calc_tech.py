@@ -18,6 +18,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE)
 from market_codes import resolve
 from qt_api import get_json as _qt_json   # 域名 failover 统一入口（2026-09-18）
+from dragonball_signals import classify_macd_state, classify_break  # DRAGONBALL 融合 P0（2026-09-24）
 
 
 def _get(url):
@@ -70,6 +71,10 @@ def report(name, rows):
         cross = ' → 金叉成立（本根）'
     elif d < e and d1 >= e1:
         cross = ' → 死叉成立（本根）'
+    # DRAGONBALL 融合 P0（2026-09-24）：MACD 六态「稳定性」分类（篇4）。
+    # 与 zone（多头/空头区）/ dif_dir / dea_dir（动能方向）**语义独立**——
+    # 六态刻画「趋势持续性」，动能刻画「方向变化」，二者不可混用（融合蓝图 §一·3）。
+    _st = classify_macd_state(d, e)
     return {
         'name': name, 't': last['t'], 'close': last['c'],
         'ma55': round(m55, 2) if m55 else None,
@@ -77,11 +82,16 @@ def report(name, rows):
         'dif': round(d, 2), 'dea': round(e, 2),
         'prev_dif': round(d1, 2), 'prev_dea': round(e1, 2),
         'zone': trend + cross,
+        'macd_state': _st['state'],
+        'macd_state_side': _st['side'],
         'gap': round(d - e, 2),
         'dif_dir': '向上' if d > d1 else '向下',
         'dea_dir': '向上' if e > e1 else '向下',
         'close_vs_ma55': ('上方' if m55 and last['c'] > m55 else '下方'),
         'close_vs_ma20': ('上方' if m20 and last['c'] > m20 else '下方'),
+        # DRAGONBALL 融合 P0（2026-09-24）：刺破/有效跌破语义分层（篇4/5）。
+        # 「刺破=预警、有效跌破=确认、破55=分水岭」，用收盘价判「有效」，盘中最低判「刺破」。
+        'break_state': classify_break(last['c'], last['l'], m20, m55) if (m20 is not None and m55 is not None) else None,
         'ma55_pct': round((last['c'] - m55) / m55 * 100, 2) if m55 else None,
         'ma20_pct': round((last['c'] - m20) / m20 * 100, 2) if m20 else None,
     }
