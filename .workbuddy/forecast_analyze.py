@@ -37,7 +37,8 @@ CHAIN = os.path.join(HERE, 'forecast_chain.json')
 sys.path.insert(0, HERE)
 from market_codes import resolve
 import qt_api      # 腾讯接口多域名 failover（2026-09-18：web.ifzq.gtimg.cn 被代理拦）
-from dragonball_signals import classify_macd_state  # DRAGONBALL 融合 P0（2026-09-24）
+from dragonball_signals import classify_macd_state, hill_tail_index  # DRAGONBALL 融合 P0/P2
+from dragonball_narrative import vol_trend, price_trend, reflexivity_stage, build_risk_note  # D 叙事层（2026-09-24）
 
 
 def run_py(script, *args):
@@ -254,6 +255,17 @@ def compute_tj_bypass(tencent_code):
     else:
         out["signal"] = None
         out["note"] = None
+
+    # D 叙事层（篇1 反身性四阶段 → 风险提示，定性、不进打分）
+    try:
+        _vt = vol_trend(closes)
+        _pt = price_trend(closes)
+        _stage = reflexivity_stage(_pt, _vt)
+        _rets = [(closes[i] - closes[i - 1]) / closes[i - 1] * 100 for i in range(1, len(closes))]
+        _xi = hill_tail_index(_rets)['xi']
+        out["risk_note"] = build_risk_note(_stage, tail_xi=_xi)
+    except Exception:
+        out["risk_note"] = None
     return out
 
 
