@@ -30,6 +30,8 @@
         → 历史快照与运行时件，不参与对外输出
     · .workbuddy/memory/** 与 _sync_家里/**
         → 内部记忆、家用同步副本
+    · .workbuddy/_tj_docs/**（T&J 原文「一字不差」归档，git 已跟踪）
+        → 数据层原文，脱敏即破坏「一字不差」归档要求，非对外产物
     · outputs/ 下非当日的历史报告
         → 历史产物不动
     · 本文件、display_names.py、_rename_tj_0918.py
@@ -49,7 +51,7 @@ for _s in (sys.stdout, sys.stderr):
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # 需要排除的目录（整棵子树）
-SKIP_DIRS = {'.git', 'node_modules', '__pycache__', '_sync_家里', 'archive'}
+SKIP_DIRS = {'.git', 'node_modules', '__pycache__', '_sync_家里', 'archive', '_tj_docs'}
 # 命中的文件名（按 basename 精确匹配）
 SKIP_FILES = {
     'fetch_zsxq.py', 'fetch_zsxq_fallback.py', 'backfill_zsxq_window.py',
