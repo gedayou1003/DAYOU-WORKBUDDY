@@ -55,7 +55,7 @@ SKIP_DIRS = {'.git', 'node_modules', '__pycache__', '_sync_家里', 'archive', '
 # 命中的文件名（按 basename 精确匹配）
 SKIP_FILES = {
     'fetch_zsxq.py', 'fetch_zsxq_fallback.py', 'backfill_zsxq_window.py',
-    'anonymize_report.py',
+    'anonymize_report.py', 'anonymize_ops_report.py',
     # display_names.py 是脱敏规则本体，必然含全部匹配串 —— 它**就是**脱敏机制
     'display_names.py',
     'forecast_chain.json', 'consensus_chain.json', 'zsxq_fetch_raw.json',

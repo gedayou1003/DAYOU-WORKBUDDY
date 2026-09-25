@@ -40,6 +40,12 @@ _RULES = (
     (re.compile(r'T\\&J'), DISPLAY_ALIAS),   # anonymize_report.py 里的转义写法
     (re.compile(r'T&J'), DISPLAY_ALIAS),
     (re.compile(r'(?<![A-Za-z_])TJ(?![A-Za-z_])'), DISPLAY_ALIAS),
+    # 2026-09-26 用户指令：对外名从「DRAGON BALL」进一步统一为「星球③」。
+    # 数据层落链时可能已手写成 DRAGON BALL（非原名），一并收编为编号。
+    # 顺序敏感：DRAGON BALL模型 先于 DRAGON BALL，避免「模型」残留。
+    (re.compile(r'DRAGON BALL模型'), '星球③'),
+    (re.compile(r'DRAGON BALL'), '星球③'),
+    (re.compile(r'DRAGON_BALL'), '星球③'),
 )
 
 
