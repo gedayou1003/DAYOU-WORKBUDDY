@@ -1,0 +1,1183 @@
+{
+ "periods": {
+  "日线": {
+   "tag": "日线",
+   "price": 3888.37,
+   "trend": "向上",
+   "pzs": "在中枢内部或未明显离开（中枢上沿:3884.44 下沿:3842.72）",
+   "ma55": 3904.34,
+   "ma_pos": "下方",
+   "ma_slope": "向下",
+   "ma_dist_pct": -0.41,
+   "macd_state": "弱",
+   "macd_state_side": "空头",
+   "zero_cross": null,
+   "bis": [
+    {
+     "bi_type": "up",
+     "start_price": 2689.7,
+     "end_price": 3674.4,
+     "start_date": "2024-09-18 00:00:00",
+     "end_date": "2024-10-08 00:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3674.4,
+     "end_price": 3266.88,
+     "start_date": "2024-10-08 00:00:00",
+     "end_date": "2024-10-24 00:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3244.81,
+     "end_price": 3509.82,
+     "start_date": "2024-10-30 00:00:00",
+     "end_date": "2024-11-08 00:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3509.82,
+     "end_price": 3284.13,
+     "start_date": "2024-11-08 00:00:00",
+     "end_date": "2024-11-19 00:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3227.36,
+     "end_price": 3494.87,
+     "start_date": "2024-11-27 00:00:00",
+     "end_date": "2024-12-10 00:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3494.87,
+     "end_price": 3357.77,
+     "start_date": "2024-12-10 00:00:00",
+     "end_date": "2024-12-17 00:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3346.47,
+     "end_price": 3418.95,
+     "start_date": "2024-12-19 00:00:00",
+     "end_date": "2024-12-27 00:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3418.95,
+     "end_price": 3185.46,
+     "start_date": "2024-12-27 00:00:00",
+     "end_date": "2025-01-06 00:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3140.98,
+     "end_price": 3268.26,
+     "start_date": "2025-01-13 00:00:00",
+     "end_date": "2025-01-20 00:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3392.41,
+     "end_price": 3340.24,
+     "start_date": "2025-03-12 00:00:00",
+     "end_date": "2025-03-24 00:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3040.69,
+     "end_price": 3311.15,
+     "start_date": "2025-04-07 00:00:00",
+     "end_date": "2025-04-22 00:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3311.15,
+     "end_price": 3277.55,
+     "start_date": "2025-04-22 00:00:00",
+     "end_date": "2025-04-30 00:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3277.55,
+     "end_price": 3402.87,
+     "start_date": "2025-04-30 00:00:00",
+     "end_date": "2025-05-15 00:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3402.87,
+     "end_price": 3332.49,
+     "start_date": "2025-05-15 00:00:00",
+     "end_date": "2025-05-27 00:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3332.49,
+     "end_price": 3413.51,
+     "start_date": "2025-05-27 00:00:00",
+     "end_date": "2025-06-11 00:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3413.51,
+     "end_price": 3347.65,
+     "start_date": "2025-06-11 00:00:00",
+     "end_date": "2025-06-23 00:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3347.65,
+     "end_price": 3532.12,
+     "start_date": "2025-06-23 00:00:00",
+     "end_date": "2025-07-14 00:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3888.6,
+     "end_price": 3732.84,
+     "start_date": "2025-08-26 00:00:00",
+     "end_date": "2025-09-04 00:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3732.84,
+     "end_price": 3892.74,
+     "start_date": "2025-09-04 00:00:00",
+     "end_date": "2025-09-12 00:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3899.96,
+     "end_price": 3809.54,
+     "start_date": "2025-09-18 00:00:00",
+     "end_date": "2025-09-29 00:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3800.11,
+     "end_price": 4025.7,
+     "start_date": "2025-10-13 00:00:00",
+     "end_date": "2025-10-30 00:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4025.7,
+     "end_price": 3922.58,
+     "start_date": "2025-10-30 00:00:00",
+     "end_date": "2025-11-05 00:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3922.58,
+     "end_price": 4034.08,
+     "start_date": "2025-11-05 00:00:00",
+     "end_date": "2025-11-14 00:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4034.08,
+     "end_price": 3816.58,
+     "start_date": "2025-11-14 00:00:00",
+     "end_date": "2025-11-24 00:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3816.58,
+     "end_price": 3914.46,
+     "start_date": "2025-11-24 00:00:00",
+     "end_date": "2025-12-01 00:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3936.31,
+     "end_price": 3850.6,
+     "start_date": "2025-12-08 00:00:00",
+     "end_date": "2025-12-12 00:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3815.84,
+     "end_price": 3983.98,
+     "start_date": "2025-12-16 00:00:00",
+     "end_date": "2025-12-29 00:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4098.78,
+     "end_price": 4090.06,
+     "start_date": "2026-01-07 00:00:00",
+     "end_date": "2026-01-19 00:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 4090.06,
+     "end_price": 4160.99,
+     "start_date": "2026-01-19 00:00:00",
+     "end_date": "2026-01-26 00:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4170.21,
+     "end_price": 4048.94,
+     "start_date": "2026-01-29 00:00:00",
+     "end_date": "2026-02-05 00:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 4048.94,
+     "end_price": 4197.23,
+     "start_date": "2026-02-05 00:00:00",
+     "end_date": "2026-03-03 00:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4197.23,
+     "end_price": 4048.09,
+     "start_date": "2026-03-03 00:00:00",
+     "end_date": "2026-03-16 00:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3794.68,
+     "end_price": 3955.94,
+     "start_date": "2026-03-23 00:00:00",
+     "end_date": "2026-04-01 00:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4114.84,
+     "end_price": 4114.09,
+     "start_date": "2026-04-23 00:00:00",
+     "end_date": "2026-05-15 00:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3927.85,
+     "end_price": 4175.35,
+     "start_date": "2026-06-08 00:00:00",
+     "end_date": "2026-06-23 00:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4175.35,
+     "end_price": 3992.55,
+     "start_date": "2026-06-23 00:00:00",
+     "end_date": "2026-06-29 00:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3741.11,
+     "end_price": 3847.09,
+     "start_date": "2026-07-20 00:00:00",
+     "end_date": "2026-07-31 00:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3995.18,
+     "end_price": 3842.72,
+     "start_date": "2026-09-01 00:00:00",
+     "end_date": "2026-09-16 00:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3842.72,
+     "end_price": 3967.68,
+     "start_date": "2026-09-16 00:00:00",
+     "end_date": "2026-09-22 00:00:00"
+    }
+   ],
+   "latest_signal": {
+    "name": "一卖",
+    "type": "sell",
+    "level": 1,
+    "date": "2026-09-22",
+    "price": 3967.68,
+    "confidence": 0.8,
+    "description": "一卖：上涨背驰顶分型（MACD顶背驰确认）"
+   },
+   "recent_signals": [
+    {
+     "name": "一卖",
+     "type": "sell",
+     "level": 1,
+     "date": "2026-09-22",
+     "price": 3967.68,
+     "confidence": 0.8,
+     "description": "一卖：上涨背驰顶分型（MACD顶背驰确认）"
+    }
+   ],
+   "bi_count": 39,
+   "zhongshu_count": 7,
+   "last_zs": {
+    "start_date": "2026-07-20",
+    "end_date": "2026-09-22",
+    "high": 3884.44,
+    "low": 3842.72,
+    "mid": 3863.58,
+    "bi_count": 3
+   }
+  },
+  "120分钟": {
+   "tag": "120分钟",
+   "price": 3888.37,
+   "trend": "向下",
+   "pzs": "在中枢下方（中枢上沿:3970.31 下沿:3915.22）",
+   "ma55": 3922.79,
+   "ma_pos": "下方",
+   "ma_slope": "向下",
+   "ma_dist_pct": -0.88,
+   "macd_state": "中性偏强",
+   "macd_state_side": "多头",
+   "zero_cross": null,
+   "bis": [
+    {
+     "bi_type": "down",
+     "start_price": 3936.58,
+     "end_price": 3851.12,
+     "start_date": "2025-10-09 15:00:00",
+     "end_date": "2025-10-14 15:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3835.36,
+     "end_price": 3919.32,
+     "start_date": "2025-10-17 15:00:00",
+     "end_date": "2025-10-21 15:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4025.7,
+     "end_price": 3937.02,
+     "start_date": "2025-10-30 11:30:00",
+     "end_date": "2025-11-03 11:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3922.58,
+     "end_price": 4024.94,
+     "start_date": "2025-11-05 11:30:00",
+     "end_date": "2025-11-11 11:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4034.08,
+     "end_price": 3926.59,
+     "start_date": "2025-11-14 11:30:00",
+     "end_date": "2025-11-18 15:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3816.58,
+     "end_price": 3895.59,
+     "start_date": "2025-11-24 11:30:00",
+     "end_date": "2025-11-27 15:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3914.46,
+     "end_price": 3859.05,
+     "start_date": "2025-12-01 15:00:00",
+     "end_date": "2025-12-04 11:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3859.05,
+     "end_price": 3936.31,
+     "start_date": "2025-12-04 11:30:00",
+     "end_date": "2025-12-08 15:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3936.31,
+     "end_price": 3850.6,
+     "start_date": "2025-12-08 15:00:00",
+     "end_date": "2025-12-12 11:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3815.84,
+     "end_price": 3937.13,
+     "start_date": "2025-12-16 15:00:00",
+     "end_date": "2025-12-23 11:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3983.98,
+     "end_price": 3955.49,
+     "start_date": "2025-12-29 11:30:00",
+     "end_date": "2025-12-31 15:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3955.49,
+     "end_price": 4098.78,
+     "start_date": "2025-12-31 15:00:00",
+     "end_date": "2026-01-07 11:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4190.87,
+     "end_price": 4090.06,
+     "start_date": "2026-01-14 11:30:00",
+     "end_date": "2026-01-19 11:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 4090.06,
+     "end_price": 4140.84,
+     "start_date": "2026-01-19 11:30:00",
+     "end_date": "2026-01-22 11:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4170.21,
+     "end_price": 4002.78,
+     "start_date": "2026-01-29 15:00:00",
+     "end_date": "2026-02-03 11:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 4002.78,
+     "end_price": 4142.56,
+     "start_date": "2026-02-03 11:30:00",
+     "end_date": "2026-02-11 15:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4197.23,
+     "end_price": 4085.9,
+     "start_date": "2026-03-03 11:30:00",
+     "end_date": "2026-03-06 11:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 4052.55,
+     "end_price": 4141.65,
+     "start_date": "2026-03-09 11:30:00",
+     "end_date": "2026-03-12 11:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4141.65,
+     "end_price": 4048.09,
+     "start_date": "2026-03-12 11:30:00",
+     "end_date": "2026-03-16 11:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3794.68,
+     "end_price": 3924.11,
+     "start_date": "2026-03-23 15:00:00",
+     "end_date": "2026-03-27 15:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4114.84,
+     "end_price": 4061.82,
+     "start_date": "2026-04-23 11:30:00",
+     "end_date": "2026-04-29 11:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 4061.82,
+     "end_price": 4180.21,
+     "start_date": "2026-04-29 11:30:00",
+     "end_date": "2026-05-07 15:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4258.86,
+     "end_price": 4108.6,
+     "start_date": "2026-05-14 11:30:00",
+     "end_date": "2026-05-18 15:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 4067.75,
+     "end_price": 4112.96,
+     "start_date": "2026-05-22 11:30:00",
+     "end_date": "2026-05-29 11:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4112.96,
+     "end_price": 3927.85,
+     "start_date": "2026-05-29 11:30:00",
+     "end_date": "2026-06-08 15:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3927.85,
+     "end_price": 4103.93,
+     "start_date": "2026-06-08 15:00:00",
+     "end_date": "2026-06-16 11:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4103.93,
+     "end_price": 4070.17,
+     "start_date": "2026-06-16 11:30:00",
+     "end_date": "2026-06-22 11:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 4070.17,
+     "end_price": 4133.1,
+     "start_date": "2026-06-22 11:30:00",
+     "end_date": "2026-06-25 11:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4143.31,
+     "end_price": 3967.91,
+     "start_date": "2026-07-01 11:30:00",
+     "end_date": "2026-07-08 11:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3741.11,
+     "end_price": 3858.31,
+     "start_date": "2026-07-20 15:00:00",
+     "end_date": "2026-07-27 15:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3858.31,
+     "end_price": 3767.5,
+     "start_date": "2026-07-27 15:00:00",
+     "end_date": "2026-07-30 15:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3767.5,
+     "end_price": 3967.59,
+     "start_date": "2026-07-30 15:00:00",
+     "end_date": "2026-08-10 15:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3994.18,
+     "end_price": 3883.79,
+     "start_date": "2026-08-18 15:00:00",
+     "end_date": "2026-08-21 11:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3855.35,
+     "end_price": 3970.31,
+     "start_date": "2026-08-24 15:00:00",
+     "end_date": "2026-08-28 11:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3995.18,
+     "end_price": 3915.22,
+     "start_date": "2026-09-01 15:00:00",
+     "end_date": "2026-09-04 15:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3842.72,
+     "end_price": 3967.68,
+     "start_date": "2026-09-16 11:30:00",
+     "end_date": "2026-09-22 11:30:00"
+    }
+   ],
+   "latest_signal": {
+    "name": "一卖",
+    "type": "sell",
+    "level": 1,
+    "date": "2026-09-22",
+    "price": 3967.68,
+    "confidence": 0.5,
+    "description": "一卖：上涨背驰顶分型（无背驰，信号较弱）"
+   },
+   "recent_signals": [
+    {
+     "name": "一卖",
+     "type": "sell",
+     "level": 1,
+     "date": "2026-09-22",
+     "price": 3967.68,
+     "confidence": 0.5,
+     "description": "一卖：上涨背驰顶分型（无背驰，信号较弱）"
+    }
+   ],
+   "bi_count": 36,
+   "zhongshu_count": 6,
+   "last_zs": {
+    "start_date": "2026-08-18",
+    "end_date": "2026-09-22",
+    "high": 3970.31,
+    "low": 3915.22,
+    "mid": 3942.765,
+    "bi_count": 4
+   }
+  },
+  "60分钟": {
+   "tag": "60分钟",
+   "price": 3888.37,
+   "trend": "向下",
+   "pzs": "在中枢下方（中枢上沿:3967.59 下沿:3927.55）",
+   "ma55": 3914.31,
+   "ma_pos": "下方",
+   "ma_slope": "向下",
+   "ma_dist_pct": -0.66,
+   "macd_state": "极弱",
+   "macd_state_side": "空头",
+   "zero_cross": null,
+   "bis": [
+    {
+     "bi_type": "down",
+     "start_price": 3955.94,
+     "end_price": 3871.3,
+     "start_date": "2026-04-01 14:00:00",
+     "end_date": "2026-04-03 14:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3871.3,
+     "end_price": 3995.0,
+     "start_date": "2026-04-03 14:00:00",
+     "end_date": "2026-04-08 15:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4114.84,
+     "end_price": 4061.15,
+     "start_date": "2026-04-23 10:30:00",
+     "end_date": "2026-04-24 11:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 4061.15,
+     "end_price": 4092.83,
+     "start_date": "2026-04-24 11:30:00",
+     "end_date": "2026-04-27 14:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4258.86,
+     "end_price": 4109.99,
+     "start_date": "2026-05-14 10:30:00",
+     "end_date": "2026-05-19 11:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 4109.99,
+     "end_price": 4199.53,
+     "start_date": "2026-05-19 11:30:00",
+     "end_date": "2026-05-21 10:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4199.53,
+     "end_price": 4067.75,
+     "start_date": "2026-05-21 10:30:00",
+     "end_date": "2026-05-22 10:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 4067.75,
+     "end_price": 4153.88,
+     "start_date": "2026-05-22 10:30:00",
+     "end_date": "2026-05-25 15:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4153.88,
+     "end_price": 4070.25,
+     "start_date": "2026-05-25 15:00:00",
+     "end_date": "2026-05-28 10:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 4032.58,
+     "end_price": 4107.05,
+     "start_date": "2026-06-02 10:30:00",
+     "end_date": "2026-06-03 15:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4107.05,
+     "end_price": 3938.71,
+     "start_date": "2026-06-03 15:00:00",
+     "end_date": "2026-06-08 10:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3927.85,
+     "end_price": 4010.87,
+     "start_date": "2026-06-08 14:00:00",
+     "end_date": "2026-06-09 15:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4010.87,
+     "end_price": 3958.44,
+     "start_date": "2026-06-09 15:00:00",
+     "end_date": "2026-06-11 11:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3958.44,
+     "end_price": 4092.23,
+     "start_date": "2026-06-11 11:30:00",
+     "end_date": "2026-06-15 10:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4175.35,
+     "end_price": 4007.86,
+     "start_date": "2026-06-23 11:30:00",
+     "end_date": "2026-06-26 11:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3992.55,
+     "end_price": 4143.31,
+     "start_date": "2026-06-29 10:30:00",
+     "end_date": "2026-07-01 11:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4143.31,
+     "end_price": 4019.21,
+     "start_date": "2026-07-01 11:30:00",
+     "end_date": "2026-07-02 15:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3938.88,
+     "end_price": 4074.83,
+     "start_date": "2026-07-09 11:30:00",
+     "end_date": "2026-07-10 14:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 4074.83,
+     "end_price": 3869.3,
+     "start_date": "2026-07-10 14:00:00",
+     "end_date": "2026-07-14 11:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3869.3,
+     "end_price": 3940.45,
+     "start_date": "2026-07-14 11:30:00",
+     "end_date": "2026-07-16 11:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3940.45,
+     "end_price": 3745.17,
+     "start_date": "2026-07-16 11:30:00",
+     "end_date": "2026-07-17 14:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3741.11,
+     "end_price": 3884.44,
+     "start_date": "2026-07-20 15:00:00",
+     "end_date": "2026-07-22 11:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3884.44,
+     "end_price": 3851.71,
+     "start_date": "2026-07-22 11:30:00",
+     "end_date": "2026-07-23 11:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3767.5,
+     "end_price": 3847.08,
+     "start_date": "2026-07-30 14:00:00",
+     "end_date": "2026-07-31 15:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3967.59,
+     "end_price": 3927.55,
+     "start_date": "2026-08-10 15:00:00",
+     "end_date": "2026-08-12 10:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3905.76,
+     "end_price": 3992.09,
+     "start_date": "2026-08-14 11:30:00",
+     "end_date": "2026-08-18 10:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3994.18,
+     "end_price": 3879.58,
+     "start_date": "2026-08-18 15:00:00",
+     "end_date": "2026-08-19 15:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3879.58,
+     "end_price": 3911.08,
+     "start_date": "2026-08-19 15:00:00",
+     "end_date": "2026-08-21 10:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3995.18,
+     "end_price": 3930.45,
+     "start_date": "2026-09-01 14:00:00",
+     "end_date": "2026-09-03 14:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3915.22,
+     "end_price": 3951.32,
+     "start_date": "2026-09-04 15:00:00",
+     "end_date": "2026-09-08 11:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3958.12,
+     "end_price": 3852.03,
+     "start_date": "2026-09-09 15:00:00",
+     "end_date": "2026-09-11 11:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3852.03,
+     "end_price": 3891.48,
+     "start_date": "2026-09-11 11:30:00",
+     "end_date": "2026-09-15 11:30:00"
+    }
+   ],
+   "latest_signal": {
+    "name": "三卖",
+    "type": "sell",
+    "level": 3,
+    "date": "2026-09-15",
+    "price": 3891.48,
+    "confidence": 0.75,
+    "description": "三卖：跌破中枢后反弹不进入"
+   },
+   "recent_signals": [
+    {
+     "name": "三卖",
+     "type": "sell",
+     "level": 3,
+     "date": "2026-09-15",
+     "price": 3891.48,
+     "confidence": 0.75,
+     "description": "三卖：跌破中枢后反弹不进入"
+    }
+   ],
+   "bi_count": 32,
+   "zhongshu_count": 4,
+   "last_zs": {
+    "start_date": "2026-08-10",
+    "end_date": "2026-08-19",
+    "high": 3967.59,
+    "low": 3927.55,
+    "mid": 3947.57,
+    "bi_count": 3
+   }
+  },
+  "15分钟": {
+   "tag": "15分钟",
+   "price": 3888.37,
+   "trend": "向下",
+   "pzs": "无中枢参考",
+   "ma55": 3934.96,
+   "ma_pos": "下方",
+   "ma_slope": "向下",
+   "ma_dist_pct": -1.18,
+   "macd_state": "弱",
+   "macd_state_side": "空头",
+   "zero_cross": null,
+   "bis": [
+    {
+     "bi_type": "down",
+     "start_price": 3967.5,
+     "end_price": 3959.39,
+     "start_date": "2026-08-13 10:15:00",
+     "end_date": "2026-08-13 11:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3903.7,
+     "end_price": 3977.41,
+     "start_date": "2026-08-14 13:30:00",
+     "end_date": "2026-08-17 14:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3992.09,
+     "end_price": 3955.6,
+     "start_date": "2026-08-18 09:45:00",
+     "end_date": "2026-08-18 11:15:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3955.6,
+     "end_price": 3994.18,
+     "start_date": "2026-08-18 11:15:00",
+     "end_date": "2026-08-18 14:45:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3994.18,
+     "end_price": 3911.44,
+     "start_date": "2026-08-18 14:45:00",
+     "end_date": "2026-08-19 10:45:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3879.58,
+     "end_price": 3909.36,
+     "start_date": "2026-08-19 14:45:00",
+     "end_date": "2026-08-20 11:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3909.36,
+     "end_price": 3883.79,
+     "start_date": "2026-08-20 11:00:00",
+     "end_date": "2026-08-21 09:45:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3883.79,
+     "end_price": 3910.9,
+     "start_date": "2026-08-21 09:45:00",
+     "end_date": "2026-08-21 11:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3910.9,
+     "end_price": 3895.91,
+     "start_date": "2026-08-21 11:00:00",
+     "end_date": "2026-08-21 14:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3850.86,
+     "end_price": 3896.21,
+     "start_date": "2026-08-25 10:00:00",
+     "end_date": "2026-08-25 13:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3896.21,
+     "end_price": 3881.74,
+     "start_date": "2026-08-25 13:30:00",
+     "end_date": "2026-08-26 09:45:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3881.74,
+     "end_price": 3926.43,
+     "start_date": "2026-08-26 09:45:00",
+     "end_date": "2026-08-26 10:45:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3926.43,
+     "end_price": 3909.79,
+     "start_date": "2026-08-26 10:45:00",
+     "end_date": "2026-08-26 14:15:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3909.31,
+     "end_price": 3970.31,
+     "start_date": "2026-08-27 09:45:00",
+     "end_date": "2026-08-28 10:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3970.31,
+     "end_price": 3953.73,
+     "start_date": "2026-08-28 10:30:00",
+     "end_date": "2026-08-28 13:15:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3927.2,
+     "end_price": 3989.58,
+     "start_date": "2026-08-31 10:00:00",
+     "end_date": "2026-09-01 10:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3995.18,
+     "end_price": 3932.25,
+     "start_date": "2026-09-01 13:15:00",
+     "end_date": "2026-09-02 10:15:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3932.25,
+     "end_price": 3958.05,
+     "start_date": "2026-09-02 10:15:00",
+     "end_date": "2026-09-02 14:15:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3968.11,
+     "end_price": 3930.45,
+     "start_date": "2026-09-03 10:00:00",
+     "end_date": "2026-09-03 13:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3930.45,
+     "end_price": 3980.2,
+     "start_date": "2026-09-03 13:30:00",
+     "end_date": "2026-09-04 09:45:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3980.2,
+     "end_price": 3954.1,
+     "start_date": "2026-09-04 09:45:00",
+     "end_date": "2026-09-04 11:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3915.22,
+     "end_price": 3937.81,
+     "start_date": "2026-09-04 15:00:00",
+     "end_date": "2026-09-07 13:45:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3951.32,
+     "end_price": 3925.72,
+     "start_date": "2026-09-08 11:00:00",
+     "end_date": "2026-09-08 14:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3925.72,
+     "end_price": 3952.22,
+     "start_date": "2026-09-08 14:30:00",
+     "end_date": "2026-09-09 10:15:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3956.61,
+     "end_price": 3933.47,
+     "start_date": "2026-09-09 11:15:00",
+     "end_date": "2026-09-09 13:45:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3933.47,
+     "end_price": 3958.12,
+     "start_date": "2026-09-09 13:45:00",
+     "end_date": "2026-09-09 14:45:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3958.12,
+     "end_price": 3934.6,
+     "start_date": "2026-09-09 14:45:00",
+     "end_date": "2026-09-10 10:30:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3852.03,
+     "end_price": 3896.26,
+     "start_date": "2026-09-11 10:45:00",
+     "end_date": "2026-09-11 14:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3896.26,
+     "end_price": 3887.22,
+     "start_date": "2026-09-11 14:00:00",
+     "end_date": "2026-09-14 11:00:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3877.69,
+     "end_price": 3887.14,
+     "start_date": "2026-09-14 14:00:00",
+     "end_date": "2026-09-14 15:00:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3891.62,
+     "end_price": 3858.15,
+     "start_date": "2026-09-15 10:30:00",
+     "end_date": "2026-09-15 14:45:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3842.72,
+     "end_price": 3888.15,
+     "start_date": "2026-09-16 10:15:00",
+     "end_date": "2026-09-16 13:15:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3894.4,
+     "end_price": 3866.89,
+     "start_date": "2026-09-16 14:00:00",
+     "end_date": "2026-09-17 10:15:00"
+    },
+    {
+     "bi_type": "up",
+     "start_price": 3866.89,
+     "end_price": 3884.54,
+     "start_date": "2026-09-17 10:15:00",
+     "end_date": "2026-09-17 13:30:00"
+    },
+    {
+     "bi_type": "down",
+     "start_price": 3967.68,
+     "end_price": 3947.0,
+     "start_date": "2026-09-22 10:45:00",
+     "end_date": "2026-09-22 13:45:00"
+    }
+   ],
+   "latest_signal": null,
+   "recent_signals": [],
+   "bi_count": 35,
+   "zhongshu_count": 0,
+   "last_zs": null
+  }
+ },
+ "taoquan": [
+  {
+   "pair": "日线→120分钟",
+   "conclusion": "卖点但大周期已突破中枢（一卖）",
+   "strength": "弱",
+   "pos": 109.4
+  },
+  {
+   "pair": "120分钟→60分钟",
+   "conclusion": "卖点但大周期在支撑下方（三卖）",
+   "strength": "弱",
+   "pos": -48.7
+  },
+  {
+   "pair": "60分钟→15分钟",
+   "conclusion": "小周期无信号",
+   "strength": "",
+   "pos": -97.9
+  }
+ ],
+ "xduan": {
+  "60F_X段(日线主涨→120F回踩)": "非主涨段",
+  "15F_X段(120F主涨→60F回踩)": "非主涨段"
+ },
+ "main_up": {
+  "日线主涨段": false,
+  "120分钟主涨段": false,
+  "60分钟主涨段": false,
+  "15分钟主涨段": false
+ }
+}

@@ -140,10 +140,14 @@ def load_data(pred_id=None):
                          % (rid, ' / '.join(need)))
 
     act, meta = pick_actual(chain, p.get('target'), rid)
-    # ⚠️ 2026-09-24 复审（R4）：目标日以 **记录 id 的日期段** 为准（`levels.date` 曾有
-    # 「填成数据基准日」的历史问题，见下方 --out 缺省命名段的注释）。SVG 的自述目标日
-    # 与默认文件名都统一用这个值，避免两个来源打架。
-    meta['target_date'] = _date_prefix(rid) or _date_prefix(p.get('target')) or meta.get('actual_date') or ''
+    # ⚠️ 2026-09-25 修正（跨日预判 bug）：目标日必须以 **target 字段（目标交易日）优先**，
+    #   记录 id 的日期段只是兜底。上一版写成 `_date_prefix(rid) or _date_prefix(target)`，
+    #   在「收盘档预判次日」时 rid=生成日、target=次日 → 目标日被错取成生成日，
+    #   导致 SVG 自述 date 与「目标日文件名」打架（check_integrity【8】报不一致）。
+    #   levels.date 仍不直接采信（2026-09-24 复审：它曾填成「数据基准日」），
+    #   但 target 字段才是本意的「目标交易日」，优先级应高于 rid。
+    meta['target_date'] = (_date_prefix(p.get('target'))
+                           or _date_prefix(rid) or meta.get('actual_date') or '')
     return lv, act, rid, meta
 
 
