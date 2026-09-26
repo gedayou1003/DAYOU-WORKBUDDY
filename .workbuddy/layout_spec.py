@@ -23,13 +23,16 @@ TIER_ALIAS = {
 # key: (中文名, [标题正则...])  —— 正则允许措辞微变，覆盖「中文序数 / 第X块 / 无编号」三种标题写法
 BLOCKS = {
     'core':       ('核心主线速览',   [r'核心主线速览']),
-    'star':       ('星球信息',       [r'星球信息']),
+    # star 块标题随「隐掉星球」脱敏由「星球信息」改为「资讯信息」，两种写法都要能匹配
+    #（旧报告仍是「星球信息」，新报告是「资讯信息」）
+    'star':       ('资讯信息',       [r'星球信息', r'资讯信息']),
     'judge':      ('信息判断',       [r'信息判断', r'跨星球观点对比', r'观点对比']),
     'tech':       ('技术分析',       [r'技术分析', r'盘面与技术面']),
     'forecast':   ('预判',           [r'预判']),
     'industry':   ('行业强弱榜',     [r'行业强弱榜', r'行业判断']),
     'bias':       ('偏差统计',       [r'偏差.*统计']),
-    'appendix_a': ('附录A·抓取通道', [r'附录\s*A']),
+    # 附录 A 标题脱敏后可能去掉编号 A（只剩一个附录），两种写法都要能匹配
+    'appendix_a': ('附录A·抓取通道', [r'附录\s*A', r'附录\s*抓取通道']),
     'appendix_b': ('附录B·星球代号', [r'附录\s*B']),
     'products':   ('产物清单',       [r'产物清单']),
     # —— 复盘档专属 ——
@@ -58,20 +61,20 @@ SLOTS = {
     # 偏差统计(bias) 是第四块「预判」的子项，规范顺序在行业强弱榜(industry) 之前
     'morning': {
         'required': ['core', 'star', 'judge', 'tech', 'forecast', 'bias', 'industry'],
-        'optional': ['appendix_a', 'appendix_b', 'products'],
+        'optional': ['appendix_a', 'products'],
     },
     # 午间/收盘为「四块」（无行业榜），行业榜仅晨报「五块」——2026-09-08 精简去重后
     'noon': {
         'required': ['core', 'star', 'judge', 'tech', 'forecast', 'bias'],
-        'optional': ['appendix_a', 'appendix_b'],
+        'optional': ['appendix_a'],
     },
     'intraday': {
         'required': ['core', 'star', 'judge', 'tech', 'forecast', 'bias', 'industry'],
-        'optional': ['appendix_a', 'appendix_b', 'products'],
+        'optional': ['appendix_a', 'products'],
     },
     'close': {
         'required': ['core', 'star', 'judge', 'tech', 'forecast', 'bias'],
-        'optional': ['appendix_a', 'appendix_b'],
+        'optional': ['appendix_a'],
     },
     'review': {
         'required': ['actual', 'review', 'bias', 'cognition', 'nextday'],

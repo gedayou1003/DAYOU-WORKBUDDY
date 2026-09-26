@@ -27,7 +27,28 @@ import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PY = sys.executable
-TODAY = datetime.date.today().isoformat()
+
+# 复用产品脚本的 HOLIDAYS（2026-09-26 起），避免休市日历在两处各自维护而腐烂。
+# check_integrity 模块顶层只定义常量/函数、main() 在 __main__ 守卫内，import 无副作用。
+import check_integrity as _CI  # noqa: E402
+HOLIDAYS = _CI.HOLIDAYS
+
+
+def _recent_trading_day():
+    """返回「最近一个交易日（含今天）」作测试参照日。
+
+    2026-09-26 修：原先 TODAY = datetime.date.today()，今天一旦落在周末/节假日，
+    测试造的记录就落在非交易日上、被 check_integrity.trading_days() 排除，
+    B/K/P 等「注入缺口/失效白名单」用例会静默失效（rc 期望 1/2 却得 0）。
+    改为回退到最近一个交易日，测试从此与日历解耦。
+    """
+    d = datetime.date.today()
+    while d.weekday() >= 5 or d.isoformat() in HOLIDAYS:
+        d -= datetime.timedelta(days=1)
+    return d.isoformat()
+
+
+TODAY = _recent_trading_day()
 RID = TODAY + '-morning'
 
 # 档位后缀 → 报告文件名里的中文档位段（与 check_integrity.TIER_BY_SUFFIX 同口径，
@@ -38,9 +59,15 @@ TIER_ZH = {'morning': '晨报', 'morning-v2': '晨报', 'noon': '午间', 'after
 
 
 def prev_trading_day(day=None):
-    """TODAY 之前最近的一个交易日（用于造「有交易日但链上零记录」的真缺口）"""
+    """TODAY 之前最近的一个交易日（用于造「有交易日但链上零记录」的真缺口）。
+
+    2026-09-26 修：原先只跳过周末，9/25 中秋纳入产品 HOLIDAYS 后，本函数会把
+    休市日误当交易日返回 —— L~P 用例造出的「真缺口」落在休市日上，被产品脚本的
+    trading_days() 排除，断言静默失效（rc 从期望的 1 变成 0）。现同时跳过 HOLIDAYS，
+    与产品脚本的交易日判定同口径。
+    """
     d = datetime.date.fromisoformat(day or TODAY) - datetime.timedelta(days=1)
-    while d.weekday() >= 5:
+    while d.weekday() >= 5 or d.isoformat() in HOLIDAYS:
         d -= datetime.timedelta(days=1)
     return d.isoformat()
 

@@ -18,7 +18,7 @@ import sys
 for _s in (sys.stdout, sys.stderr):
     try:
         _s.reconfigure(encoding='utf-8', errors='replace')
-    except Exception:
+    except Exception:  # silent-ok: 终端编码收口尽力而为，失败不影响结论
         pass
 
 # 隐掉后不允许再出现的真实名/代号（漏配哨兵）
