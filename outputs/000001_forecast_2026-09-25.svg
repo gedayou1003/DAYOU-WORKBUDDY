@@ -44,7 +44,7 @@
 <text class="ts" x="228" y="247.4" text-anchor="end" fill="#1f3a3a">C 3888.37</text>
 <text class="tb" x="100" y="128.9" fill="#b33a1f">⚠ 假突破 3884 失败</text>
 <text x="22" y="48.0" class="tb" fill="#b33a1f">▸ 当日关键信号</text>
-<text x="24" y="63.0" class="ts" fill="#5a5a4f">· v5 总分 -3（买卖点 -1 + 星球③ -1 + BOLL 0 + MACD DIF 拐头 -1）——近 5 期首个强偏空</text>
+<text x="24" y="63.0" class="ts" fill="#5a5a4f">· v5 总分 -3（买卖点 -1 + 定调 -1 + BOLL 0 + MACD DIF 拐头 -1）——近 5 期首个强偏空</text>
 <text x="24" y="78.0" class="ts" fill="#5a5a4f">· 全部 6 个级别（5F/15F/30F/60F/120F/日线）DIF 同日转向向下，日线与 5F 死叉成立（本根）</text>
 <text x="24" y="93.0" class="ts" fill="#5a5a4f">· 日/60F/15F/120F 四周期全部「有效破 55 线」，55 线极强传递性全链 false</text>
 <rect x="240" y="265.7" width="360" height="64.2" fill="#f3eddd" opacity="0.55"/>
@@ -76,7 +76,7 @@
 <text x="627" y="423" class="ts" fill="#6a6a5f">震荡：3860–3884 内不追涨杀跌，等变盘</text>
 <text x="627" y="441" class="ts" fill="#b33a1f">突破：放量站稳 3884 → 追多，看 3904</text>
 <text x="627" y="459" class="ts" fill="#1a7a3a">跌破：跌破 3860 → 减仓，看 3843</text>
-<text x="627" y="477" class="ts" fill="#5a5a4f">信号：v5 总分 -3（买卖点 -1 + 星球③ -1 + BOLL…</text>
+<text x="627" y="477" class="ts" fill="#5a5a4f">信号：v5 总分 -3（买卖点 -1 + 定调 -1 + BOLL…</text>
 <text x="627" y="491" class="ts" fill="#5a5a4f">信号：全部 6 个级别（5F/15F/30F/60F/120F/日线）DIF …</text>
 <text x="627" y="505" class="ts" fill="#5a5a4f">信号：日/60F/15F/120F 四周期全部「有效破 55 线」，55…</text>
 <text x="627" y="523" class="ts" fill="#5a5a4f">概率：突破28% / 震荡37% / 跌破35%</text>
