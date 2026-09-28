@@ -72,6 +72,10 @@ _*.log
 .workbuddy/_ohlc_cache/
 # 链操作 payload（每期临时生成，含当日数据）
 .workbuddy/payload_*.json
+# 复盘/构建 payload 临时文件（带下划线前缀，跑完即弃）
+.workbuddy/_payload_*.json
+# OHLC 单次快照临时件
+.workbuddy/_ohlc_*.json
 # 链回滚快照（数据链本身不同步，快照也仅留本机）
 .workbuddy/archive/backup_*/
 # 卫生归档（cleanup_workspace.py 产出：日志/一次性脚本/陈旧命名产物，本机临时件，不同步）
