@@ -152,12 +152,22 @@ ck(rc == 1, '缺归档时退出码 1（实测 %s）' % rc)
 ck('ERROR 1' in out, '汇总里标出 ERROR 1')
 shutil.rmtree(sb, ignore_errors=True)
 
-print('C) 注入 ERROR（链停更 / 漏复盘）→ 1')
+print('C) 注入 ERROR（pending 目标日已过仍未复盘）→ 1')
 sb = build(forecast=[{'id': RID, 'review': {'actual': FULL}},
-                     {'id': '2026-01-02-morning', 'status': 'pending'},
-                     {'id': '2026-01-03-morning', 'status': 'pending'}])
+                     {'id': '2026-01-02-morning', 'status': 'pending', 'target': '2026-01-02 全天'},
+                     {'id': '2026-01-03-morning', 'status': 'pending', 'target': '2026-01-03 全天'}])
 rc, out = run(sb)
-ck(rc == 1, 'pending>1 时退出码 1（实测 %s）' % rc)
+ck(rc == 1, '目标日已过仍 pending 时退出码 1（实测 %s）' % rc)
+ck('目标日已过仍未复盘' in out, '点明「目标日已过」而非笼统 pending>1')
+shutil.rmtree(sb, ignore_errors=True)
+
+print('C2) pending 目标日=今日（未到复盘时点）→ 0，非漏复盘')
+sb = build(forecast=[{'id': RID, 'review': {'actual': FULL}},
+                     {'id': TODAY + '-close', 'status': 'pending', 'target': TODAY + ' 全天（节后第一个交易日）'},
+                     {'id': TODAY + '-noon', 'status': 'pending', 'target': TODAY + ' 全天（节后第一个交易日）'}])
+rc, out = run(sb)
+ck(rc == 0, '目标日=今日时退出码 0（实测 %s）' % rc)
+ck('未到复盘时点' in out, '点明「未到复盘时点」而非误报漏复盘')
 shutil.rmtree(sb, ignore_errors=True)
 
 print('D) 注入 WARN（非静态初验的 actual 缺字段）→ 2')

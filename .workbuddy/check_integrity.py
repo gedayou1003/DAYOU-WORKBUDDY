@@ -255,6 +255,36 @@ def trading_days(start, end):
     return days
 
 
+def next_trading_day(d):
+    """d 之后第一个交易日（d 本身不算），用于共识链「指向下一交易日」的复盘时点判定。"""
+    d = datetime.date.fromisoformat(d)
+    for _ in range(60):
+        d += datetime.timedelta(days=1)
+        if d.weekday() < 5 and d.isoformat() not in HOLIDAYS:
+            return d.isoformat()
+    return None
+
+
+def pending_target(record, chain_name):
+    """判定一条 pending 记录「目标日」（到了这天收盘才谈得上复盘）。
+
+    forecast：target 字段里的日期（回退 levels.date）；解析不出返回 None。
+    consensus：无 target 字段，用记录 id 的日期 + 1 个交易日（它指向的下一交易日）。
+    返回 None 表示「无法判定」，守卫按保守口径处理（不误放过真漏复盘）。
+    """
+    if chain_name == 'forecast':
+        for src in (record.get('target'), (record.get('levels') or {}).get('date')):
+            if isinstance(src, str):
+                m = re.search(r'(\d{4}-\d{2}-\d{2})', src)
+                if m:
+                    return m.group(1)
+        return None
+    m = re.match(r'^(\d{4}-\d{2}-\d{2})', str(record.get('id') or ''))
+    if not m:
+        return None
+    return next_trading_day(m.group(1))
+
+
 def ran_morning(rec_ids):
     """该日是否跑过晨报档 —— 决定「该不该有 DRAGON BALL模型 归档」。
 
@@ -477,16 +507,38 @@ def main():
               + '、'.join('%s→%s' % (k, KNOWN_ACTUAL_EXCEPTIONS[k]) for k in legacy))
         infos += 1
 
-    # 6) pending 守卫（自 chain_apply 下沉：链上超过 1 条 pending 说明可能漏复盘）
-    print('\n【6】pending 守卫（> 1 条即可能漏复盘上一条）')
+    # 6) pending 守卫（自 chain_apply 下沉：链上「目标日已过仍未复盘」的 pending 才算漏复盘）
+    print('\n【6】pending 守卫（目标日已过仍未复盘 → 漏复盘）')
     for name, ch in (('forecast', fchain), ('consensus', cchain)):
-        pends = [r.get('id') for r in ch if r.get('status') == 'pending']
-        if len(pends) > 1:
-            print(f'  ⚠️ {name}: pending={len(pends)} → {", ".join(pends)}')
+        pendings = [r for r in ch if r.get('status') == 'pending']
+        ids = '、'.join(str(r.get('id')) for r in pendings)
+        if not pendings:
+            print(f'  ✅ {name}: pending=0')
+            continue
+        overdue, unknown = [], []
+        for r in pendings:
+            tgt = pending_target(r, name)
+            if tgt is None:
+                unknown.append(str(r.get('id')))
+            elif tgt < today:
+                overdue.append('%s(目标%s)' % (r.get('id'), tgt))
+        if overdue:
+            print(f'  ⚠️ {name}: pending={len(pendings)}，目标日已过仍未复盘 → {", ".join(overdue)}')
             errors += 1
+        elif unknown:
+            # 无法判定目标日（缺 target / id 无日期）→ 保守：>1 仍按漏复盘提示，不误放过
+            if len(pendings) > 1:
+                print(f'  ⚠️ {name}: pending={len(pendings)}（{ids}），'
+                      f'其中 {len(unknown)} 条无法判定目标日 → 保守按漏复盘提示')
+                errors += 1
+            else:
+                print(f'  ✅ {name}: pending=1（{ids}）')
+        elif len(pendings) > 1:
+            print(f'  ℹ️ {name}: pending={len(pendings)}（{ids}）——'
+                  f'目标日均今日/未来，未到复盘时点，非漏复盘')
+            infos += 1
         else:
-            print(f'  ✅ {name}: pending={len(pends)}'
-                  + ('（%s）' % pends[0] if pends else ''))
+            print(f'  ✅ {name}: pending=1（{ids}）')
 
     # 7) 链记录 → 报告产物存在性（2026-09-18 审计 5.5）
     print('\n【7】链记录 → 报告产物（链上有记录，但 outputs 里没有对应报告）')
