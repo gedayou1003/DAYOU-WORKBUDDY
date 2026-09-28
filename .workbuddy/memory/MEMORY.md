@@ -1412,5 +1412,15 @@ SVG 自述的 `date` **取「记录 id 的日期段」，不取 `levels.date`** 
 - **P1-8 主涨段**：破前 20 日高点 52.2% vs 基线 39.7%（+12.5pp，n=23）→ **有增量**（预测「中期新高」）；破前 5 日高点无增量（56.5% vs 60.6%）。→ 作关键位/结构字段有信息量，仍不进方向打分。
 - **P1-9 二次跌破**：5 日仍跌 45.8% vs 解除 37.5%（+8.3pp 相对偏空），但绝对 <50% → **实证「解除≠下跌，二次跌破也不等于转空」**，只作回调升级标注。
 
+## §43 「改完代码跑对口测试」固化（2026-09-28，响应「为什么每天都在修 bug」）
+
+**约定（改 `.workbuddy/` 下任何脚本后必做，替代每次全量跑）**：
+1. `run_tests.py --for <脚本名>` —— 跑该脚本的对口测试（`SCRIPT_TO_TESTS` 映射已建，21 脚本 → 21 test 全覆盖）。
+2. **必须用 venv 解释器**：`~/.workbuddy/binaries/python/envs/default/Scripts/python.exe`。裸解释器缺 pandas → 依赖 pandas 的测试（如 test_degrade_exitcodes 的 analyze_000001_multi 段）会 ModuleNotFoundError，**看似红了其实是解释器错**。run_tests.py 启动时已加 pandas 检测提示。
+3. 新增脚本/测试 → 同步更新 `SCRIPT_TO_TESTS`，再 `--audit` 自检（孤儿测试/死 key/死脚本三查）。
+4. 已知无测试缺口：`calc_tech` / `calc_tech_multi` / `scan_sw_realtime` / `run_morning_report`（改它们只有 py_compile + --help 弱验证）。
+
+**动机**：积分大头不在修 bug、在「跑→看→修→再跑」返工 + 全量验证；全量跑 21 个测试还曾 SIGTERM。改哪跑哪把单次回归成本从「几十个测试」降到「1~3 个」。
+
 
 
