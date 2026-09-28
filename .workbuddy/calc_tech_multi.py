@@ -33,17 +33,19 @@ ORDER = ('5F', '15F', '30F', '60F', '120F(合成)', '日线')
 
 def build(code):
     out = {}
+    raw = {}                       # 保留各级别原始行，供 120F 合成复用，避免 m60 二次取数
     for label, p, n in LEVELS:
         try:
             rows = mkline(code, p, n)
+            raw[label] = rows
             out[label] = report(label, rows)
             out[label]['bars'] = len(rows)
         except Exception as e:
             out[label] = {'error': '%s: %s' % (type(e).__name__, e)}
 
-    # 120F：腾讯无 m120 接口，用 60F 每 2 根合成
+    # 120F：腾讯无 m120 接口，用 60F 每 2 根合成（复用上面已取的 m60，省 1 次 HTTP）
     try:
-        r60 = mkline(code, 'm60', 800)
+        r60 = raw.get('60F') or mkline(code, 'm60', 800)
         syn = []
         for i in range(0, len(r60) - 1, 2):
             a, b = r60[i], r60[i + 1]

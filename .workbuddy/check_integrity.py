@@ -279,6 +279,7 @@ def pending_target(record, chain_name):
                 if m:
                     return m.group(1)
         return None
+    # consensus：无 target 字段，用 id 日期 + 1 个交易日（levels 无统一日期语义，不读）
     m = re.match(r'^(\d{4}-\d{2}-\d{2})', str(record.get('id') or ''))
     if not m:
         return None

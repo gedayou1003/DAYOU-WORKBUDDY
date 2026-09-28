@@ -98,7 +98,7 @@ DATA_STEPS = [
 def cmd_data(args):
     day = args.date or TODAY()
     print('===== 晨报·阶段一 数据采集（%s）=====' % day)
-    print('并发上限 2；关键步骤：fetch / ohlc（失败即停），其余失败仅告警。\n')
+    print('并发上限 2；fetch / ohlc 为关键步（失败在末尾汇总报错），其余失败仅告警。\n')
 
     def _one(step):
         name, cwd, argv, crit = step
@@ -126,7 +126,7 @@ def cmd_data(args):
     _print_fetch_summary(results.get('fetch'))
     _print_ohlc_summary(results.get('ohlc'))
     print('  · 技术指标: .workbuddy/_tech_%s.json + _tech_multi_%s.json' % (day, day))
-    print('  · 引擎B买卖点: %s/output/000001_%s_买卖点对比表.md' % (SKILL_DIR, day))
+    print('  · 引擎B买卖点: %s/output/000001_%s_买卖点对比表.md' % (SKILL_DIR, day.replace('-', '')))
     print('  · 行业榜: .workbuddy/backtest_data/scan_result_sw_realtime.json + scan_result_ths.json')
 
     crit_fail = [n for n, (rc, _, _, c) in results.items() if c and rc != 0]
@@ -179,54 +179,54 @@ def cmd_finish(args):
         return 1
 
     print('===== 晨报·阶段二 产物收口（%s）=====' % day)
+    # 每步带「关键退出码集合」：rc ∈ crit_rc 才算关键失败（停止），否则仅告警。
+    # 校验器的 rc=2 是 WARN（不是 ERROR），不能当关键失败停掉 —— 早期用布尔 crit 把这层搞混了。
     steps = []
 
-    # 1) 变盘倾向分（OBS-2）
+    # 1) 变盘倾向分（OBS-2）：rc=1 输入不足必须停；rc=2 降级仅告警（prob_note 里会写明）
     if args.vol and not args.skip_turn:
         tv = ['calc_turn_score.py', '--payload', payload, '--vol', args.vol,
               '--base-a', str(args.base_a), '--base-b', str(args.base_b), '--base-c', str(args.base_c)]
         if args.band_pct is not None:
             tv += ['--band-pct', str(args.band_pct)]
-        steps.append(('turn_score', None, tv, True, 'calc_turn_score（变盘倾向分）'))
+        steps.append(('turn_score', None, tv, {1}, 'calc_turn_score（变盘倾向分）'))
     elif args.skip_turn:
         print('  %s 跳过变盘分（--skip-turn，prob_note 已手填）' % _INFO)
     else:
         print('  %s 未给 --vol，跳过变盘分（剧本概率沿用 payload 里已写值）' % _WARN)
 
-    # 2) 链落盘（统一入口，exit 2 = 校验未过，必须停）
-    steps.append(('chain', None, ['chain_apply.py', '--payload', payload], True, 'chain_apply（落盘+回读断言）'))
+    # 2) 链落盘（统一入口，rc=1 参数问题 / rc=2 校验未过，都要停）
+    steps.append(('chain', None, ['chain_apply.py', '--payload', payload], {1, 2}, 'chain_apply（落盘+回读断言）'))
 
-    # 3) DRAGON BALL 归档
+    # 3) DRAGON BALL 归档（rc=2 表示 0 条/守卫跳过，仅告警不覆盖，非关键）
     if not args.skip_archive:
         arch = ['gen_tj_archive.py']
         if args.force_archive:
             arch.append('--force')
-        steps.append(('archive', None, arch, False, 'gen_tj_archive（DRAGON BALL 归档）'))
+        steps.append(('archive', None, arch, set(), 'gen_tj_archive（DRAGON BALL 归档）'))
 
-    # 4) 走势图
-    steps.append(('svg', None, ['gen_forecast_svg.py'], False, 'gen_forecast_svg（预判走势图）'))
+    # 4) 走势图 / 5) HTML（失败可重跑，非关键）
+    steps.append(('svg', None, ['gen_forecast_svg.py'], set(), 'gen_forecast_svg（预判走势图）'))
+    steps.append(('html', None, ['md_to_html_report.py', md], set(), 'md_to_html_report（HTML 阅读版）'))
 
-    # 5) HTML
-    steps.append(('html', None, ['md_to_html_report.py', md], False, 'md_to_html_report（HTML 阅读版）'))
-
-    # 6-8) 三校验
-    steps.append(('check_layout', None, ['check_layout.py', md], True, 'check_layout（排版，0 ERROR 才过）'))
-    steps.append(('check_display', None, ['check_display_name.py', '--today', day], True, 'check_display_name（脱敏守卫）'))
-    steps.append(('check_integrity', None, ['check_integrity.py'], False, 'check_integrity（数据完整性）'))
+    # 6-8) 三校验（rc=1 是 ERROR 必须停；rc=2 是 WARN 仅告警）
+    steps.append(('check_layout', None, ['check_layout.py', md], {1}, 'check_layout（排版，0 ERROR 才过）'))
+    steps.append(('check_display', None, ['check_display_name.py', '--today', day], {1, 2}, 'check_display_name（脱敏守卫，任何非零都停）'))
+    steps.append(('check_integrity', None, ['check_integrity.py'], {1}, 'check_integrity（数据完整性）'))
 
     fail = 0
-    for name, cwd, argv, crit, desc in steps:
+    for name, cwd, argv, crit_rc, desc in steps:
         full = [sys.executable] + [os.path.join(ROOT, '.workbuddy', argv[0])] + argv[1:]
         print('\n-- %s' % desc)
         rc, out, dt = _run(full, cwd=cwd or ROOT, log=_log_path('finish', name, day))
-        mark = _OK if rc == 0 else _FAIL
+        mark = _OK if rc == 0 else (_FAIL if rc in crit_rc else _WARN)
         print('  %s %-12s rc=%d  %.0fs' % (mark, name, rc, dt))
-        for l in _tail(out, 8):
-            print('        ' + l)
-        if rc != 0 and crit:
-            # chain_apply exit 2 = 空壳/占位符未过；check_layout exit 1 = ERROR；check_display 非零 = 泄漏
-            fail += 1
+        if rc != 0:                       # 只在失败时打尾部，rc=0 的校验器输出不刷屏
+            for l in _tail(out, 8):
+                print('        ' + l)
+        if rc in crit_rc:
             print('%s 关键步骤 %s 未过（rc=%d），停止后续。' % (_FAIL, name, rc))
+            fail += 1
             break
 
     if fail:
