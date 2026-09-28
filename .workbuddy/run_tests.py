@@ -79,8 +79,9 @@ SCRIPT_TO_TESTS = {
     'forecast_analyze': ['test_degrade_exitcodes.py'],
     'check_cookie': ['test_degrade_exitcodes.py'],
     'anonymize_report': ['test_degrade_exitcodes.py'],
-    # 以下脚本目前**无独立回归测试**（改它们只有 py_compile + --help/--selftest 弱验证）：
-    #   calc_tech / calc_tech_multi / scan_sw_realtime / run_morning_report
+    'run_morning_report': ['test_run_morning_report.py'],
+    # 以下脚本目前**无独立回归测试**（改它们只有 py_compile + --help 弱验证）：
+    #   calc_tech / calc_tech_multi / scan_sw_realtime
     # calc_turn_score 有内置 --selftest（无独立 test 文件）
 }
 
