@@ -257,6 +257,123 @@ def cmd_finish(args):
     return 0
 
 
+# ======================================================================
+# 开盘 gap 校准（方案二：9:25 后取开盘价，重算关键位距离 + 方向一致性）
+# ======================================================================
+# 只做三件事：① 实时取开盘价（get_daily_ohlc 已含 gap/gap_pct/gap_type 字段）
+# ② 重算「关键位 → 开盘价」的相对距离（纯算术，秒级）③ 输出 gap 方向 vs 预判方向一致性。
+# 不重跑引擎/缠论/抓取 —— 结构位是历史 OHLC 函数、不随 gap 平移，补偿它们反而是错的。
+_LEVEL_KEYS = [
+    ('up_target', '压力'),
+    ('decision', '决策位'),
+    ('down_support', '支撑'),
+    ('down_lower', '主支撑'),
+    ('down_lowest', '最低'),
+]
+
+
+def _load_morning_record(day):
+    """从 forecast_chain.json 读当日 morning 预判记录（id == day-morning）。"""
+    p = os.path.join(HERE, 'forecast_chain.json')
+    try:
+        with open(p, encoding='utf-8') as f:
+            data = json.load(f)
+    except Exception:
+        return None
+    recs = data if isinstance(data, list) else data.get('records', [])
+    rid = day + '-morning'
+    for r in recs:
+        if r.get('id') == rid:
+            return r
+    return None
+
+
+def _parse_direction(text):
+    m = re.match(r'^(偏空|偏多|震荡|方向不明)', text or '')
+    return m.group(1) if m else '未知'
+
+
+def _short_label(label, maxlen=18):
+    s = re.split(r'[·（(]', label or '')[0].strip()
+    return s if len(s) <= maxlen else s[:maxlen] + '…'
+
+
+def cmd_gap(args):
+    day = args.date or TODAY()
+    code = args.code
+    rec = _load_morning_record(day)
+    if rec is None:
+        print('%s 未找到 %s-morning 预判记录（先跑 data + 落盘 morning 预判）' % (_FAIL, day))
+        return 1
+    direction = _parse_direction(rec.get('direction', ''))
+
+    # 实时取开盘价（--force 强制刷新 gap 槽位缓存，开盘价 9:25 定死后秒级可取）
+    full = [sys.executable, os.path.join(ROOT, '.workbuddy', 'get_daily_ohlc.py'),
+            code, '1', '--slot', 'gap', '--force']
+    rc, out, dt = _run(full, cwd=ROOT, log=_log_path('gap', 'ohlc', day))
+    if rc != 0:
+        print('%s 取开盘价失败（rc=%d）' % (_FAIL, rc))
+        for l in _tail(out, 5):
+            print('    ' + l)
+        return 1
+    try:
+        j = json.loads(out)
+    except Exception:
+        print('%s 开盘价 JSON 解析失败' % _FAIL)
+        return 1
+
+    print('===== 开盘 gap 校准（%s %s）=====' % (day, j.get('name') or code))
+    # 尚未开盘 → 取到的仍是上一交易日收盘，gap 校准无意义（非错误，rc=0）
+    if j.get('date') != day:
+        print('  尚未开盘：当前最新为 %s 收盘 %.2f。gap 校准需在 9:25 集合竞价后（当日开盘价生成）跑才有意义。'
+              % (j.get('date'), j.get('close', 0)))
+        print('  → 等 9:25 后（9:30 后也来得及）再跑一次本命令即可。')
+        return 0
+
+    open_px = j.get('open', 0)
+    print('  开盘 %.2f | 昨收 %.2f | gap %+.2f 点（%+.2f%%）→ %s'
+          % (open_px, j.get('prev_close', 0), j.get('gap', 0), j.get('gap_pct', 0), j.get('gap_type', '?')))
+    print('  预判方向：%s' % direction)
+
+    # 关键位（去重，按价格降序）
+    levels = rec.get('levels') or {}
+    seen = set()
+    rows = []
+    for key, tag in _LEVEL_KEYS:
+        node = levels.get(key)
+        if not isinstance(node, dict):
+            continue
+        px = node.get('price')
+        if px is None or px in seen:
+            continue
+        seen.add(px)
+        pct = round((px - open_px) / open_px * 100, 2) if open_px else 0
+        rows.append((px, pct, tag, _short_label(node.get('label', ''))))
+    rows.sort(key=lambda x: -x[0])
+
+    print('  关键位距【开盘价 %.2f】：' % open_px)
+    for px, pct, tag, lab in rows:
+        print('    %+6.2f%%  %8.2f  [%s] %s' % (pct, px, tag, lab))
+
+    # gap 方向 × 预判方向 一致性
+    gt = j.get('gap_type', '')
+    print('  gap × 方向：', end='')
+    if gt == '平开':
+        print('平开 → 中性（gap 幅度 <0.15%%，对方向无确认意义，以预判方向为准）')
+    elif gt == '低开' and direction == '偏空':
+        print('低开 → 与「偏空」一致 %s（开盘即确认偏空，剧本 A 下探段前移，逆势反抽纪律适用）' % _OK)
+    elif gt == '高开' and direction == '偏多':
+        print('高开 → 与「偏多」一致 %s（开盘即确认偏多，看能否放量站稳第一反压）' % _OK)
+    elif gt == '低开' and direction == '偏多':
+        print('低开 → 与「偏多」背离 %s（预警：预判偏多但低开，方向存疑，谨慎）' % _WARN)
+    elif gt == '高开' and direction == '偏空':
+        print('高开 → 与「偏空」背离 %s（预警：预判偏空但高开，谨防高开反抽后回落，看是否回补缺口）' % _WARN)
+    else:
+        print('%s → 中性（预判「%s」无明确多空注，gap 不改变方向判断）' % (gt, direction))
+    print('  注：结构位（支撑/压力/中枢）是历史 OHLC 函数、不随 gap 平移；本表只重算「现价→关键位」距离。')
+    return 0
+
+
 def cmd_plan(args):
     print('''===== 晨报一键流程速查 =====
 
@@ -273,6 +390,11 @@ def cmd_plan(args):
 [阶段二] 产物收口（顺序，关键失败即停）
   $PY .workbuddy/run_morning_report.py finish --payload <json> --md <md> --vol "v1,v2,v3,v4,v5" [--git]
   步骤: 变盘分 → 链落盘 → 归档 → SVG → HTML → 三校验 → (git)
+
+[开盘校准]（可选，9:25 集合竞价后任意时间跑，秒级）
+  $PY .workbuddy/run_morning_report.py gap [--date <日期>]
+  作用: 取当日开盘价 → 重算「关键位→开盘价」距离 + 输出 gap 方向 vs 预判方向一致性
+  注意: 只重算现价距离，不重跑引擎/缠论；结构位不随 gap 平移。
 
 排版铁律（写 md 时就照做，别再事后返工）:
   ① 关键位表唯一完整落地，正文其余处用整数/指针（同价位正文 ≤8 次）
@@ -304,6 +426,11 @@ def main(argv=None):
     sp_fin.add_argument('--git', action='store_true', help='末尾 git add+commit+push')
     sp_fin.add_argument('--date', default=None)
     sp_fin.set_defaults(func=cmd_finish)
+
+    sp_gap = sub.add_parser('gap', help='开盘 gap 校准（9:25 后取开盘价，重算关键位距离 + 方向一致性）')
+    sp_gap.add_argument('--date', default=None, help='指定日期（默认今天）')
+    sp_gap.add_argument('--code', default=CODE, help='标的代码（默认 000001）')
+    sp_gap.set_defaults(func=cmd_gap)
 
     sp_plan = sub.add_parser('plan', help='打印完整流程速查')
     sp_plan.set_defaults(func=cmd_plan)
