@@ -69,8 +69,19 @@ def _apply_section(chain_name, section, dry_run=False):
                 pt = rv.get('per_topic') or []
                 hits = sum(1 for it in pt if isinstance(it, dict)
                            and str(it.get('verdict', '')).startswith('\u2705'))
+                # 对立观点复盘：opposite_review 在共识 schema 里是 list（每项带 verdict），
+                # 但旧版也可能是单 dict —— 两种形态都要能回显（2026-09-29 踩坑：恒按 dict.get
+                # 会导致 list 抛 AttributeError，链落盘前校验即崩）。
+                opp = rv.get('opposite_review')
+                if isinstance(opp, list):
+                    opp_summary = ' / '.join(str(x.get('verdict', '?'))
+                                             for x in opp if isinstance(x, dict)) or '?'
+                elif isinstance(opp, dict):
+                    opp_summary = opp.get('verdict', '?')
+                else:
+                    opp_summary = '?'
                 msgs.append('[校验通过] %s 已 verified；共识复盘 %d 条（\u2705 %d 条）、对立观点复盘：%s' % (
-                    vp, len(pt), hits, (rv.get('opposite_review') or {}).get('verdict', '?')))
+                    vp, len(pt), hits, opp_summary))
             else:
                 msgs.append('[校验通过] %s 已 verified；四维：%s / %s / %s / %s' % (
                     vp, rv.get('direction_verdict') or rv.get('direction', '?'),

@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 0 940 580" font-family="-apple-system,'PingFang SC',sans-serif">
+<title>上证综指 2026-09-29 预判图</title>
+<desc>pred=2026-09-29-morning / date=2026-09-29 / actual=2026-09-28</desc>
+<defs><style>
+.grid{stroke:#d8d2c4;stroke-width:0.5;stroke-dasharray:2 3}
+.axis{stroke:#3a4a4a;stroke-width:1;fill:none}
+.label{fill:#3a4a4a;font-size:10px}
+.actual{stroke:#1f3a3a;stroke-width:2.2;fill:none}
+.node-up{fill:#fdf0ec;stroke:#b33a1f;stroke-width:2}
+.node-dn{fill:#edf5ee;stroke:#1a7a3a;stroke-width:2}
+.tt{font-size:11px;font-weight:700}
+.tb{font-size:10px}
+.ts{font-size:9px}
+</style></defs>
+<text x="430" y="18" text-anchor="middle" class="tt" fill="#1f3a3a" font-size="15">上证综指 2026-09-29 预判 · 震荡区间 + 变盘路径图（v5）</text>
+<line class="grid" x1="20" y1="441.4" x2="600" y2="441.4"/>
+<text class="label" x="14" y="444.4" text-anchor="end">3780</text>
+<line class="grid" x1="20" y1="383.4" x2="600" y2="383.4"/>
+<text class="label" x="14" y="386.4" text-anchor="end">3800</text>
+<line class="grid" x1="20" y1="325.4" x2="600" y2="325.4"/>
+<text class="label" x="14" y="328.4" text-anchor="end">3820</text>
+<line class="grid" x1="20" y1="267.5" x2="600" y2="267.5"/>
+<text class="label" x="14" y="270.5" text-anchor="end">3840</text>
+<line class="grid" x1="20" y1="209.5" x2="600" y2="209.5"/>
+<text class="label" x="14" y="212.5" text-anchor="end">3860</text>
+<line class="grid" x1="20" y1="151.5" x2="600" y2="151.5"/>
+<text class="label" x="14" y="154.5" text-anchor="end">3880</text>
+<line class="grid" x1="20" y1="93.6" x2="600" y2="93.6"/>
+<text class="label" x="14" y="96.6" text-anchor="end">3900</text>
+<line class="axis" x1="20" y1="40" x2="20" y2="480"/>
+<line class="grid" x1="240" y1="40" x2="240" y2="480" stroke="#a89e87" stroke-dasharray="3 4"/>
+<text x="130" y="500" text-anchor="middle" class="label">当日实况</text>
+<text x="420" y="500" text-anchor="middle" class="label">震荡区间 · 变盘路径</text>
+<path class="actual" d="M 20.0,156.1 L 100.0,364.1 L 170.0,156.1 L 240.0,314.9"/>
+<circle cx="20" cy="156.1" r="3" fill="#1f3a3a"/>
+<text class="ts" x="18" y="170.1" text-anchor="end" fill="#1a5a3a">O 3878.41</text>
+<circle cx="170" cy="156.1" r="3" fill="#b33a1f"/>
+<text class="ts" x="174" y="152.1" fill="#b33a1f">H 3878.41</text>
+<circle cx="100" cy="364.1" r="3" fill="#1a7a3a"/>
+<text class="ts" x="104" y="378.1" fill="#1a7a3a">L 3806.67</text>
+<circle cx="240" cy="314.9" r="3" fill="#1f3a3a"/>
+<text class="ts" x="228" y="306.9" text-anchor="end" fill="#1f3a3a">C 3823.62</text>
+<text class="tb" x="170" y="140.1" fill="#b33a1f">⚠ 假突破 3843 失败</text>
+<text x="22" y="48.0" class="tb" fill="#b33a1f">▸ 当日关键信号</text>
+<text x="24" y="63.0" class="ts" fill="#5a5a4f">· v5 总分 -2（买卖点 +1 + 定调 -1 + BOLL -1 + MACD DIF 拐头 -1）——偏空，短线反抽 vs 中期下跌</text>
+<text x="24" y="78.0" class="ts" fill="#5a5a4f">· 60F 一买@3806.67 出现（9/28 最低点，买卖点因子本轮首次转正）</text>
+<text x="24" y="93.0" class="ts" fill="#5a5a4f">· 15F/30F/5F DIF 拐头向上，日线/60F/120F DIF 继续向下——短长端背离并存</text>
+<rect x="240" y="259.6" width="360" height="104.5" fill="#f3eddd" opacity="0.55"/>
+<text class="ts" x="592" y="311.8" text-anchor="end" fill="#8a7a55">震荡带 3807–3843</text>
+<circle cx="240" cy="314.9" r="4.5" fill="#2b2b2b"/>
+<text class="tb" x="234" y="306.9" text-anchor="end" fill="#2b2b2b">现价 3823.62</text>
+<path d="M 240.0,314.9 L 320.0,299.3 L 400.0,330.6 L 480.0,305.5 L 600.0,314.9" stroke="#8a8a80" stroke-width="2.2" fill="none" stroke-dasharray="4 3"/>
+<text class="tb" x="330" y="313.3" fill="#6a6a5f">区间震荡（37%）</text>
+<polygon class="node-up" points="420.0,248.57973783018315 431.0,259.57973783018315 420.0,270.57973783018315 409.0,259.57973783018315"/>
+<path d="M 420.0,259.6 L 510.0,207.8 L 600.0,155.9" stroke="#b33a1f" stroke-width="2.1" fill="none"/>
+<polygon points="600,147.9 608,155.9 600,163.9 592,155.9" fill="#b33a1f"/>
+<text class="tb" x="436.0" y="253.6" fill="#b33a1f">突破 3843（28%）</text>
+<text class="ts" x="490" y="202.6" fill="#b33a1f">放量站稳 → 看 3878 30F 中轨·反抽天花板（定调 点名「30F 中轨反弹」）</text>
+<polygon class="node-dn" points="420.0,353.0656083261972 431.0,364.0656083261972 420.0,375.0656083261972 409.0,364.0656083261972"/>
+<path d="M 420.0,364.1 L 510.0,364.1 L 600.0,364.1" stroke="#1a7a3a" stroke-width="2.2" fill="none"/>
+<polygon points="600,356.1 608,364.1 600,372.1 592,364.1" fill="#1a7a3a"/>
+<text class="tb" x="436.0" y="378.1" fill="#1a7a3a">跌破 3807（35%）</text>
+<text class="ts" x="490" y="368.1" fill="#1a7a3a">缩量跌破 → 看 3807 主支撑·新低（跌破 30 分钟不收回 → 下探 3780 → 3750）</text>
+<line x1="20" y1="155.9" x2="600" y2="155.9" stroke="#b33a1f" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
+<text class="ts" x="610" y="158.9" fill="#b33a1f">RESIST 3878.48 30F 中轨·反抽天花板（定调 点名「30F 中轨反弹」）</text>
+<line x1="20" y1="259.6" x2="600" y2="259.6" stroke="#b33a1f" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
+<text class="ts" x="610" y="262.6" fill="#b33a1f">RESIST 3842.72 旧前低·日线中枢下沿·破位转反压（放量收盘站稳 → 反抽升级）</text>
+<line x1="20" y1="364.1" x2="600" y2="364.1" stroke="#1a7a3a" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
+<text class="ts" x="610" y="367.1" fill="#1a7a3a">SUPP 3806.67 9/28 新低·60F 一买位（下跌背驰反转点）</text>
+<line x1="20" y1="364.1" x2="600" y2="364.1" stroke="#1a7a3a" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
+<g>
+<rect x="615" y="385" width="270" height="150" rx="6" fill="#fffdf6" stroke="#a89e87" stroke-width="0.8"/>
+<text x="627" y="403" class="tb" fill="#1f3a3a">盘面应对（v5 纪律）</text>
+<text x="627" y="423" class="ts" fill="#6a6a5f">震荡：3807–3843 内不追涨杀跌，等变盘</text>
+<text x="627" y="441" class="ts" fill="#b33a1f">突破：放量站稳 3843 → 追多，看 3878</text>
+<text x="627" y="459" class="ts" fill="#1a7a3a">跌破：跌破 3807 → 减仓，看 3807</text>
+<text x="627" y="477" class="ts" fill="#5a5a4f">信号：v5 总分 -2（买卖点 +1 + 定调 -1 + BOLL -1 + M…</text>
+<text x="627" y="491" class="ts" fill="#5a5a4f">信号：60F 一买@3806.67 出现（9/28 最低点，买卖点因子…</text>
+<text x="627" y="505" class="ts" fill="#5a5a4f">信号：15F/30F/5F DIF 拐头向上，日线/60F/120F DIF 继…</text>
+<text x="627" y="523" class="ts" fill="#5a5a4f">概率：突破28% / 震荡37% / 跌破35%</text>
+</g>
+<g>
+<rect x="20" y="545" width="580" height="26" rx="4" fill="#fffdf6" stroke="#a89e87" stroke-width="0.6"/>
+<line x1="30" y1="558" x2="52" y2="558" stroke="#1f3a3a" stroke-width="2"/>
+<text x="56" y="562" class="ts" fill="#1f3a3a">当日实况</text>
+<line x1="130" y1="558" x2="152" y2="558" stroke="#8a8a80" stroke-width="2.5" stroke-dasharray="4 3"/>
+<text x="156" y="562" class="ts" fill="#5a5a4f">震荡（常态）</text>
+<line x1="250" y1="558" x2="272" y2="558" stroke="#b33a1f" stroke-width="3"/>
+<text x="276" y="562" class="ts" fill="#b33a1f">突破（线宽=概率）</text>
+<line x1="380" y1="558" x2="402" y2="558" stroke="#1a7a3a" stroke-width="3"/>
+<text x="406" y="562" class="ts" fill="#1a7a3a">跌破（线宽=概率）</text>
+<line x1="495" y1="558" x2="517" y2="558" stroke="#7a7a7a" stroke-width="1" stroke-dasharray="2 3"/>
+<text x="521" y="562" class="ts" fill="#5a5a4f">关键位</text>
+</g>
+</svg>
