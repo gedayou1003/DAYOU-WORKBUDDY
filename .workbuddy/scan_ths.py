@@ -16,6 +16,22 @@ import sys, os, json, warnings, time
 warnings.filterwarnings('ignore')
 import pandas as pd
 import urllib.request
+import requests as _requests
+
+# 同花顺明文 HTTP（端口 80）被 sandbox 网络策略拦截（q.10jqka.com.cn:80），
+# 而 HTTPS（443）可达且返回正常数据（2026-09-30 实测：https ajax 接口 status 200 含 page_info）。
+# akshare 的 stock_board_industry_summary_ths 硬编码 http://q.10jqka.com.cn，
+# 这里把该域名的 http 请求静默重定向到 https，绕开对 :80 的拦截（不改 akshare 源码，pip 升级不失效）。
+_orig_requests_get = _requests.get
+
+
+def _ths_https_get(url, *args, **kwargs):
+    if isinstance(url, str) and url.startswith('http://q.10jqka.com.cn'):
+        url = 'https://' + url[len('http://'):]
+    return _orig_requests_get(url, *args, **kwargs)
+
+
+_requests.get = _ths_https_get
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SKILL = os.path.expanduser("~/.workbuddy/skills/chan-signal__skillhub")
