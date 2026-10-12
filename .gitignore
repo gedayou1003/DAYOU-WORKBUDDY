@@ -56,6 +56,7 @@ _*.log
 .workbuddy/_bias_*.json
 .workbuddy/_backfill_*.json
 .workbuddy/_tj_raw_*.txt
+.workbuddy/_tj_*.json
 .workbuddy/_recon*.log
 .workbuddy/_audit*
 # 维护/体检类临时脚本（一次性，跑完即弃）
