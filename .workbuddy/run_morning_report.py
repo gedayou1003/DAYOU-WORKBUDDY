@@ -32,7 +32,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 for _s in (sys.stdout, sys.stderr):
     try:
         _s.reconfigure(errors='replace')
-    except Exception:
+    except Exception:  # silent-ok: 终端编码收口尽力而为，失败不影响结论
         pass
 _OK, _FAIL, _WARN, _INFO = '[OK]', '[X] ', '[~] ', '[i] '
 if sys.stdout.encoding and ('utf-8' in sys.stdout.encoding.lower() or 'utf8' in sys.stdout.encoding.lower()):
@@ -70,7 +70,7 @@ def _run(cmd, cwd=None, log=None, timeout=1200):
         try:
             with open(log, 'w', encoding='utf-8') as f:
                 f.write('$ %s\n(cwd=%s, %.1fs, rc=%d)\n%s\n' % (' '.join(cmd), cwd, dt, rc, out))
-        except Exception:
+        except Exception:  # silent-ok: 日志写失败不影响主流程（真失败已由返回值 rc 报出）
             pass
     return rc, out, dt
 
@@ -158,7 +158,7 @@ def _print_ohlc_summary(r):
         return
     try:
         j = json.loads(out)
-    except Exception:
+    except Exception:  # silent-ok: 展示层摘要，json 解析失败只少打一行，不影响主流程
         return
     if 'close' in j:
         print('  · OHLC: %s 收盘 %.2f（%+.2f%%）' % (j.get('date'), j['close'], j.get('pct_chg', 0)))
@@ -278,7 +278,7 @@ def _load_morning_record(day):
     try:
         with open(p, encoding='utf-8') as f:
             data = json.load(f)
-    except Exception:
+    except Exception:  # silent-ok: 读链失败返回 None，调用方 cmd_gap 统一报「未找到记录」并 return 1
         return None
     recs = data if isinstance(data, list) else data.get('records', [])
     rid = day + '-morning'

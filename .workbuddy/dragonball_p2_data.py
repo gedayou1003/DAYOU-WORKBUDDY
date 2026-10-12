@@ -19,7 +19,7 @@ import urllib.request
 for _s in (sys.stdout, sys.stderr):
     try:
         _s.reconfigure(encoding='utf-8', errors='replace')
-    except Exception:
+    except Exception:  # silent-ok: 终端编码收口尽力而为，失败不影响结论
         pass
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -61,7 +61,7 @@ def fetch_industry_amount():
             df.columns = ['code', 'date', 'close', 'open', 'high', 'low', 'volume', 'amount']
             if len(df) and df.iloc[-1]['amount'] is not None:
                 amounts.append(float(df.iloc[-1]['amount']))
-        except Exception:
+        except Exception:  # silent-ok: 某行业取数失败跳过，main 里 industry_n 暴露实际行业数（部分降级）
             continue
     return amounts
 

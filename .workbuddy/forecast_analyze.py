@@ -264,8 +264,11 @@ def compute_tj_bypass(tencent_code):
         _rets = [(closes[i] - closes[i - 1]) / closes[i - 1] * 100 for i in range(1, len(closes))]
         _xi = hill_tail_index(_rets)['xi']
         out["risk_note"] = build_risk_note(_stage, tail_xi=_xi)
-    except Exception:
+    except Exception as e:
+        # 定性旁路：叙事层算不出只降级为「无风险提示」，不影响方向打分；
+        # 但仍要出声 —— 否则叙事层代码有 bug 会永远静默（第五原则）
         out["risk_note"] = None
+        sys.stderr.write('[warn] DRAGON BALL 叙事层算不出，risk_note 降级为 None：%s\n' % e)
     return out
 
 

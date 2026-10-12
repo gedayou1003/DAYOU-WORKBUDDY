@@ -25,7 +25,7 @@ import types
 for _s in (sys.stdout, sys.stderr):
     try:
         _s.reconfigure(errors='replace')
-    except Exception:
+    except Exception:  # silent-ok: 终端编码收口尽力而为，失败不影响结论
         pass
 
 HERE = os.path.dirname(os.path.abspath(__file__))
