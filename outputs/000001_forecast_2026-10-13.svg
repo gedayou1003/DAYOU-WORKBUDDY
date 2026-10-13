@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 0 940 580" font-family="-apple-system,'PingFang SC',sans-serif">
 <title>上证综指 2026-10-13 预判图</title>
-<desc>pred=2026-10-12-close / date=2026-10-13 / actual=2026-10-12</desc>
+<desc>pred=2026-10-13-morning / date=2026-10-13 / actual=2026-10-12</desc>
 <defs><style>
 .grid{stroke:#d8d2c4;stroke-width:0.5;stroke-dasharray:2 3}
 .axis{stroke:#3a4a4a;stroke-width:1;fill:none}
@@ -50,8 +50,8 @@
 <text class="ts" x="228" y="305.8" text-anchor="end" fill="#1f3a3a">C 3797.24</text>
 <text x="22" y="48.0" class="tb" fill="#b33a1f">▸ 当日关键信号</text>
 <text x="24" y="63.0" class="ts" fill="#5a5a4f">· v5 总分 -2（买卖点 +1 + 定调 -1 + BOLL -1 + MACD DIF 拐头 -1）</text>
-<text x="24" y="78.0" class="ts" fill="#5a5a4f">· 15F 带宽 0.93% 极度收口（<1%，触发方向不明；9/30 的 0.67% 收口后向下变盘，本期再现）</text>
-<text x="24" y="93.0" class="ts" fill="#5a5a4f">· 60F DIF 拐头向上（-20.3→-19.92）vs 日线 DIF 加速下行（-28.72）——级别背离</text>
+<text x="24" y="78.0" class="ts" fill="#5a5a4f">· 15F 带宽 0.93% 极度收口（<1%，触发方向不明；9/30 的 0.67% 收口后向下变盘，10/12 再现）</text>
+<text x="24" y="93.0" class="ts" fill="#5a5a4f">· 3828.22（10/12 高点）= 短线诱多分界（定调「10/13 需新高 3828 否则诱多 X 段、重置 60F-日线主跌套娃」）</text>
 <rect x="240" y="167.9" width="360" height="115.6" fill="#f3eddd" opacity="0.55"/>
 <text class="ts" x="592" y="225.7" text-anchor="end" fill="#8a7a55">震荡带 3812–3870</text>
 <circle cx="240" cy="313.8" r="4.5" fill="#2b2b2b"/>
@@ -71,9 +71,9 @@
 <line x1="20" y1="120.0" x2="600" y2="120.0" stroke="#b33a1f" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
 <text class="ts" x="610" y="123.0" fill="#b33a1f">RESIST 3894.16 日线 MA55·反抽上限（定调「最多反抽至 55 日线」）</text>
 <line x1="20" y1="167.9" x2="600" y2="167.9" stroke="#b33a1f" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
-<text class="ts" x="610" y="170.9" fill="#b33a1f">RESIST 3870.19 60F55·核心决策位（定调「突破 60F55 → 3754 成日线拐点，否则 3754 难保」）</text>
+<text class="ts" x="610" y="170.9" fill="#b33a1f">RESIST 3870.19 60F55·核心决策位（定调「反弹至 60F55 附近」+「突破 60F55 → 3754 成日线拐点」）</text>
 <line x1="20" y1="283.5" x2="600" y2="283.5" stroke="#1a7a3a" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
-<text class="ts" x="610" y="286.5" fill="#1a7a3a">SUPP 3812.40 15F MA55/60F 中轨 3816.96 贴身压力带（站稳升级短线反抽）</text>
+<text class="ts" x="610" y="286.5" fill="#1a7a3a">SUPP 3812.40 15F MA55/60F 中轨 3816.96 贴身压力带（定调「站稳 15F55 → 主跌套娃暂时解除」）</text>
 <line x1="20" y1="400.0" x2="600" y2="400.0" stroke="#1a7a3a" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
 <text class="ts" x="610" y="403.0" fill="#1a7a3a">SUPP 3754.14 主支撑·10/9 低点·60F 一买（跌破收盘不收回 → 下探 3741）</text>
 <g>
@@ -84,7 +84,7 @@
 <text x="627" y="459" class="ts" fill="#1a7a3a">跌破：跌破 3812 → 减仓，看 3754</text>
 <text x="627" y="477" class="ts" fill="#5a5a4f">信号：v5 总分 -2（买卖点 +1 + 定调 -1 + BOLL -1 + M…</text>
 <text x="627" y="491" class="ts" fill="#5a5a4f">信号：15F 带宽 0.93% 极度收口（<1%，触发方向不明；9/…</text>
-<text x="627" y="505" class="ts" fill="#5a5a4f">信号：60F DIF 拐头向上（-20.3→-19.92）vs 日线 DIF …</text>
+<text x="627" y="505" class="ts" fill="#5a5a4f">信号：3828.22（10/12 高点）= 短线诱多分界（定调「10/…</text>
 <text x="627" y="523" class="ts" fill="#5a5a4f">概率：突破28% / 震荡37% / 跌破35%</text>
 </g>
 <g>
