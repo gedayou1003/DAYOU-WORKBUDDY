@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 0 940 580" font-family="-apple-system,'PingFang SC',sans-serif">
 <title>上证综指 2026-10-14 预判图</title>
-<desc>pred=2026-10-13-close / date=2026-10-14 / actual=2026-10-13</desc>
+<desc>pred=2026-10-14-morning / date=2026-10-14 / actual=2026-10-13</desc>
 <defs><style>
 .grid{stroke:#d8d2c4;stroke-width:0.5;stroke-dasharray:2 3}
 .axis{stroke:#3a4a4a;stroke-width:1;fill:none}
@@ -49,42 +49,42 @@
 <circle cx="240" cy="292.2" r="3" fill="#1f3a3a"/>
 <text class="ts" x="228" y="284.2" text-anchor="end" fill="#1f3a3a">C 3800.86</text>
 <text x="22" y="48.0" class="tb" fill="#b33a1f">▸ 当日关键信号</text>
-<text x="24" y="63.0" class="ts" fill="#5a5a4f">· v5 总分 0（买卖点 +1 + 定调 +1 + BOLL -1 + MACD DIF 拐头 -1）→ 震荡</text>
-<text x="24" y="78.0" class="ts" fill="#5a5a4f">· 15F 带宽 2.14% 已从 0.93% 打开（变盘兑现，方向不明触发解除）</text>
-<text x="24" y="93.0" class="ts" fill="#5a5a4f">· 15F/30F/60F 三级别 DIF 向上（短端背离）vs 日线 DIF 加速下行 -30.79——级别背离</text>
-<rect x="240" y="172.0" width="360" height="95.4" fill="#f3eddd" opacity="0.55"/>
-<text class="ts" x="592" y="219.7" text-anchor="end" fill="#8a7a55">震荡带 3814–3864</text>
+<text x="24" y="63.0" class="ts" fill="#5a5a4f">· v5 总分 0（买卖点 +1 + 定调 +1 + BOLL -1 + MACD DIF 拐头 -1）</text>
+<text x="24" y="78.0" class="ts" fill="#5a5a4f">· 15-30-60F 三级别 DIF 向上（底背离）+ 日线 DIF 加速下行 -30.79</text>
+<text x="24" y="93.0" class="ts" fill="#5a5a4f">· 15F 带宽 2.14% 常态（10/13 已从 0.93% 打开，方向不明触发解除）</text>
+<rect x="240" y="172.0" width="360" height="103.8" fill="#f3eddd" opacity="0.55"/>
+<text class="ts" x="592" y="223.9" text-anchor="end" fill="#8a7a55">震荡带 3810–3864</text>
 <circle cx="240" cy="292.2" r="4.5" fill="#2b2b2b"/>
 <text class="tb" x="234" y="284.2" text-anchor="end" fill="#2b2b2b">现价 3800.86</text>
-<path d="M 240.0,292.2 L 320.0,277.9 L 400.0,306.5 L 480.0,283.6 L 600.0,292.2" stroke="#8a8a80" stroke-width="2.2" fill="none" stroke-dasharray="4 3"/>
-<text class="tb" x="330" y="291.9" fill="#6a6a5f">区间震荡（37%）</text>
+<path d="M 240.0,292.2 L 320.0,277.1 L 400.0,307.3 L 480.0,283.1 L 600.0,292.2" stroke="#8a8a80" stroke-width="2.2" fill="none" stroke-dasharray="4 3"/>
+<text class="tb" x="330" y="291.1" fill="#6a6a5f">区间震荡（37%）</text>
 <polygon class="node-up" points="420.0,160.9754200507066 431.0,171.9754200507066 420.0,182.9754200507066 409.0,171.9754200507066"/>
 <path d="M 420.0,172.0 L 510.0,143.8 L 600.0,115.6" stroke="#b33a1f" stroke-width="2.1" fill="none"/>
 <polygon points="600,107.6 608,115.6 600,123.6 592,115.6" fill="#b33a1f"/>
 <text class="tb" x="436.0" y="166.0" fill="#b33a1f">突破 3864（28%）</text>
-<text class="ts" x="490" y="141.0" fill="#b33a1f">放量站稳 → 看 3894 日线 MA55·反抽上限（定调「最多反抽至 55 日线」）</text>
-<polygon class="node-dn" points="420.0,256.38343861458463 431.0,267.38343861458463 420.0,278.38343861458463 409.0,267.38343861458463"/>
-<path d="M 420.0,267.4 L 510.0,335.9 L 600.0,404.4" stroke="#1a7a3a" stroke-width="2.2" fill="none"/>
+<text class="ts" x="490" y="141.0" fill="#b33a1f">放量站稳 → 看 3894 日线 MA55·反抽上限（定调「突破 60F 中轨理论看涨至 55 日线附近」）</text>
+<polygon class="node-dn" points="420.0,264.81625198745223 431.0,275.81625198745223 420.0,286.81625198745223 409.0,275.81625198745223"/>
+<path d="M 420.0,275.8 L 510.0,340.1 L 600.0,404.4" stroke="#1a7a3a" stroke-width="2.2" fill="none"/>
 <polygon points="600,396.4 608,404.4 600,412.4 592,404.4" fill="#1a7a3a"/>
-<text class="tb" x="436.0" y="281.4" fill="#1a7a3a">跌破 3814（35%）</text>
-<text class="ts" x="490" y="346.7" fill="#1a7a3a">缩量跌破 → 看 3742 主支撑·10/13 前低·定调 3741 目标（跌破收盘不收回 → 下探更深）</text>
+<text class="tb" x="436.0" y="289.8" fill="#1a7a3a">跌破 3810（35%）</text>
+<text class="ts" x="490" y="350.5" fill="#1a7a3a">缩量跌破 → 看 3742 主支撑·10/13 低点·前低（跌破收盘不收回 → 下探 3741）</text>
 <line x1="20" y1="115.6" x2="600" y2="115.6" stroke="#b33a1f" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
-<text class="ts" x="610" y="118.6" fill="#b33a1f">RESIST 3894.24 日线 MA55·反抽上限（定调「最多反抽至 55 日线」）</text>
+<text class="ts" x="610" y="118.6" fill="#b33a1f">RESIST 3894.24 日线 MA55·反抽上限（定调「突破 60F 中轨理论看涨至 55 日线附近」）</text>
 <line x1="20" y1="172.0" x2="600" y2="172.0" stroke="#b33a1f" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
-<text class="ts" x="610" y="175.0" fill="#b33a1f">RESIST 3864.44 60F MA55·核心决策位（定调「突破 60F55 → 3741 成日线拐点」）</text>
-<line x1="20" y1="267.4" x2="600" y2="267.4" stroke="#1a7a3a" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
-<text class="ts" x="610" y="270.4" fill="#1a7a3a">SUPP 3813.98 30F MA55/60F 中轨 3809.52 贴身压力带（站稳升级短线反抽）</text>
+<text class="ts" x="610" y="175.0" fill="#b33a1f">RESIST 3864.44 60F MA55·决策位（突破则 3754 成日线拐点）</text>
+<line x1="20" y1="275.8" x2="600" y2="275.8" stroke="#1a7a3a" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
+<text class="ts" x="610" y="278.8" fill="#1a7a3a">SUPP 3809.52 60F 中轨/30F MA55 3813.98 贴身压力带（定调「60F 中轨绕不开」）</text>
 <line x1="20" y1="404.4" x2="600" y2="404.4" stroke="#1a7a3a" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.75"/>
-<text class="ts" x="610" y="407.4" fill="#1a7a3a">SUPP 3741.53 主支撑·10/13 前低·定调 3741 目标（跌破收盘不收回 → 下探更深）</text>
+<text class="ts" x="610" y="407.4" fill="#1a7a3a">SUPP 3741.53 主支撑·10/13 低点·前低（跌破收盘不收回 → 下探 3741）</text>
 <g>
 <rect x="615" y="385" width="270" height="150" rx="6" fill="#fffdf6" stroke="#a89e87" stroke-width="0.8"/>
 <text x="627" y="403" class="tb" fill="#1f3a3a">盘面应对（v5 纪律）</text>
-<text x="627" y="423" class="ts" fill="#6a6a5f">震荡：3814–3864 内不追涨杀跌，等变盘</text>
+<text x="627" y="423" class="ts" fill="#6a6a5f">震荡：3810–3864 内不追涨杀跌，等变盘</text>
 <text x="627" y="441" class="ts" fill="#b33a1f">突破：放量站稳 3864 → 追多，看 3894</text>
-<text x="627" y="459" class="ts" fill="#1a7a3a">跌破：跌破 3814 → 减仓，看 3742</text>
+<text x="627" y="459" class="ts" fill="#1a7a3a">跌破：跌破 3810 → 减仓，看 3742</text>
 <text x="627" y="477" class="ts" fill="#5a5a4f">信号：v5 总分 0（买卖点 +1 + 定调 +1 + BOLL -1 + MA…</text>
-<text x="627" y="491" class="ts" fill="#5a5a4f">信号：15F 带宽 2.14% 已从 0.93% 打开（变盘兑现，方向…</text>
-<text x="627" y="505" class="ts" fill="#5a5a4f">信号：15F/30F/60F 三级别 DIF 向上（短端背离）vs 日线…</text>
+<text x="627" y="491" class="ts" fill="#5a5a4f">信号：15-30-60F 三级别 DIF 向上（底背离）+ 日线 DIF …</text>
+<text x="627" y="505" class="ts" fill="#5a5a4f">信号：15F 带宽 2.14% 常态（10/13 已从 0.93% 打开，方…</text>
 <text x="627" y="523" class="ts" fill="#5a5a4f">概率：突破28% / 震荡37% / 跌破35%</text>
 </g>
 <g>
